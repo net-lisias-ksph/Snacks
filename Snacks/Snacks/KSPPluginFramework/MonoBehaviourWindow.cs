@@ -15,7 +15,6 @@ using UnityEngine;
 
 namespace KSPPluginFramework
 {
-
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
     sealed class WindowInitialsAttribute : Attribute
     {
@@ -133,21 +132,15 @@ namespace KSPPluginFramework
             get { return _Visible; }
             set
             {
-                if (_Visible != value)
-                {
-                    if (value)
-                    {
-                        LogFormatted_DebugOnly("Adding Window to PostDrawQueue-{0}", WindowID);
-                        RenderingManager.AddToPostDrawQueue(5, this.DrawGUI);
-                    }
-                    else
-                    {
-                        LogFormatted_DebugOnly("Removing Window from PostDrawQueue", WindowID);
-                        RenderingManager.RemoveFromPostDrawQueue(5, this.DrawGUI);
-                    }
-                }
                 _Visible = value;
             }
+        }
+
+        internal override void  OnGUIEvery()
+        {
+ 	        base.OnGUIEvery();
+            if (_Visible)
+                DrawGUI();
         }
 
         /// <summary>

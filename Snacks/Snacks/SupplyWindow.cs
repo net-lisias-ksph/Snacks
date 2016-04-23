@@ -23,12 +23,14 @@ SOFTWARE.
  * 
  * */
 
-using KSP.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using KSP.IO;
+using KSP.UI.Screens;
+using KSP.UI.Dialogs;
 
 namespace Snacks
 {
@@ -109,12 +111,29 @@ namespace Snacks
                 GUILayout.Label(supplies.First().BodyName + ":", hedStyle);
                 foreach (ShipSupply supply in supplies)
                 {
+                    /*
                     if (supply.Percent > 50)
                         GUILayout.Label(new GUIContent(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount, "Crew: " + supply.CrewCount  + "  Duration*: " + supply.DayEstimate + " days"), regStyle);
                     else if (supply.Percent > 25)
                         GUILayout.Label(new GUIContent(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount, "Crew: " + supply.CrewCount + "  Duration*: " + supply.DayEstimate + " days"), yelStyle);
                     else
                         GUILayout.Label(new GUIContent(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount, "Crew: " + supply.CrewCount + "  Duration*: " + supply.DayEstimate + " days"), redStyle);
+                     */
+                    if (supply.Percent > 50)
+                    {
+                        GUILayout.Label(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount, regStyle);
+                        GUILayout.Label("Crew: " + supply.CrewCount + "  Duration: " + supply.DayEstimate + " days", regStyle);
+                    }
+                    else if (supply.Percent > 25)
+                    {
+                        GUILayout.Label(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount, yelStyle);
+                        GUILayout.Label("Crew: " + supply.CrewCount + "  Duration: " + supply.DayEstimate + " days", yelStyle);
+                    }
+                    else
+                    {
+                        GUILayout.Label(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount, redStyle);
+                        GUILayout.Label("Crew: " + supply.CrewCount + "  Duration: " + supply.DayEstimate + " days", redStyle);
+                    }
                 }
             }
            

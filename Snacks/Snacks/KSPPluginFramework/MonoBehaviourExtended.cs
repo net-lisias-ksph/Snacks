@@ -359,7 +359,6 @@ namespace KSPPluginFramework
         /// </summary>
         internal virtual void OnGUIEvery()
         {
-
         }
 
         /// <summary>

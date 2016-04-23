@@ -42,6 +42,12 @@ namespace Snacks
         private int mealsPerDay = 1;
         private double delayedReaction;
         private bool kerbalDeath;
+        private double snacksPerCrewCapacity = 50.0f;
+
+        public double SnacksPerCrewCapacity
+        {
+            get { return snacksPerCrewCapacity; }
+        }
 
         public double SnacksPerMeal
         {
