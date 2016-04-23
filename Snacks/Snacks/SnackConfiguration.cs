@@ -94,6 +94,7 @@ namespace Snacks
             mealsPerDay = int.Parse(node.GetValue("mealsPerDay"));
             delayedReaction = double.Parse(node.GetValue("delayedReaction"));
             kerbalDeath = bool.Parse(node.GetValue("kerbalDeath"));
+            snacksPerCrewCapacity = double.Parse(node.GetValue("snacksPerCrewCapacity"));
             Debug.Log("snacksPerMeal:" + snacksPerMeal + "mealsPerDay:" + mealsPerDay);
         
         }
