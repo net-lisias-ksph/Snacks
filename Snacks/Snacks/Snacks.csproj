@@ -73,7 +73,6 @@
     <Compile Include="SnackConsumer.cs" />
     <Compile Include="SnackController.cs" />
     <Compile Include="SnackConfiguration.cs" />
-    <Compile Include="SnackAdder.cs" />
     <Compile Include="SnackSnapshot.cs" />
     <Compile Include="SupplyWindow.cs" />
   </ItemGroup>

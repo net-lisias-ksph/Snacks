@@ -1,0 +1,23 @@
+{
+    "NAME":"WildBlueTools",
+    "URL":"https://raw.githubusercontent.com/Angel-125/Snacks/master/GameData/Snacks/Snacks.version",
+    "DOWNLOAD":"https://github.com/Angel-125/Snacks/releases",
+    "GITHUB":
+    {
+        "USERNAME":"Angel-125",
+        "REPOSITORY":"Snacks",
+        "ALLOW_PRE_RELEASE":false,
+    },
+    "VERSION":
+    {
+	"MAJOR":1,
+	"MINOR":1,
+	"PATCH":1
+    },
+    "KSP_VERSION":
+    {
+        "MAJOR":1,
+        "MINOR":1,
+        "PATCH":0
+    },
+}
