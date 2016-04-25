@@ -60,6 +60,12 @@ namespace Snacks
 
         void Awake()
         {
+            if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
+                HighLogic.LoadedScene != GameScenes.FLIGHT &&
+                HighLogic.LoadedScene != GameScenes.SPACECENTER &&
+                HighLogic.LoadedScene != GameScenes.TRACKSTATION)
+                return;
+
             try
             {
                 GameEvents.onCrewOnEva.Add(OnCrewOnEva);
@@ -86,6 +92,12 @@ namespace Snacks
 
         void Start()
         {
+            if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
+                HighLogic.LoadedScene != GameScenes.FLIGHT &&
+                HighLogic.LoadedScene != GameScenes.SPACECENTER &&
+                HighLogic.LoadedScene != GameScenes.TRACKSTATION)
+                return; 
+            
             try
             {
                 snackTime = random.NextDouble() * snackFrequency + Planetarium.GetUniversalTime();
@@ -179,6 +191,11 @@ namespace Snacks
 
         void FixedUpdate()
         {
+            if (HighLogic.LoadedScene != GameScenes.SPACECENTER && 
+                HighLogic.LoadedScene != GameScenes.FLIGHT && 
+                HighLogic.LoadedScene != GameScenes.SPACECENTER && 
+                HighLogic.LoadedScene != GameScenes.TRACKSTATION)
+                return;
             try
             {
 
