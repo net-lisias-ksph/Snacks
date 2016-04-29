@@ -9,6 +9,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.1.3
+- Updated to KSP 1.1.1
+- Fixed name in versioning file
+
 1.1.2
 - Fixed NREs
 - Cleaned up the Module Manager patch. Thanks for the hints, Badsector! :)
