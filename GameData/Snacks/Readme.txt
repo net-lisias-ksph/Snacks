@@ -9,6 +9,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.1.5
+- Updated to KSP 1.1.2
+
 1.1.4
 - Fixed an issue where snacks weren't provided to non-command crewed parts.
 - Rebalananced Snack amounts for non-command modules to 400 per crewmember.
