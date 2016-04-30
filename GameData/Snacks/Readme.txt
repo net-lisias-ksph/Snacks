@@ -9,6 +9,13 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.1.4
+- Fixed an issue where snacks weren't provided to non-command crewed parts.
+- Rebalananced Snack amounts for non-command modules to 400 per crewmember.
+NOTE: This will only apply to new vessels. For existing vessles, temporarily rename patch.cfg to patch.txt,
+and rename rebalance.txt to rebalance.cfg. Start your game, load your vessels, and then exit the game and rename
+the files back to rebalance.txt and patch.cfg.
+
 1.1.3
 - Updated to KSP 1.1.1
 - Fixed name in versioning file

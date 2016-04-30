@@ -1,4 +1,11 @@
-@PART[*]:HAS[@MODULE[ModuleCommand],#CrewCapacity[*],!RESOURCE[Snacks]]
+//Rebalance.txt
+//By Angel-125
+//Use this to reblance your existing vessels.
+//Simply rename the patch.cfg to patch.txt and
+//rename Rebalance.txt to Rebalance.cfg and restart your game.
+//Once you've played the game, exit KSP and rename this file to
+//Rebalance.txt and patch.txt back to patch.cfg.
+@PART[*]:HAS[@MODULE[ModuleCommand],#CrewCapacity[*]]
 {
 	RESOURCE
 	{
@@ -10,7 +17,7 @@
 	}
 }
 
-@PART[*]:HAS[!MODULE[ModuleCommand],#CrewCapacity[*],!RESOURCE[Snacks]]
+@PART[*]:HAS[!MODULE[ModuleCommand],#CrewCapacity[*]]
 {
 	RESOURCE
 	{
