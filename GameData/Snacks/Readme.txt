@@ -9,6 +9,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.1.6
+- Minor updates to the MM patch to help with customization
+
 1.1.5
 - Updated to KSP 1.1.2
 
