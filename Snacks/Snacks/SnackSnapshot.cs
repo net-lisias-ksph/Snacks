@@ -46,15 +46,9 @@ namespace Snacks
                         if (v.GetVesselCrew().Count > 0 && v.loaded)
                         {
                             activeVessels.Add(v.id);
-                            List<PartResource> resources = new List<PartResource>();
-                            v.rootPart.GetConnectedResources(snackResourceId, ResourceFlowMode.ALL_VESSEL, resources);
                             double snackAmount = 0;
                             double snackMax = 0;
-                            foreach (PartResource r in resources)
-                            {
-                                snackAmount += r.amount;
-                                snackMax += r.maxAmount;
-                            }
+                            v.resourcePartSet.GetConnectedResourceTotals(snackResourceId, out snackAmount, out snackMax, true);
  
                             ShipSupply supply = new ShipSupply();
                             supply.VesselName = v.vesselName;

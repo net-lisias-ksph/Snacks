@@ -54,7 +54,6 @@ namespace Snacks
         private double snacksPerMeal;
         private double lossPerDayPerKerbal;
         private int snackResourceId;
-        private int soilResourceId;
         private int snackFrequency;
         private bool kerbalDeath;
 
@@ -76,7 +75,6 @@ namespace Snacks
                 GameEvents.onVesselWasModified.Add(OnVesselWasModified);
                 SnackConfiguration snackConfig = SnackConfiguration.Instance();
                 snackResourceId = snackConfig.SnackResourceId;
-                soilResourceId = snackConfig.SoilResourceId;
                 snackFrequency = 6 * 60 * 60 * 2 / snackConfig.MealsPerDay;
                 snacksPerMeal = snackConfig.SnacksPerMeal;
                 lossPerDayPerKerbal = snackConfig.LossPerDay;
@@ -136,12 +134,10 @@ namespace Snacks
         {
             try
             {
-                //Debug.Log("EVA End");
-                double got = consumer.GetSnackResource(data.from, 1.0);
-                //Debug.Log("EVA Got:" + got);
-                List<PartResource> resources = new List<PartResource>();
-                data.to.GetConnectedResources(snackResourceId, ResourceFlowMode.ALL_VESSEL, resources);
-                resources.First().amount += got;
+                Part evaKerbal = data.from;
+                Part boardedPart = data.to;
+                double kerbalSnacks = consumer.GetSnackResource(evaKerbal, 1.0);
+                boardedPart.RequestResource(snackResourceId, -kerbalSnacks, ResourceFlowMode.ALL_VESSEL);
                 SnackSnapshot.Instance().SetRebuildSnapshot();
             }
             catch (Exception ex)
@@ -154,33 +150,19 @@ namespace Snacks
         {
             try
             {
-                //Debug.Log("EVA start");
-                double got = consumer.GetSnackResource(data.from, 1.0);
-                //Debug.Log("EVA Got:" + got);
-                if (!data.to.Resources.Contains(snackResourceId))
+                Part evaKerbal = data.to;
+                Part partExited = data.from;
+                double snacksAmount = consumer.GetSnackResource(partExited, 1.0);
+
+                if (evaKerbal.Resources.Contains(snackResourceId) == false)
                 {
                     ConfigNode node = new ConfigNode("RESOURCE");
                     node.AddValue("name", "Snacks");
-                    data.to.Resources.Add(node);
+                    node.AddValue("maxAmount", "1");
+                    evaKerbal.Resources.Add(node);
                 }
-                List<PartResource> resources = new List<PartResource>();
-                data.to.GetConnectedResources(snackResourceId, ResourceFlowMode.ALL_VESSEL, resources);
-                resources.First().amount = got;
-                resources.First().maxAmount = 1;
+                evaKerbal.Resources[SnackUtils.kSnacksResource].amount = snacksAmount;
                 SnackSnapshot.Instance().SetRebuildSnapshot();
-
-                if (!data.to.Resources.Contains(soilResourceId))
-                {
-                    ConfigNode node = new ConfigNode("RESOURCE");
-                    node.AddValue("name", "Soil");
-                    data.to.Resources.Add(node);
-                }
-                resources = new List<PartResource>();
-                data.to.GetConnectedResources(soilResourceId, ResourceFlowMode.ALL_VESSEL, resources);
-                resources.First().amount = 0;
-                resources.First().maxAmount = 1;
-
-                data.to.AddModule("EVANutritiveAnalyzer");
             }
             catch (Exception ex)
             {

@@ -53,28 +53,7 @@ namespace Snacks
 
         public double GetSnackResource(Part p, double demand)
         {
-            List<PartResource> resources = new List<PartResource>();
-            p.GetConnectedResources(snacksResource.id, ResourceFlowMode.ALL_VESSEL, resources);
-
-            double supplied = 0;
-            foreach (PartResource res in resources)
-            {
-                if (res.amount >= demand)
-                {
-                    res.amount -= demand;
-                    supplied += demand;
-                    return supplied;
-                }
-                else
-                {
-                    supplied += res.amount;
-                    demand -= res.amount;
-                    res.amount = 0;
-                }
-
-            }
-            return supplied;
-
+            return SnackUtils.ConsumeSnacks(p, demand);
         }
 
         public double GetSnackResource(List<ProtoPartSnapshot> protoPartSnapshots, double demand)
