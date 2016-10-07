@@ -33,72 +33,118 @@ namespace Snacks
 {
     class SnackConfiguration
     {
+        private static SnackConfiguration snackConfig;
+        int snackResourceId;
 
-        private ConfigNode node;
-        private double snacksPerMeal = 1;
-        private double lossPerDayPerKerbal;
-        private int snackResourceId;
-        private int mealsPerDay = 1;
-        private double delayedReaction;
-        private bool kerbalDeath;
-        private double snacksPerCrewCapacity = 50.0f;
-
-        public double SnacksPerCrewCapacity
+        public int SnackResourceId
         {
-            get { return snacksPerCrewCapacity; }
+            get
+            {
+                return snackResourceId;
+            }
         }
 
         public double SnacksPerMeal
         {
-            get { return snacksPerMeal; }
+            get 
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.snacksPerMeal; 
+            }
         }
-        public double LossPerDay
-        {
-            get { return lossPerDayPerKerbal; }
-        }
-        public int SnackResourceId
-        {
-            get { return snackResourceId; }
-        }
+
         public int MealsPerDay
         {
-            get { return mealsPerDay; }
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.mealsPerDay;
+            }
         }
-        public double DelayedReaction
+
+        public bool loseRepWhenHungry
         {
-            get { return delayedReaction; }
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.loseRepWhenHungry;
+            }
         }
-        public bool KerbalDeath
+
+        public double repLostWhenHungry
         {
-            get { return kerbalDeath; }
+            get 
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                switch (snackProperties.repLoss)
+                {
+                    case SnacksProperties.RepLoss.Low:
+                    default:
+                        return 0.0025;
+
+                    case SnacksProperties.RepLoss.Medium:
+                        return 0.005;
+
+                    case SnacksProperties.RepLoss.High:
+                        return 0.01;
+                }
+            }
         }
 
+        public bool loseFundsWhenHungry
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.loseFundsWhenHuntry;
+            }
+        }
 
+        public float fundsLostWhenHungry
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return (float)snackProperties.finePerKerbal;
+            }
+        }
 
+        public bool losePartialControlWhenHungry
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.partialControlWhenHungry;
+            }
+        }
+
+        public bool randomSnackingEnabled
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.enableRandomSnacking;
+            }
+        }
+
+        public bool recyclingEnabled
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.enableRecyclers;
+            }
+        }
+     
         private SnackConfiguration()
         {
             PartResourceDefinition snacksResource = PartResourceLibrary.Instance.GetDefinition("Snacks");
             snackResourceId = snacksResource.id;
-            //PartResourceDefinition soilResource = PartResourceLibrary.Instance.GetDefinition("Soil");
-            //soilResourceId = soilResource.id;
-            string file = IOUtils.GetFilePathFor(this.GetType(), "snacks.cfg");
-            Debug.Log("loading file:" + file);
-            node = ConfigNode.Load(file).GetNode("SNACKS");
-            snacksPerMeal = double.Parse(node.GetValue("snacksPerMeal"));
-            lossPerDayPerKerbal = double.Parse(node.GetValue("repLossPercent"));
-            mealsPerDay = int.Parse(node.GetValue("mealsPerDay"));
-            delayedReaction = double.Parse(node.GetValue("delayedReaction"));
-            kerbalDeath = bool.Parse(node.GetValue("kerbalDeath"));
-            snacksPerCrewCapacity = double.Parse(node.GetValue("snacksPerCrewCapacity"));
-            Debug.Log("snacksPerMeal:" + snacksPerMeal + "mealsPerDay:" + mealsPerDay);
-        
         }
-
-        private static SnackConfiguration snackConfig;
 
         public static SnackConfiguration Instance()
         {
-            if(snackConfig == null)
+            if (snackConfig == null)
                 snackConfig = new SnackConfiguration();
             return snackConfig;
         }

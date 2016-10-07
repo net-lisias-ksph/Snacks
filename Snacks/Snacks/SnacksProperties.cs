@@ -9,6 +9,7 @@ namespace Snacks
 {
     public class SnacksProperties : GameParameters.CustomParameterNode
     {
+        
         public enum RepLoss
         {
             Low,
@@ -43,6 +44,15 @@ namespace Snacks
 //        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
         public bool partialControlWhenHungry = false;
 
+        public SnacksProperties Instance
+        {
+            get
+            {
+                return HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+            }
+        }
+
+        #region CustomParameterNode
         public override string Title
         {
             get
@@ -104,5 +114,6 @@ namespace Snacks
 
             return base.Enabled(member, parameters);
         }
+        #endregion
     }
 }

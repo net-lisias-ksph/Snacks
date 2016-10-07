@@ -77,15 +77,8 @@ namespace Snacks
                 snackResourceId = snackConfig.SnackResourceId;
                 snackFrequency = 6 * 60 * 60 * 2 / snackConfig.MealsPerDay;
                 snacksPerMeal = snackConfig.SnacksPerMeal;
-                lossPerDayPerKerbal = snackConfig.LossPerDay;
-                kerbalDeath = snackConfig.KerbalDeath;
-                consumer = new SnackConsumer(snackConfig.SnacksPerMeal, snackConfig.LossPerDay);
-
-                Debug.Log("FRED snack stats");
-                Debug.Log("MealsPerDay " + snackConfig.MealsPerDay);
-                Debug.Log("SnacksPerMeal " + snackConfig.SnacksPerMeal);
-                Debug.Log("snackFrequency " + snackFrequency);
-                Debug.Log("lossPerDayPerKerbal " + lossPerDayPerKerbal);
+                lossPerDayPerKerbal = snackConfig.repLostWhenHungry;
+                consumer = new SnackConsumer(snackConfig.SnacksPerMeal, snackConfig.repLostWhenHungry);
             }
             catch (Exception ex)
             {

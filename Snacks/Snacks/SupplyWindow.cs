@@ -58,6 +58,7 @@ namespace Snacks
 
         private void SetupGUI()
         {
+            /*
             if (HighLogic.LoadedScene == GameScenes.FLIGHT || HighLogic.LoadedScene == GameScenes.SPACECENTER)
             {
                 if (button == null)
@@ -65,6 +66,7 @@ namespace Snacks
             }
             else if (button != null)
                 ApplicationLauncher.Instance.RemoveModApplication(button);
+             */
         }
 
 
@@ -81,8 +83,7 @@ namespace Snacks
         private void SetupStyles()
         {
            
-            hedStyle = new GUIStyle(GUI.skin.label);
-            //hedStyle.fontSize = hedStyle.fontSize + 2;
+//            hedStyle = new GUIStyle(GUI.skin.label);
             regStyle = new GUIStyle(GUI.skin.label);
             regStyle.margin = new RectOffset(25, 0, 0, 0);
             redStyle = new GUIStyle(regStyle);
