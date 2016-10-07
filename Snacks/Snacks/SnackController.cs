@@ -42,7 +42,7 @@ namespace Snacks
         protected System.Random random = new System.Random();
         protected int snackFrequency;
 
-        private SnackConsumer consumer;
+        private SnackConsumer consumer = new SnackConsumer();
 
         #region Lifecycle
         void Awake()
@@ -222,7 +222,6 @@ namespace Snacks
         {
             snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
 //            snackFrequency = 60 / SnacksProperties.MealsPerDay;
-            consumer = new SnackConsumer(SnacksProperties.SnacksPerMeal, SnacksProperties.RepLostWhenHungry);
         }
 
         private void EatSnacks()

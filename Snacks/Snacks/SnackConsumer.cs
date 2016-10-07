@@ -33,22 +33,7 @@ namespace Snacks
 {
     class SnackConsumer
     {
-        private System.Random random = new System.Random();
-        private double snacksPer;
-        private double lossPerDayPerKerbal;
-
-        public SnackConsumer(double snacksPer, double loss)
-        {
-            this.snacksPer = snacksPer;
-            lossPerDayPerKerbal = loss;
-        }
-
-        private bool GetRandomChance(double prob)
-        {
-            if (random.NextDouble() < prob)
-                return true;
-            return false;
-        }
+        private static System.Random random = new System.Random();
 
         public double GetSnackResource(Part part, double demand)
         {
@@ -102,33 +87,28 @@ namespace Snacks
 
             return supplied;
         }
-
-        private double CalculateExtraSnacksRequired(List<ProtoCrewMember> crew)
-        {
-            if (SnacksProperties.EnableRandomSnacking == false)
-                return 0;
-
-            double extra = 0;
-            foreach (ProtoCrewMember pc in crew)
-            {
-                if (GetRandomChance(pc.courage / 2.0))
-                    extra += snacksPer;
-                if (GetRandomChance(pc.stupidity / 2.0))
-                    extra -= snacksPer;
-                if (pc.isBadass && GetRandomChance(.2))
-                    extra -= snacksPer;
-            }
-            return extra;
-        }
-
+       
         /**
          * Removes the calculated number of snacks from the vessel.
          * returns the number of snacks that were required, but missing.
          * */
         public double ConsumeAndGetDeficit(ProtoVessel pv)
         {
-            double demand = pv.GetVesselCrew().Count * snacksPer;
-            double extra = CalculateExtraSnacksRequired(pv.GetVesselCrew());
+            double demand = 0;
+            double extra = calculateExtraSnacksRequired(pv.GetVesselCrew());
+            int totalCrew = pv.GetVesselCrew().Count;
+
+            //Calcuate demand when we are recycling
+            if (SnacksProperties.RecyclersEnabled)
+            {
+            }
+
+            //Not recycling
+            else
+            {
+                demand = SnacksProperties.SnacksPerMeal * totalCrew;
+            }
+
             //Debug.Log("SnackDemand(" + pv.vesselName +"): e: " + extra + " r:" + demand);
 
             if ((demand + extra) <= 0)
@@ -136,7 +116,7 @@ namespace Snacks
 
             double fed = GetSnackResource(pv.protoPartSnapshots, demand + extra);
             if (fed == 0)//unable to feed, no skipping or extra counted
-                return pv.GetVesselCrew().Count * snacksPer;
+                return pv.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal;
 
             return demand + extra - fed;
         }
@@ -147,8 +127,28 @@ namespace Snacks
         * */
         public double ConsumeAndGetDeficit(Vessel v)
         {
+            double demand = CalculateDemand(v);
+
+            //Debug.Log("SnackDemand(" + v.vesselName + "): e: " + extra + " r:" + demand);
+            if ((demand) <= 0)
+                return 0;
+
+            double fed = GetSnackResource(v.rootPart, demand);
+            if (fed == 0)//unable to feed, no skipping or extra counted
+                return v.GetCrewCount() * SnacksProperties.SnacksPerMeal;
+
+            return demand - fed;
+        }
+
+        public static double CalculateDemand(ProtoVessel pv)
+        {
+            return 0;
+        }
+
+        public static double CalculateDemand(Vessel v)
+        {
             double demand = 0;
-            double extra = CalculateExtraSnacksRequired(v.GetVesselCrew());
+            double extra = calculateExtraSnacksRequired(v.GetVesselCrew());
             int totalCrew = v.GetVesselCrew().Count;
 
             //Calcuate demand when we are recycling
@@ -157,6 +157,7 @@ namespace Snacks
                 List<SnackRecycler> recyclers = v.FindPartModulesImplementing<SnackRecycler>();
                 int crewProcessesd = 0;
 
+                //If we have recyclers, then reduce snack consumption based upon the capacity of the recycler and its efficiency.
                 if (recyclers.Count > 0)
                 {
                     recyclers.OrderByDescending(x => x.RecyclePercentage);
@@ -193,17 +194,33 @@ namespace Snacks
                 demand = SnacksProperties.SnacksPerMeal * totalCrew;
             }
 
-            //Debug.Log("SnackDemand(" + v.vesselName + "): e: " + extra + " r:" + demand);
-            if ((demand + extra) <= 0)
+            return demand + extra;
+        }
+
+        private static bool getRandomChance(double prob)
+        {
+            if (random.NextDouble() < prob)
+                return true;
+            return false;
+        }
+
+        private static double calculateExtraSnacksRequired(List<ProtoCrewMember> crew)
+        {
+            if (SnacksProperties.EnableRandomSnacking == false)
                 return 0;
 
-            double fed = GetSnackResource(v.rootPart, demand + extra);
-            //Debug.Log("fed" + fed + v.vesselName);
-
-            if (fed == 0)//unable to feed, no skipping or extra counted
-                return v.GetCrewCount() * snacksPer;
-
-            return demand + extra - fed;
+            double extra = 0;
+            foreach (ProtoCrewMember pc in crew)
+            {
+                if (getRandomChance(pc.courage / 2.0))
+                    extra += SnacksProperties.SnacksPerMeal;
+                if (getRandomChance(pc.stupidity / 2.0))
+                    extra -= SnacksProperties.SnacksPerMeal;
+                if (pc.isBadass && getRandomChance(.2))
+                    extra -= SnacksProperties.SnacksPerMeal;
+            }
+            return extra;
         }
+
     }
 }
