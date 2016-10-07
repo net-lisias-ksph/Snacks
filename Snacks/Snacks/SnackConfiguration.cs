@@ -35,7 +35,7 @@ namespace Snacks
     {
 
         private ConfigNode node;
-        private double snacksPerMeal;
+        private double snacksPerMeal = 1;
         private double lossPerDayPerKerbal;
         private int snackResourceId;
         private int mealsPerDay = 1;

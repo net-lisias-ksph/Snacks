@@ -55,7 +55,6 @@ namespace Snacks
         private double lossPerDayPerKerbal;
         private int snackResourceId;
         private int snackFrequency;
-        private bool kerbalDeath;
 
         void Awake()
         {
@@ -73,19 +72,10 @@ namespace Snacks
                 GameEvents.onVesselRename.Add(OnRename);
                 GameEvents.onVesselChange.Add(OnVesselChange);
                 GameEvents.onVesselWasModified.Add(OnVesselWasModified);
+                GameEvents.OnGameSettingsApplied.Remove(onGameSettingsApplied);
                 SnackConfiguration snackConfig = SnackConfiguration.Instance();
                 snackResourceId = snackConfig.SnackResourceId;
-                snackFrequency = 6 * 60 * 60 * 2 / snackConfig.MealsPerDay;
-                snacksPerMeal = snackConfig.SnacksPerMeal;
-                lossPerDayPerKerbal = snackConfig.LossPerDay;
-                kerbalDeath = snackConfig.KerbalDeath;
-                consumer = new SnackConsumer(snackConfig.SnacksPerMeal, snackConfig.LossPerDay);
-
-                Debug.Log("FRED snack stats");
-                Debug.Log("MealsPerDay " + snackConfig.MealsPerDay);
-                Debug.Log("SnacksPerMeal " + snackConfig.SnacksPerMeal);
-                Debug.Log("snackFrequency " + snackFrequency);
-                Debug.Log("lossPerDayPerKerbal " + lossPerDayPerKerbal);
+                updatesnackParameters();
             }
             catch (Exception ex)
             {
@@ -104,12 +94,33 @@ namespace Snacks
             
             try
             {
-                snackTime = random.NextDouble() * snackFrequency + Planetarium.GetUniversalTime();
+                double randomFactor = 1;
+
+                System.Random rand = new System.Random();
+                if (SnackConfiguration.Instance().randomSnackingEnabled)
+                    randomFactor = rand.NextDouble();
+
+                snackTime = randomFactor * snackFrequency + Planetarium.GetUniversalTime();
             }
             catch (Exception ex)
             {
                 Debug.Log("Snacks - Start error: " + ex.Message + ex.StackTrace);
             }
+        }
+
+        private void onGameSettingsApplied()
+        {
+            updatesnackParameters();
+        }
+
+        private void updatesnackParameters()
+        {
+            SnackConfiguration snackConfig = SnackConfiguration.Instance();
+
+            snackFrequency = 6 * 60 * 60 * 2 / snackConfig.MealsPerDay;
+            snacksPerMeal = snackConfig.SnacksPerMeal;
+            lossPerDayPerKerbal = snackConfig.repLostWhenHungry;
+            consumer = new SnackConsumer(snackConfig.SnacksPerMeal, snackConfig.repLostWhenHungry);
         }
 
         private void OnVesselWasModified(Vessel data)
@@ -191,14 +202,13 @@ namespace Snacks
 
                 if (currentTime > snackTime)
                 {
-                    SnackConfiguration snackConfig = SnackConfiguration.Instance();
-                    Debug.Log("FRED snack stats");
-                    Debug.Log("MealsPerDay " + snackConfig.MealsPerDay);
-                    Debug.Log("SnacksPerMeal " + snackConfig.SnacksPerMeal);
-                    Debug.Log("snackFrequency " + snackFrequency);
-                    Debug.Log("lossPerDayPerKerbal " + lossPerDayPerKerbal);
+                    double randomFactor = 1;
+
                     System.Random rand = new System.Random();
-                    snackTime = rand.NextDouble() * snackFrequency + currentTime;
+                    if (SnackConfiguration.Instance().randomSnackingEnabled)
+                        randomFactor = rand.NextDouble();
+
+                    snackTime = randomFactor * snackFrequency + currentTime;
                     Debug.Log("Snack time!  Next Snack Time!:" + snackTime);
                     EatSnacks();
                     SnackSnapshot.Instance().SetRebuildSnapshot();
@@ -237,7 +247,12 @@ namespace Snacks
                         double snacks = consumer.RemoveSnacks(v);
                         snacksMissed += snacks;
                         if (snacks > 0)
+                        {
+                            if (SnackConfiguration.Instance().losePartialControlWhenHungry)
+                            {
+                            }
                             Debug.Log("No snacks for: " + v.vesselName);
+                        }
                     }
 
                 }
@@ -251,7 +266,12 @@ namespace Snacks
                             double snacks = consumer.RemoveSnacks(pv);
                             snacksMissed += snacks;
                             if (snacks > 0)
+                            {
+                                if (SnackConfiguration.Instance().losePartialControlWhenHungry)
+                                {
+                                }
                                 Debug.Log("No snacks for: " + pv.vesselName);
+                            }
                         }
                     }
                 }
@@ -261,14 +281,26 @@ namespace Snacks
                     int fastingKerbals = Convert.ToInt32(snacksMissed / snacksPerMeal);
                     if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
                     {
-                        double repLoss;
-                        if (Reputation.CurrentRep > 0)
-                            repLoss = fastingKerbals * lossPerDayPerKerbal * Reputation.Instance.reputation;
-                        else
-                            repLoss = fastingKerbals;
+                        //Funding loss
+                        if (SnackConfiguration.Instance().loseFundsWhenHungry)
+                        {
+                            double fine = SnackConfiguration.Instance().fundsLostWhenHungry * fastingKerbals;
+                            Funding.Instance.AddFunds(-fine, TransactionReasons.Any);
+                            ScreenMessages.PostScreenMessage(fastingKerbals + " Kerbals didn't have any snacks (fined " + Convert.ToInt32(fine) + ")", 5, ScreenMessageStyle.UPPER_LEFT);
+                        }
 
-                        Reputation.Instance.AddReputation(Convert.ToSingle(-1 * repLoss), TransactionReasons.Any);
-                        ScreenMessages.PostScreenMessage(fastingKerbals + " Kerbals didn't have any snacks(reputation decreased by " + Convert.ToInt32(repLoss) + ")", 5, ScreenMessageStyle.UPPER_LEFT);
+                        //Reputation loss
+                        if (SnackConfiguration.Instance().loseRepWhenHungry)
+                        {
+                            double repLoss;
+                            if (Reputation.CurrentRep > 0)
+                                repLoss = fastingKerbals * lossPerDayPerKerbal * Reputation.Instance.reputation;
+                            else
+                                repLoss = fastingKerbals;
+
+                            Reputation.Instance.AddReputation(Convert.ToSingle(-1 * repLoss), TransactionReasons.Any);
+                            ScreenMessages.PostScreenMessage(fastingKerbals + " Kerbals didn't have any snacks (reputation decreased by " + Convert.ToInt32(repLoss) + ")", 5, ScreenMessageStyle.UPPER_LEFT);
+                        }
                     }
                     else
                     {
