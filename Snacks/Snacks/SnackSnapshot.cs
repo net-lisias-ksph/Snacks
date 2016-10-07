@@ -121,7 +121,7 @@ namespace Snacks
             ships.Add(supply);
         }
 
-        public void SetRebuildSnapshot()
+        public void RebuildSnapshot()
         {
             vessels = null;
         }

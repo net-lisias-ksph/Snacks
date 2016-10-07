@@ -47,14 +47,11 @@ namespace Snacks
             }
         }
 
-        private double snackTime = -1;
-        private System.Random random = new System.Random();
+        protected double snackTime = -1;
+        protected System.Random random = new System.Random();
+        protected int snackFrequency;
 
         private SnackConsumer consumer;
-        private double snacksPerMeal;
-        private double lossPerDayPerKerbal;
-        //private int snackResourceId;
-        private int snackFrequency;
 
         void Awake()
         {
@@ -72,16 +69,21 @@ namespace Snacks
                 GameEvents.onVesselRename.Add(OnRename);
                 GameEvents.onVesselChange.Add(OnVesselChange);
                 GameEvents.onVesselWasModified.Add(OnVesselWasModified);
-                snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
-                snacksPerMeal = SnacksProperties.SnacksPerMeal;
-                lossPerDayPerKerbal = SnacksProperties.RepLostWhenHungry;
-                consumer = new SnackConsumer(SnacksProperties.SnacksPerMeal, SnacksProperties.RepLostWhenHungry);
+                GameEvents.OnGameSettingsApplied.Add(UpdateSnackConsumption);
+
+                UpdateSnackConsumption();
             }
             catch (Exception ex)
             {
                 Debug.Log("Snacks - Awake error: " + ex.Message + ex.StackTrace);
             }
             
+        }
+
+        public void UpdateSnackConsumption()
+        {
+            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+            consumer = new SnackConsumer(SnacksProperties.SnacksPerMeal, SnacksProperties.RepLostWhenHungry);
         }
 
         void Start()
@@ -105,25 +107,25 @@ namespace Snacks
         private void OnVesselWasModified(Vessel data)
         {
             //Debug.Log("OnVesselWasModified");
-            SnackSnapshot.Instance().SetRebuildSnapshot();
+            SnackSnapshot.Instance().RebuildSnapshot();
         }
 
         private void OnVesselChange(Vessel data)
         {
             //Debug.Log("OnVesselChange");
-            SnackSnapshot.Instance().SetRebuildSnapshot();
+            SnackSnapshot.Instance().RebuildSnapshot();
         }
 
         private void OnRename(GameEvents.HostedFromToAction<Vessel, string> data)
         {
             //Debug.Log("OnRename");
-            SnackSnapshot.Instance().SetRebuildSnapshot();
+            SnackSnapshot.Instance().RebuildSnapshot();
         }
 
         private void onLoad(ConfigNode node)
         {
             //Debug.Log("onLoad");
-            SnackSnapshot.Instance().SetRebuildSnapshot();
+            SnackSnapshot.Instance().RebuildSnapshot();
         }
 
         private void OnCrewBoardVessel(GameEvents.FromToAction<Part, Part> data)
@@ -134,7 +136,7 @@ namespace Snacks
                 Part boardedPart = data.to;
                 double kerbalSnacks = consumer.GetSnackResource(evaKerbal, 1.0);
                 boardedPart.RequestResource(SnacksProperties.SnackResourceID, -kerbalSnacks, ResourceFlowMode.ALL_VESSEL);
-                SnackSnapshot.Instance().SetRebuildSnapshot();
+                SnackSnapshot.Instance().RebuildSnapshot();
             }
             catch (Exception ex)
             {
@@ -158,7 +160,7 @@ namespace Snacks
                     evaKerbal.Resources.Add(node);
                 }
                 evaKerbal.Resources[SnackUtils.kSnacksResource].amount = snacksAmount;
-                SnackSnapshot.Instance().SetRebuildSnapshot();
+                SnackSnapshot.Instance().RebuildSnapshot();
             }
             catch (Exception ex)
             {
@@ -185,7 +187,7 @@ namespace Snacks
                     snackTime = rand.NextDouble() * snackFrequency + currentTime;
                     Debug.Log("Snack time!  Next Snack Time!:" + snackTime);
                     EatSnacks();
-                    SnackSnapshot.Instance().SetRebuildSnapshot();
+                    SnackSnapshot.Instance().RebuildSnapshot();
                 }
             }
             catch (Exception ex)
@@ -200,6 +202,11 @@ namespace Snacks
             {
                 GameEvents.onCrewOnEva.Remove(OnCrewOnEva);
                 GameEvents.onCrewBoardVessel.Remove(OnCrewBoardVessel);
+                GameEvents.onGameStateLoad.Remove(onLoad);
+                GameEvents.onVesselRename.Remove(OnRename);
+                GameEvents.onVesselChange.Remove(OnVesselChange);
+                GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
+                GameEvents.OnGameSettingsApplied.Remove(UpdateSnackConsumption);
             }
             catch (Exception ex)
             {
@@ -242,12 +249,12 @@ namespace Snacks
 
                 if (snacksMissed > 0)
                 {
-                    int fastingKerbals = Convert.ToInt32(snacksMissed / snacksPerMeal);
+                    int fastingKerbals = Convert.ToInt32(snacksMissed / SnacksProperties.SnacksPerMeal);
                     if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
                     {
                         double repLoss;
                         if (Reputation.CurrentRep > 0)
-                            repLoss = fastingKerbals * lossPerDayPerKerbal * Reputation.Instance.reputation;
+                            repLoss = fastingKerbals * SnacksProperties.RepLostWhenHungry * Reputation.Instance.reputation;
                         else
                             repLoss = fastingKerbals;
 
@@ -267,14 +274,5 @@ namespace Snacks
                 Debug.Log("Snacks - EatSnacks: " + ex.Message + ex.StackTrace);
             }
         }
-
-        private void SetVesselOutOfSnacks(Vessel v)
-        {
-            //v.GetVesselCrew()[0].
-
-            //Debug.Log(pv.ctrlState);
-        }
-
-
     }
 }
