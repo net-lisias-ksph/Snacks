@@ -10,6 +10,7 @@ namespace Snacks
     public class SnacksProperties : GameParameters.CustomParameterNode
     {
         public static string SnacksResourceName = "Snacks";
+        public static string SoilResourceName = "Soil";
 
         public enum RepLoss
         {
@@ -24,10 +25,10 @@ namespace Snacks
         [GameParameters.CustomIntParameterUI("Meals per day", minValue = 1, maxValue = 3, stepSize = 1, toolTip = "How often do kerbals eat", autoPersistance = true)]
         public int mealsPerDay = 1;
 
-        [GameParameters.CustomParameterUI("Some kerbals eat more, some eat less", toolTip = "At snack time, kerbals eat random amounts of Snacks", autoPersistance = true)]
+        [GameParameters.CustomParameterUI("Some kerbals eat more, some eat less", toolTip = "At snack time, kerbals eat random amounts of Snacks, and the time between snacking is also random", autoPersistance = true)]
         public bool enableRandomSnacking = true;
 
-        [GameParameters.CustomParameterUI("Recyclers reduce snack consumption", toolTip = "Recyclers reduce the snacks eaten but consume ElectrcCharge", autoPersistance = true)]
+        [GameParameters.CustomParameterUI("Enable recycling", toolTip = "Kerbals produce Soil when snacking. Recyclers convert the Soil back to Snacks at the cost of ElectricCharge", autoPersistance = true)]
         public bool enableRecyclers = true;
 
         [GameParameters.CustomParameterUI("Hungry kerbals hurt your reputation.", toolTip = "When kerbals go hungry, you lose Reputation", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
@@ -42,7 +43,7 @@ namespace Snacks
         [GameParameters.CustomIntParameterUI("Fine per kerbal", maxValue = 50000, minValue = 1000, stepSize = 1000, toolTip = "How much is it gonna cost", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
         public int finePerKerbal = 1000;
         
-//        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
+        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
         public bool partialControlWhenHungry = false;
 
         #region Properties
