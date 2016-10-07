@@ -187,7 +187,7 @@ namespace Snacks
                     node.AddValue("maxAmount", "1");
                     evaKerbal.Resources.Add(node);
                 }
-                evaKerbal.Resources[SnackUtils.kSnacksResource].amount = snacksAmount;
+                evaKerbal.Resources[SnacksProperties.SnacksResourceName].amount = snacksAmount;
                 SnackSnapshot.Instance().RebuildSnapshot();
             }
             catch (Exception ex)

@@ -65,7 +65,6 @@
     <Compile Include="SnackRecycler.cs" />
     <Compile Include="SnackSnapshot.cs" />
     <Compile Include="SnacksProperties.cs" />
-    <Compile Include="Utilities\SnackUtils.cs" />
     <Compile Include="Utilities\Window.cs" />
     <Compile Include="Utilities\WindowUtils.cs" />
   </ItemGroup>
