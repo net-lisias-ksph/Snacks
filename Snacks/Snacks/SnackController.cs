@@ -31,21 +31,12 @@ using KSP.IO;
 
 namespace Snacks
 {
-
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
     public class SnackController : MonoBehaviour
     {
 
         public static event EventHandler SnackTime;
-
-        protected virtual void OnSnackTime(EventArgs e)
-        {
-            EventHandler handler = SnackTime;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
+        public static event EventHandler PreSnackTime;
 
         protected double snackTime = -1;
         protected System.Random random = new System.Random();
@@ -53,6 +44,7 @@ namespace Snacks
 
         private SnackConsumer consumer;
 
+        #region Lifecycle
         void Awake()
         {
             if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
@@ -80,12 +72,6 @@ namespace Snacks
             
         }
 
-        public void UpdateSnackConsumption()
-        {
-            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
-            consumer = new SnackConsumer(SnacksProperties.SnacksPerMeal, SnacksProperties.RepLostWhenHungry);
-        }
-
         void Start()
         {
             if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
@@ -96,7 +82,10 @@ namespace Snacks
             
             try
             {
-                snackTime = random.NextDouble() * snackFrequency + Planetarium.GetUniversalTime();
+                if (SnacksProperties.EnableRandomSnacking)
+                    snackTime = random.NextDouble() * snackFrequency + Planetarium.GetUniversalTime();
+                else
+                    snackTime = snackFrequency + Planetarium.GetUniversalTime();
             }
             catch (Exception ex)
             {
@@ -104,6 +93,45 @@ namespace Snacks
             }
         }
 
+        void FixedUpdate()
+        {
+            if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
+                HighLogic.LoadedScene != GameScenes.FLIGHT &&
+                HighLogic.LoadedScene != GameScenes.SPACECENTER &&
+                HighLogic.LoadedScene != GameScenes.TRACKSTATION)
+                return;
+            try
+            {
+
+                double currentTime = Planetarium.GetUniversalTime();
+
+                if (currentTime > snackTime)
+                {
+                    if (SnacksProperties.EnableRandomSnacking)
+                    {
+                        System.Random rand = new System.Random();
+                        snackTime = rand.NextDouble() * snackFrequency + currentTime;
+                    }
+                    else
+                    {
+                        snackTime = snackFrequency + currentTime;
+                    }
+
+                    Debug.Log("Snack time!  Next Snack Time!:" + snackTime);
+
+                    EatSnacks();
+
+                    SnackSnapshot.Instance().RebuildSnapshot();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("Snacks - FixedUpdate: " + ex.Message + ex.StackTrace);
+            }
+        }
+        #endregion
+
+        #region GameEvents
         private void OnVesselWasModified(Vessel data)
         {
             //Debug.Log("OnVesselWasModified");
@@ -169,33 +197,6 @@ namespace Snacks
 
         }
 
-        void FixedUpdate()
-        {
-            if (HighLogic.LoadedScene != GameScenes.SPACECENTER && 
-                HighLogic.LoadedScene != GameScenes.FLIGHT && 
-                HighLogic.LoadedScene != GameScenes.SPACECENTER && 
-                HighLogic.LoadedScene != GameScenes.TRACKSTATION)
-                return;
-            try
-            {
-
-                double currentTime = Planetarium.GetUniversalTime();
-
-                if (currentTime > snackTime)
-                {
-                    System.Random rand = new System.Random();
-                    snackTime = rand.NextDouble() * snackFrequency + currentTime;
-                    Debug.Log("Snack time!  Next Snack Time!:" + snackTime);
-                    EatSnacks();
-                    SnackSnapshot.Instance().RebuildSnapshot();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("Snacks - FixedUpdate: " + ex.Message + ex.StackTrace);
-            }
-        }
-
         void OnDestroy()
         {
             try
@@ -213,59 +214,70 @@ namespace Snacks
                 Debug.Log("Snacks - OnDestroy: " + ex.Message + ex.StackTrace);
             }
         }
+        #endregion
+
+        #region Helpers
+
+        public void UpdateSnackConsumption()
+        {
+            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+//            snackFrequency = 60 / SnacksProperties.MealsPerDay;
+            consumer = new SnackConsumer(SnacksProperties.SnacksPerMeal, SnacksProperties.RepLostWhenHungry);
+        }
 
         private void EatSnacks()
         {
             try
             {
-                List<Guid> activeVessels = new List<Guid>();
+                //Post the before snack time event
+                OnPreSnackTime(EventArgs.Empty);
+
                 double snacksMissed = 0;
-                foreach (Vessel v in FlightGlobals.Vessels)
+                double snackDeficit;
+
+                //Consume snacks for loaded vessels
+                foreach (Vessel v in FlightGlobals.VesselsLoaded)
                 {
-                    if (v.GetCrewCount() > 0 && v.loaded)
+                    if (v.GetCrewCount() > 0)
                     {
-                        activeVessels.Add(v.id);
-                        double snacks = consumer.RemoveSnacks(v);
-                        snacksMissed += snacks;
-                        if (snacks > 0)
+                        snackDeficit = consumer.ConsumeAndGetDeficit(v);
+                        snacksMissed += snackDeficit;
+                        if (snackDeficit > 0)
+                        {
+                            //Disable partial control for the vessel
+                            if (SnacksProperties.PartialControlWhenHungry)
+                            {
+                            }
+
                             Debug.Log("No snacks for: " + v.vesselName);
+                        }
                     }
 
                 }
 
-                foreach (ProtoVessel pv in HighLogic.CurrentGame.flightState.protoVessels)
+                //Consume snacks for unloaded vessels
+                foreach (Vessel unloadedVessel in FlightGlobals.VesselsUnloaded)
                 {
-                    if (pv.GetVesselCrew().Count > 0)
+                    if (unloadedVessel.protoVessel.GetVesselCrew().Count > 0)
                     {
-                        if (!pv.vesselRef.loaded && !activeVessels.Contains(pv.vesselID))
+                        snackDeficit = consumer.ConsumeAndGetDeficit(unloadedVessel.protoVessel);
+                        snacksMissed += snackDeficit;
+                        if (snackDeficit > 0)
                         {
-                            double snacks = consumer.RemoveSnacks(pv);
-                            snacksMissed += snacks;
-                            if (snacks > 0)
-                                Debug.Log("No snacks for: " + pv.vesselName);
+                            //Disable partial control for the vessel
+                            if (SnacksProperties.PartialControlWhenHungry)
+                            {
+                            }
+
+                            Debug.Log("No snacks for: " + unloadedVessel.protoVessel.vesselName);
                         }
                     }
                 }
 
-                if (snacksMissed > 0)
-                {
-                    int fastingKerbals = Convert.ToInt32(snacksMissed / SnacksProperties.SnacksPerMeal);
-                    if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
-                    {
-                        double repLoss;
-                        if (Reputation.CurrentRep > 0)
-                            repLoss = fastingKerbals * SnacksProperties.RepLostWhenHungry * Reputation.Instance.reputation;
-                        else
-                            repLoss = fastingKerbals;
+                //If we've missed some meals then apply the consequences
+                applyPenalties(snacksMissed);
 
-                        Reputation.Instance.AddReputation(Convert.ToSingle(-1 * repLoss), TransactionReasons.Any);
-                        ScreenMessages.PostScreenMessage(fastingKerbals + " Kerbals didn't have any snacks(reputation decreased by " + Convert.ToInt32(repLoss) + ")", 5, ScreenMessageStyle.UPPER_LEFT);
-                    }
-                    else
-                    {
-                        ScreenMessages.PostScreenMessage(fastingKerbals + " Kerbals didn't have any snacks.", 5, ScreenMessageStyle.UPPER_LEFT);
-                    }
-                }
+                //Post the snack time event
                 OnSnackTime(EventArgs.Empty);
                 
             }
@@ -274,5 +286,66 @@ namespace Snacks
                 Debug.Log("Snacks - EatSnacks: " + ex.Message + ex.StackTrace);
             }
         }
+
+        protected void applyPenalties(double snacksMissed)
+        {
+            if (snacksMissed < 0.001)
+                return;
+
+            //Let player know how many kerbals are hungry
+            int hungryKerbals = Convert.ToInt32(snacksMissed / SnacksProperties.SnacksPerMeal);
+            ScreenMessages.PostScreenMessage(hungryKerbals + " Kerbals are hungry for snacks.", 5, ScreenMessageStyle.UPPER_LEFT);
+
+            //If we're not in career mode then we're done
+            if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
+                return;
+
+            //Apply funding loss
+            if (SnacksProperties.LoseFundsWhenHungry)
+            {
+                double fine = SnacksProperties.FinePerKerbal * hungryKerbals;
+
+                Funding.Instance.AddFunds(-fine, TransactionReasons.Any);
+                ScreenMessages.PostScreenMessage("You've been fined " + Convert.ToInt32(fine) + "Funds", 5, ScreenMessageStyle.UPPER_LEFT);
+            }
+
+            //Apply reputation loss
+            if (SnacksProperties.LoseRepWhenHungry)
+            {
+                double repLoss;
+
+                if (Reputation.CurrentRep > 0)
+                    repLoss = hungryKerbals * SnacksProperties.RepLostWhenHungry * Reputation.Instance.reputation;
+                else
+                    repLoss = hungryKerbals;
+
+                Reputation.Instance.AddReputation(Convert.ToSingle(-1 * repLoss), TransactionReasons.Any);
+                ScreenMessages.PostScreenMessage("Youre reputation decreased by " + Convert.ToInt32(repLoss), 5, ScreenMessageStyle.UPPER_LEFT);
+            }
+
+        }
+
+        #endregion
+
+        #region Events
+
+        public virtual void OnPreSnackTime(EventArgs e)
+        {
+            EventHandler handler = PreSnackTime;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        public virtual void OnSnackTime(EventArgs e)
+        {
+            EventHandler handler = SnackTime;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+        #endregion
     }
 }

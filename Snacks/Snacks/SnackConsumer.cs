@@ -105,7 +105,7 @@ namespace Snacks
          * Removes the calculated number of snacks from the vessel.
          * returns the number of snacks that were required, but missing.
          * */
-        public double RemoveSnacks(ProtoVessel pv)
+        public double ConsumeAndGetDeficit(ProtoVessel pv)
         {
             double demand = pv.GetVesselCrew().Count * snacksPer;
             double extra = CalculateExtraSnacksRequired(pv.GetVesselCrew());
@@ -122,7 +122,7 @@ namespace Snacks
         * Removes the calculated number of snacks from the vessel.
         * returns the number of snacks that were required, but missing.
         * */
-        public double RemoveSnacks(Vessel v)
+        public double ConsumeAndGetDeficit(Vessel v)
         {
 
             double demand = v.GetVesselCrew().Count * snacksPer;
