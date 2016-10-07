@@ -34,7 +34,6 @@ namespace Snacks
                 if (vessels == null)
                 {
                     //Debug.Log("rebuilding snapshot");
-                    int snackResourceId = SnackConfiguration.Instance().SnackResourceId;
                     vessels = new Dictionary<int, List<ShipSupply>>();
                     outOfSnacks = new Dictionary<Guid, bool>();
 
@@ -48,7 +47,7 @@ namespace Snacks
                             activeVessels.Add(v.id);
                             double snackAmount = 0;
                             double snackMax = 0;
-                            v.resourcePartSet.GetConnectedResourceTotals(snackResourceId, out snackAmount, out snackMax, true);
+                            v.resourcePartSet.GetConnectedResourceTotals(SnacksProperties.SnackResourceID, out snackAmount, out snackMax, true);
  
                             ShipSupply supply = new ShipSupply();
                             supply.VesselName = v.vesselName;
@@ -56,7 +55,7 @@ namespace Snacks
                             supply.SnackAmount = Convert.ToInt32(snackAmount);
                             supply.SnackMaxAmount = Convert.ToInt32(snackMax);
                             supply.CrewCount = v.GetVesselCrew().Count;
-                            supply.DayEstimate = Convert.ToInt32(snackAmount / supply.CrewCount / (SnackConfiguration.Instance().MealsPerDay * SnackConfiguration.Instance().SnacksPerMeal));
+                            supply.DayEstimate = Convert.ToInt32(snackAmount / supply.CrewCount / (SnacksProperties.MealsPerDay * SnacksProperties.SnacksPerMeal));
                             supply.Percent = snackMax == 0 ? 0 : Convert.ToInt32(snackAmount / snackMax * 100);
                             AddShipSupply(supply, v.protoVessel.orbitSnapShot.ReferenceBodyIndex);
                             outOfSnacks.Add(v.id, snackAmount != 0.0 ? false : true);
@@ -76,7 +75,7 @@ namespace Snacks
                             {
                                 foreach (ProtoPartResourceSnapshot resource in pps.resources)
                                 {
-                                    if (resource.resourceName == "Snacks")
+                                    if (resource.resourceName == SnacksProperties.SnacksResourceName)
                                     {
                                         snackAmount += resource.amount;
                                         snackMax += resource.maxAmount;
@@ -92,7 +91,7 @@ namespace Snacks
                             supply.SnackMaxAmount = Convert.ToInt32(snackMax);
                             supply.CrewCount = pv.GetVesselCrew().Count;
                             //Debug.Log(pv.vesselName + supply.CrewCount);
-                            supply.DayEstimate = Convert.ToInt32(snackAmount / supply.CrewCount / (SnackConfiguration.Instance().MealsPerDay * SnackConfiguration.Instance().SnacksPerMeal));
+                            supply.DayEstimate = Convert.ToInt32(snackAmount / supply.CrewCount / (SnacksProperties.MealsPerDay * SnacksProperties.SnacksPerMeal));
                             //Debug.Log(pv.vesselName + supply.DayEstimate);
                             //Debug.Log("sa:" + snackAmount + " sm:" + snackMax);
                             supply.Percent = snackMax == 0 ? 0 : Convert.ToInt32(snackAmount / snackMax * 100);

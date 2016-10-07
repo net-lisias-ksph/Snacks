@@ -22,15 +22,24 @@ namespace Snacks
         {
             Dictionary<int, List<ShipSupply>> snapshot = SnackSnapshot.Instance().Vessels();
             var keys = snapshot.Keys.ToList();
+            List<ShipSupply> supplies;
 
             scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height(300), GUILayout.Width(300));
             keys.Sort();
             foreach (int planet in keys)
             {
-                List<ShipSupply> supplies;
-                snapshot.TryGetValue(planet, out supplies);
-                //supplies.Sort();
-                GUILayout.Label(supplies.First().BodyName + ":");
+                if (!snapshot.TryGetValue(planet, out supplies))
+                {
+                    GUILayout.Label("Can't seem to get supplies");
+                    GUILayout.EndScrollView();
+                }
+
+                if (SnacksProperties.EnableRandomSnacking)
+                {
+                    GUILayout.Label("The following are estimates");
+                }
+
+                GUILayout.Label("<b>" + supplies.First().BodyName + ":</b>");
                 foreach (ShipSupply supply in supplies)
                 {
                     if (supply.Percent > 50)

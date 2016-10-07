@@ -63,7 +63,7 @@
     <Compile Include="KSPPluginFramework\SkinsLibrary.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShipSupply.cs" />
-    <Compile Include="GUI\SnackAppLauncher.cs" />
+    <Compile Include="GUI\SnackApp.cs" />
     <Compile Include="GUI\SnackAppView.cs" />
     <Compile Include="SnackConsumer.cs" />
     <Compile Include="SnackController.cs" />

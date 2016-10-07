@@ -53,9 +53,8 @@ namespace Snacks
         private SnackConsumer consumer;
         private double snacksPerMeal;
         private double lossPerDayPerKerbal;
-        private int snackResourceId;
+        //private int snackResourceId;
         private int snackFrequency;
-        private bool kerbalDeath;
 
         void Awake()
         {
@@ -73,12 +72,10 @@ namespace Snacks
                 GameEvents.onVesselRename.Add(OnRename);
                 GameEvents.onVesselChange.Add(OnVesselChange);
                 GameEvents.onVesselWasModified.Add(OnVesselWasModified);
-                SnackConfiguration snackConfig = SnackConfiguration.Instance();
-                snackResourceId = snackConfig.SnackResourceId;
-                snackFrequency = 6 * 60 * 60 * 2 / snackConfig.MealsPerDay;
-                snacksPerMeal = snackConfig.SnacksPerMeal;
-                lossPerDayPerKerbal = snackConfig.repLostWhenHungry;
-                consumer = new SnackConsumer(snackConfig.SnacksPerMeal, snackConfig.repLostWhenHungry);
+                snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+                snacksPerMeal = SnacksProperties.SnacksPerMeal;
+                lossPerDayPerKerbal = SnacksProperties.RepLostWhenHungry;
+                consumer = new SnackConsumer(SnacksProperties.SnacksPerMeal, SnacksProperties.RepLostWhenHungry);
             }
             catch (Exception ex)
             {
@@ -136,7 +133,7 @@ namespace Snacks
                 Part evaKerbal = data.from;
                 Part boardedPart = data.to;
                 double kerbalSnacks = consumer.GetSnackResource(evaKerbal, 1.0);
-                boardedPart.RequestResource(snackResourceId, -kerbalSnacks, ResourceFlowMode.ALL_VESSEL);
+                boardedPart.RequestResource(SnacksProperties.SnackResourceID, -kerbalSnacks, ResourceFlowMode.ALL_VESSEL);
                 SnackSnapshot.Instance().SetRebuildSnapshot();
             }
             catch (Exception ex)
@@ -153,7 +150,7 @@ namespace Snacks
                 Part partExited = data.from;
                 double snacksAmount = consumer.GetSnackResource(partExited, 1.0);
 
-                if (evaKerbal.Resources.Contains(snackResourceId) == false)
+                if (evaKerbal.Resources.Contains(SnacksProperties.SnackResourceID) == false)
                 {
                     ConfigNode node = new ConfigNode("RESOURCE");
                     node.AddValue("name", "Snacks");
@@ -184,12 +181,6 @@ namespace Snacks
 
                 if (currentTime > snackTime)
                 {
-                    SnackConfiguration snackConfig = SnackConfiguration.Instance();
-                    Debug.Log("FRED snack stats");
-                    Debug.Log("MealsPerDay " + snackConfig.MealsPerDay);
-                    Debug.Log("SnacksPerMeal " + snackConfig.SnacksPerMeal);
-                    Debug.Log("snackFrequency " + snackFrequency);
-                    Debug.Log("lossPerDayPerKerbal " + lossPerDayPerKerbal);
                     System.Random rand = new System.Random();
                     snackTime = rand.NextDouble() * snackFrequency + currentTime;
                     Debug.Log("Snack time!  Next Snack Time!:" + snackTime);

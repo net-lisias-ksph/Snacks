@@ -9,7 +9,8 @@ namespace Snacks
 {
     public class SnacksProperties : GameParameters.CustomParameterNode
     {
-        
+        public static string SnacksResourceName = "Snacks";
+
         public enum RepLoss
         {
             Low,
@@ -33,7 +34,7 @@ namespace Snacks
         public bool loseRepWhenHungry = true;
 
         [GameParameters.CustomParameterUI("Rep loss per kerbal per meal", toolTip = "How mad your kerbals will be", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
-        public RepLoss repLoss = RepLoss.Low;
+        public RepLoss repLostWhenHungry = RepLoss.Low;
 
         [GameParameters.CustomParameterUI("Hungry kerbals hurt your bottom line.", toolTip = "When kerbals go hungry, you lose Funds", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
         public bool loseFundsWhenHuntry = true;
@@ -44,13 +45,108 @@ namespace Snacks
 //        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
         public bool partialControlWhenHungry = false;
 
-        public SnacksProperties Instance
+        #region Properties
+        public static int SnackResourceID
         {
             get
             {
-                return HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                PartResourceDefinition snacksResource = PartResourceLibrary.Instance.GetDefinition("Snacks");
+                return snacksResource.id;
             }
         }
+
+        public static bool PartialControlWhenHungry
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.partialControlWhenHungry;
+            }
+        }
+
+        public static bool RecyclersEnabled
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.enableRecyclers;
+            }
+        }
+
+        public static bool EnableRandomSnacking
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.enableRandomSnacking;
+            }
+        }
+
+        public static double SnacksPerMeal
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.snacksPerMeal;
+            }
+        }
+
+        public static int MealsPerDay
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.mealsPerDay;
+            }
+        }
+
+        public static bool LoseFundsWhenHungry
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.loseFundsWhenHuntry;
+            }
+        }
+
+        public static double FinePerKerbal
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.finePerKerbal;
+            }
+        }
+
+        public static bool LoseRepWhenHungry
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.loseRepWhenHungry;
+            }
+        }
+
+        public static double RepLostWhenHungry
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                switch (snackProperties.repLostWhenHungry)
+                {
+                    case SnacksProperties.RepLoss.Low:
+                    default:
+                        return 0.0025;
+
+                    case SnacksProperties.RepLoss.Medium:
+                        return 0.005;
+
+                    case SnacksProperties.RepLoss.High:
+                        return 0.01;
+                }
+            }
+        }
+#endregion
 
         #region CustomParameterNode
         public override string Title

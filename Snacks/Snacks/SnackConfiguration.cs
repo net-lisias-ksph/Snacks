@@ -31,9 +31,9 @@ using KSP.IO;
 
 namespace Snacks
 {
-    class SnackConfiguration
+    class SnackConfiguration2
     {
-        private static SnackConfiguration snackConfig;
+        private static SnackConfiguration2 snackConfig;
         int snackResourceId;
 
         public int SnackResourceId
@@ -76,7 +76,7 @@ namespace Snacks
             get 
             {
                 SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                switch (snackProperties.repLoss)
+                switch (snackProperties.repLostWhenHungry)
                 {
                     case SnacksProperties.RepLoss.Low:
                     default:
@@ -136,16 +136,16 @@ namespace Snacks
             }
         }
      
-        private SnackConfiguration()
+        private SnackConfiguration2()
         {
             PartResourceDefinition snacksResource = PartResourceLibrary.Instance.GetDefinition("Snacks");
             snackResourceId = snacksResource.id;
         }
 
-        public static SnackConfiguration Instance()
+        public static SnackConfiguration2 Instance()
         {
             if (snackConfig == null)
-                snackConfig = new SnackConfiguration();
+                snackConfig = new SnackConfiguration2();
             return snackConfig;
         }
     }
