@@ -56,17 +56,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Settings\SnacksScenario.cs" />
+    <Compile Include="LifeSupport\SnackVesselController.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
-    <Compile Include="SnacksResourceSwitcher.cs" />
+    <Compile Include="Utilities\SnacksResourceSwitcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ShipSupply.cs" />
+    <Compile Include="LifeSupport\ShipSupply.cs" />
     <Compile Include="GUI\SnackApp.cs" />
     <Compile Include="GUI\SnackAppView.cs" />
-    <Compile Include="SnackConsumer.cs" />
-    <Compile Include="SnackController.cs" />
-    <Compile Include="SnacksRecycler.cs" />
-    <Compile Include="SnackSnapshot.cs" />
-    <Compile Include="SnacksProperties.cs" />
+    <Compile Include="LifeSupport\SnackConsumer.cs" />
+    <Compile Include="LifeSupport\SnackController.cs" />
+    <Compile Include="LifeSupport\SnacksRecycler.cs" />
+    <Compile Include="LifeSupport\SnackSnapshot.cs" />
+    <Compile Include="Settings\SnacksProperties.cs" />
     <Compile Include="Utilities\Window.cs" />
     <Compile Include="Utilities\WindowUtils.cs" />
   </ItemGroup>

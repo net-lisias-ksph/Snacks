@@ -66,7 +66,7 @@ namespace Snacks
                 {
                     if (resource.resourceName == SnacksProperties.SnacksResourceName)
                     {
-                        if (resource.amount >= demand)
+                         if (resource.amount >= demand)
                         {
                             resource.amount -= demand;
                             return supplied;
@@ -81,9 +81,9 @@ namespace Snacks
                 }
             }
 
-            //if no snack resources were found, this vessel has not been loaded. Feed them from the magic bucket.
+            //No resources found? Too bad!
             if (!resFound)
-                return demand;
+                return 0;
 
             return supplied;
         }
@@ -128,7 +128,7 @@ namespace Snacks
          * */
         public double ConsumeAndGetDeficit(ProtoVessel pv)
         {
-            double demand = 0;
+            double demand = pv.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal;
             double extra = calculateExtraSnacksRequired(pv.GetVesselCrew());
 
             if ((demand + extra) <= 0)
@@ -142,7 +142,7 @@ namespace Snacks
             if (SnacksProperties.RecyclersEnabled)
                 AddSoilResource(pv.protoPartSnapshots, fed);
 
-            return demand + extra - fed;
+           return demand + extra - fed;
         }
 
         /**

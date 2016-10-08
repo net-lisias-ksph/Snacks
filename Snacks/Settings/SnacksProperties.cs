@@ -30,6 +30,9 @@ namespace Snacks
 
         [GameParameters.CustomParameterUI("Enable recycling", toolTip = "Kerbals produce Soil when snacking. Recyclers convert the Soil back to Snacks at the cost of ElectricCharge", autoPersistance = true)]
         public bool enableRecyclers = true;
+        
+        [GameParameters.CustomFloatParameterUI("Recycler Efficiency", minValue = 0.1f, maxValue = 1.0f, asPercentage = true, toolTip = "How well does the recycler recyle", autoPersistance = true)]
+        public float recyclerEfficiency = 0.7f;
 
         [GameParameters.CustomParameterUI("Hungry kerbals hurt your reputation.", toolTip = "When kerbals go hungry, you lose Reputation", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
         public bool loseRepWhenHungry = true;
@@ -44,7 +47,7 @@ namespace Snacks
         public int finePerKerbal = 1000;
         
         [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
-        public bool partialControlWhenHungry = false;
+        public bool partialControlWhenHungry = true;
 
         #region Properties
         public static int SnackResourceID
@@ -71,6 +74,15 @@ namespace Snacks
             {
                 SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
                 return snackProperties.enableRecyclers;
+            }
+        }
+
+        public static float RecyclerEfficiency
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.recyclerEfficiency;
             }
         }
 
@@ -207,6 +219,11 @@ namespace Snacks
             if (member.Name == "finePerKerbal" && loseFundsWhenHuntry)
                 return true;
             else if (member.Name == "finePerKerbal")
+                return false;
+
+            if (member.Name == "recyclerEfficiency" && enableRecyclers)
+                return true;
+            else if (member.Name == "recyclerEfficiency")
                 return false;
 
             return base.Enabled(member, parameters);

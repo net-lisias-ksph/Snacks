@@ -36,10 +36,10 @@ namespace Snacks
 
                 if (SnacksProperties.EnableRandomSnacking)
                 {
-                    GUILayout.Label("The following are estimates");
+                    GUILayout.Label("<color=yellow>The following are estimates</color>");
                 }
 
-                GUILayout.Label("<b>" + supplies.First().BodyName + ":</b>");
+                GUILayout.Label("<color=white><b>" + supplies.First().BodyName + ":</b></color>");
                 foreach (ShipSupply supply in supplies)
                 {
                     if (supply.Percent > 50)
@@ -55,7 +55,7 @@ namespace Snacks
                     else
                     {
                         GUILayout.Label("<color=red>" + supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
-                        GUILayout.Label("<color=red>Crew: " + supply.CrewCount + "  Duration: " + supply.DayEstimate + " days</red>");
+                        GUILayout.Label("<color=red>Crew: " + supply.CrewCount + "  Duration: " + supply.DayEstimate + " days</color>");
                     }
                 }
             }

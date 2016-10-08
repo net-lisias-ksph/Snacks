@@ -47,8 +47,7 @@ namespace Snacks
         #region Lifecycle
         void Awake()
         {
-            if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
-                HighLogic.LoadedScene != GameScenes.FLIGHT &&
+            if (HighLogic.LoadedScene != GameScenes.FLIGHT &&
                 HighLogic.LoadedScene != GameScenes.SPACECENTER &&
                 HighLogic.LoadedScene != GameScenes.TRACKSTATION)
                 return;
@@ -74,11 +73,19 @@ namespace Snacks
 
         void Start()
         {
-            if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
-                HighLogic.LoadedScene != GameScenes.FLIGHT &&
+            if (HighLogic.LoadedScene != GameScenes.FLIGHT &&
                 HighLogic.LoadedScene != GameScenes.SPACECENTER &&
                 HighLogic.LoadedScene != GameScenes.TRACKSTATION)
-                return; 
+                return;
+
+            if (HighLogic.LoadedScene == GameScenes.SPACECENTER)
+            {
+                if (SnacksScenario.Instance.showWelcomeMessage == true)
+                {
+                    SnacksScenario.Instance.showWelcomeMessage = false;
+                    ScreenMessages.PostScreenMessage("New to Snacks Continued? Be sure to read the KSPedia", 15f, ScreenMessageStyle.UPPER_CENTER);
+                }
+            } 
             
             try
             {
@@ -220,55 +227,90 @@ namespace Snacks
 
         public void UpdateSnackConsumption()
         {
-            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
-//            snackFrequency = 60 / SnacksProperties.MealsPerDay;
+            snackFrequency = 10;
+//            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
         }
 
         private void EatSnacks()
         {
             try
             {
+                Debug.Log("EatSnacks called");
                 //Post the before snack time event
                 OnPreSnackTime(EventArgs.Empty);
 
                 double snacksMissed = 0;
                 double snackDeficit;
+                bool enablePartialControl;
 
                 //Consume snacks for loaded vessels
+                //Debug.Log("Loaded vessles count: " + FlightGlobals.VesselsLoaded.Count);
                 foreach (Vessel v in FlightGlobals.VesselsLoaded)
                 {
+                    enablePartialControl = false;
                     if (v.GetCrewCount() > 0)
                     {
                         snackDeficit = consumer.ConsumeAndGetDeficit(v);
                         snacksMissed += snackDeficit;
                         if (snackDeficit > 0)
                         {
-                            //Disable partial control for the vessel
-                            if (SnacksProperties.PartialControlWhenHungry)
-                            {
-                            }
+                            enablePartialControl = true;
+                            //Debug.Log("No snacks for: " + v.vesselName + " crew count: " + v.GetVesselCrew().Count);
+                        }
+                    }
 
-                            Debug.Log("No snacks for: " + v.vesselName);
+                    //Set partial control for the vessel
+                    if (SnacksProperties.PartialControlWhenHungry)
+                    {
+                        List<SnackVesselController> snackVesselControllers = v.FindPartModulesImplementing<SnackVesselController>();
+
+                        if (snackVesselControllers.Count > 0)
+                        {
+                            SnackVesselController[] controllers = snackVesselControllers.ToArray();
+
+                            for (int index = 0; index < controllers.Length; index++)
+                                controllers[index].partialControlEnabled = enablePartialControl;
                         }
                     }
 
                 }
 
                 //Consume snacks for unloaded vessels
+                //Debug.Log("Unloaded vessels count: " + FlightGlobals.VesselsUnloaded.Count);
                 foreach (Vessel unloadedVessel in FlightGlobals.VesselsUnloaded)
                 {
+                    enablePartialControl = false;
                     if (unloadedVessel.protoVessel.GetVesselCrew().Count > 0)
                     {
                         snackDeficit = consumer.ConsumeAndGetDeficit(unloadedVessel.protoVessel);
                         snacksMissed += snackDeficit;
-                        if (snackDeficit > 0)
+                       if (snackDeficit > 0)
                         {
-                            //Disable partial control for the vessel
-                            if (SnacksProperties.PartialControlWhenHungry)
-                            {
-                            }
+                            enablePartialControl = true;
+                            //Debug.Log("No snacks for: " + unloadedVessel.protoVessel.vesselName + " crew count: " + unloadedVessel.protoVessel.GetVesselCrew().Count);
+                        }
+                    }
 
-                            Debug.Log("No snacks for: " + unloadedVessel.protoVessel.vesselName);
+                    //Set partial control for the vessel
+                    if (SnacksProperties.PartialControlWhenHungry)
+                    {
+                        ProtoPartSnapshot[] partSnapshots = unloadedVessel.protoVessel.protoPartSnapshots.ToArray();
+                        ProtoPartSnapshot partSnapshot;
+                        ProtoPartModuleSnapshot[] moduleSnapshots;
+                        ProtoPartModuleSnapshot moduleSnapshot;
+
+                        for (int partIndex = 0; partIndex < partSnapshots.Length; partIndex++)
+                        {
+                            partSnapshot = partSnapshots[partIndex];
+                            moduleSnapshots = partSnapshot.modules.ToArray();
+
+                            for (int index = 0; index < moduleSnapshots.Length; index++)
+                            {
+                                moduleSnapshot = moduleSnapshots[index];
+
+                                if (moduleSnapshot.moduleName == "SnackVesselController")
+                                    moduleSnapshot.moduleValues.SetValue("partialControlEnabled", enablePartialControl.ToString());
+                            }
                         }
                     }
                 }
