@@ -15,19 +15,22 @@ namespace Snacks
         [KSPField()]
         public int RecyclerCapacity;
 
+        double originalSnacksRatio;
+
         public override string GetInfo()
         {
             StringBuilder builder = new StringBuilder();
 
             builder.AppendLine(base.GetInfo());
-            builder.AppendFormat("Recycles {0:f2} Snacks per day", GetDailyRecycleAmount());
+            builder.AppendFormat("Recycles {0:f2} Snacks per day", GetDailySnacksRecycled());
 
             return builder.ToString();
         }
 
         public override void OnStart(StartState state)
         {
-            base.OnStart(state);
+            ResourceRatio[] outputs = outputList.ToArray();
+            ResourceRatio output;
 
             GameEvents.OnGameSettingsApplied.Add(setupRecycler);
 
@@ -37,7 +40,21 @@ namespace Snacks
             if (RecyclerCapacity == 0)
                 RecyclerCapacity = 1;
 
+            //Find the Snacks output ratio
+            for (int index = 0; index < outputs.Length; index++)
+            {
+                output = outputs[index];
+                if (output.ResourceName == SnacksProperties.SnacksResourceName)
+                {
+                    originalSnacksRatio = output.Ratio;
+                    break;
+                }
+            } 
+            
+            //Now set up the recycler
             setupRecycler();
+
+            base.OnStart(state);
        }
 
         public void Destroy()
@@ -45,22 +62,13 @@ namespace Snacks
             GameEvents.OnGameSettingsApplied.Remove(setupRecycler);
         }
 
-        public double GetDailyRecycleAmount()
+        public double GetDailySnacksRecycled()
         {
-            //Get the snacks per second
-            ResourceRatio[] outputs = outputList.ToArray();
-            ResourceRatio output;
+            if (HighLogic.LoadedScene != GameScenes.EDITOR &&
+                HighLogic.LoadedScene != GameScenes.FLIGHT)
+                return 0;
 
-            for (int index = 0; index < outputs.Length; index++)
-            {
-                output = outputs[index];
-                if (output.ResourceName == SnacksProperties.SnacksResourceName)
-                {
-                    return output.Ratio * 21600f;
-                }
-            }
-
-            return 0;
+            return originalSnacksRatio * SnacksProperties.RecyclerEfficiency * 21600;
         }
 
         private void setupRecycler()
@@ -81,9 +89,6 @@ namespace Snacks
 
                 //Enable the module
                 EnableModule();
-
-                //Set base efficiency
-                Efficiency = SnacksProperties.RecyclerEfficiency;
             }
             else
             {
@@ -97,6 +102,26 @@ namespace Snacks
 
             //Dirty the GUI
             MonoUtilities.RefreshContextWindows(this.part);
+        }
+
+        protected override ConversionRecipe PrepareRecipe(double deltatime)
+        {
+            //Get the snacks per second
+            ResourceRatio[] outputs = outputList.ToArray();
+            ResourceRatio output;
+
+            //Find the snacks output and apply efficiency
+            for (int index = 0; index < outputs.Length; index++)
+            {
+                output = outputs[index];
+                if (output.ResourceName == SnacksProperties.SnacksResourceName)
+                {
+                    output.Ratio = originalSnacksRatio * 21600f * SnacksProperties.RecyclerEfficiency;
+                    break;
+                }
+            }
+
+            return base.PrepareRecipe(deltatime);
         }
     }
 }
