@@ -12,12 +12,25 @@ namespace Snacks
     {
         public static SnacksScenario Instance;
 
-        public bool showWelcomeMessage = true;
+        private static bool showWelcomeMessage = true;
 
         public override void OnAwake()
         {
             base.OnAwake();
             Instance = this;
+        }
+
+        public bool ShowWelcomeMessage
+        {
+            get
+            {
+                return showWelcomeMessage;
+            }
+
+            set
+            {
+                showWelcomeMessage = value;
+            }
         }
 
         public override void OnLoad(ConfigNode node)
@@ -32,7 +45,10 @@ namespace Snacks
         {
             base.OnSave(node);
 
-            node.SetValue("showWelcomeMessage", showWelcomeMessage.ToString());
+            if (node.HasValue("showWelcomeMessage") == false)
+                node.AddValue("showWelcomeMessage", showWelcomeMessage.ToString());
+            else
+                node.SetValue("showWelcomeMessage", showWelcomeMessage.ToString());
         }
     }
 }

@@ -80,10 +80,10 @@ namespace Snacks
 
             if (HighLogic.LoadedScene == GameScenes.SPACECENTER)
             {
-                if (SnacksScenario.Instance.showWelcomeMessage == true)
+                if (SnacksScenario.Instance.ShowWelcomeMessage == true)
                 {
-                    SnacksScenario.Instance.showWelcomeMessage = false;
-                    ScreenMessages.PostScreenMessage("New to Snacks Continued? Be sure to read the KSPedia", 15f, ScreenMessageStyle.UPPER_CENTER);
+                    SnacksScenario.Instance.ShowWelcomeMessage = false;
+                    ScreenMessages.PostScreenMessage("New to Snacks Continued? Be sure to read the KSPedia", 10f, ScreenMessageStyle.UPPER_CENTER);
                 }
             } 
             
@@ -227,8 +227,8 @@ namespace Snacks
 
         public void UpdateSnackConsumption()
         {
-            snackFrequency = 10;
-//            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+//            snackFrequency = 10;
+            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
         }
 
         private void EatSnacks()

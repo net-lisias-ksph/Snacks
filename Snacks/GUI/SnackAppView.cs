@@ -20,7 +20,38 @@ namespace Snacks
 
         protected override void DrawWindowContents(int windowId)
         {
-            Dictionary<int, List<ShipSupply>> snapshot = SnackSnapshot.Instance().Vessels();
+            if (HighLogic.LoadedSceneIsEditor == false)
+                drawFlightWindow();
+            else
+                drawEditorWindow();
+        }
+
+        public void drawEditorWindow()
+        {
+            ShipSupply supply = SnackSnapshot.Instance().TakeEditorSnapshot();
+
+            scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height(300), GUILayout.Width(300));
+
+            if (SnacksProperties.EnableRandomSnacking || SnacksProperties.RecyclersEnabled)
+                GUILayout.Label("<color=yellow>The following are estimates</color>");
+
+            if (supply.DayEstimate > 0)
+                GUILayout.Label("<color=white>Current Crew: " + supply.CrewCount + "  Duration: " + supply.DayEstimate + " days</color>");
+            else
+                GUILayout.Label("<color=white>Current Crew: " + supply.CrewCount + "  Duration: Indefinite</color>");
+
+            if (supply.MaxDayEstimate > 0)
+                GUILayout.Label("<color=white>Max Crew: " + supply.MaxCrewCount + "  Duration: " + supply.MaxDayEstimate + " days</color>");
+            else
+                GUILayout.Label("<color=white>Max Crew: " + supply.MaxCrewCount + "  Duration: Indefinite</color>");
+
+
+            GUILayout.EndScrollView();
+        }
+
+        public void drawFlightWindow()
+        {
+            Dictionary<int, List<ShipSupply>> snapshot = SnackSnapshot.Instance().TakeSnapshot();
             var keys = snapshot.Keys.ToList();
             List<ShipSupply> supplies;
 
@@ -42,7 +73,12 @@ namespace Snacks
                 GUILayout.Label("<color=white><b>" + supplies.First().BodyName + ":</b></color>");
                 foreach (ShipSupply supply in supplies)
                 {
-                    if (supply.Percent > 50)
+                    if (supply.DayEstimate < 0)
+                    {
+                        GUILayout.Label("<color=white>" + supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
+                        GUILayout.Label("<color=white>Crew: " + supply.CrewCount + "  Duration: Indefinite</color>");
+                    }
+                    else if (supply.Percent > 50)
                     {
                         GUILayout.Label(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount);
                         GUILayout.Label("Crew: " + supply.CrewCount + "  Duration: " + supply.DayEstimate + " days");
@@ -59,7 +95,7 @@ namespace Snacks
                     }
                 }
             }
-            
+
             GUILayout.EndScrollView();
         }
     }

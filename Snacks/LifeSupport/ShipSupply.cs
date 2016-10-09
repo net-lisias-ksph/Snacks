@@ -14,6 +14,8 @@ namespace Snacks
         public int DayEstimate { get; set; }
         public int CrewCount { get; set; }
         public int Percent { get; set; }
+        public int MaxDayEstimate { get; set; }
+        public int MaxCrewCount { get; set; }
 
 
         public int CompareTo(ShipSupply obj)
