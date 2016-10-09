@@ -79,13 +79,7 @@ namespace Snacks
                 return;
 
             if (HighLogic.LoadedScene == GameScenes.SPACECENTER)
-            {
-                if (SnacksScenario.Instance.ShowWelcomeMessage == true)
-                {
-                    SnacksScenario.Instance.ShowWelcomeMessage = false;
-                    ScreenMessages.PostScreenMessage("New to Snacks Continued? Be sure to read the KSPedia", 10f, ScreenMessageStyle.UPPER_CENTER);
-                }
-            } 
+                checkAndShowWelcomeMessage();
             
             try
             {
@@ -224,6 +218,30 @@ namespace Snacks
         #endregion
 
         #region Helpers
+
+        protected void checkAndShowWelcomeMessage()
+        {
+            string settingsPath = AssemblyLoader.loadedAssemblies.GetPathByType(typeof(SnackController)) + "/Settings.cfg";
+            ConfigNode nodeSettings = ConfigNode.Load(settingsPath);
+            bool haveShownWelcome = false;
+
+            if (nodeSettings == null)
+            {
+                nodeSettings = new ConfigNode("SNACKS");
+                nodeSettings.AddValue("haveShownWelcome", "false");
+                nodeSettings.Save(settingsPath);
+            }
+
+            if (nodeSettings.HasValue("haveShownWelcome"))
+                haveShownWelcome = bool.Parse(nodeSettings.GetValue("haveShownWelcome"));
+
+            if (!haveShownWelcome)
+            {
+                nodeSettings.SetValue("haveShownWelcome", "true");
+                nodeSettings.Save(settingsPath);
+                ScreenMessages.PostScreenMessage("New to Snacks Continued? Be sure to read the KSPedia", 10f, ScreenMessageStyle.UPPER_CENTER);
+            }
+        }
 
         public void UpdateSnackConsumption()
         {

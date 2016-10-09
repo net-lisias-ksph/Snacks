@@ -56,7 +56,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Settings\SnacksScenario.cs" />
     <Compile Include="LifeSupport\SnackVesselController.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
     <Compile Include="Utilities\SnacksResourceSwitcher.cs" />

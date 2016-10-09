@@ -7,17 +7,99 @@ using KSP.IO;
 
 namespace Snacks
 {
+    public enum RepLoss
+    {
+        Low,
+        Medium,
+        High
+    }
+
+    public class SnackPenalties : GameParameters.CustomParameterNode
+    {
+        [GameParameters.CustomParameterUI("Hungry kerbals hurt your reputation.", toolTip = "When kerbals go hungry, you lose Reputation", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
+        public bool loseRepWhenHungry = true;
+
+        [GameParameters.CustomParameterUI("Rep loss per kerbal per meal", toolTip = "How mad your kerbals will be", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
+        public RepLoss repLostWhenHungry = RepLoss.Low;
+
+        [GameParameters.CustomParameterUI("Hungry kerbals hurt your bottom line.", toolTip = "When kerbals go hungry, you lose Funds", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
+        public bool loseFundsWhenHuntry = true;
+
+        [GameParameters.CustomIntParameterUI("Fine per kerbal", maxValue = 50000, minValue = 1000, stepSize = 1000, toolTip = "How much is it gonna cost", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
+        public int finePerKerbal = 5000;
+
+        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
+        public bool partialControlWhenHungry = true;
+
+        #region CustomParameterNode
+        public override string Section
+        {
+            get
+            {
+                return "Snacks!";
+            }
+        }
+
+        public override string Title
+        {
+            get
+            {
+                return "Penalties";
+            }
+        }
+
+        public override int SectionOrder
+        {
+            get
+            {
+                return 2;
+            }
+        }
+
+        public override void SetDifficultyPreset(GameParameters.Preset preset)
+        {
+            base.SetDifficultyPreset(preset);
+        }
+
+        public override GameParameters.GameMode GameMode
+        {
+            get
+            {
+                return GameParameters.GameMode.ANY;
+            }
+        }
+
+        public override bool HasPresets
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public override bool Enabled(System.Reflection.MemberInfo member, GameParameters parameters)
+        {
+            Game.Modes gameMode = HighLogic.CurrentGame.Mode;
+
+            if (member.Name == "repLoss" && loseRepWhenHungry)
+                return true;
+            else if (member.Name == "repLoss")
+                return false;
+
+            if (member.Name == "finePerKerbal" && loseFundsWhenHuntry)
+                return true;
+            else if (member.Name == "finePerKerbal")
+                return false;
+
+            return base.Enabled(member, parameters);
+        }
+        #endregion
+    }
+
     public class SnacksProperties : GameParameters.CustomParameterNode
     {
         public static string SnacksResourceName = "Snacks";
         public static string SoilResourceName = "Soil";
-
-        public enum RepLoss
-        {
-            Low,
-            Medium,
-            High
-        }
 
         [GameParameters.CustomFloatParameterUI("Snacks per meal", minValue = 1.0f, maxValue = 10.0f, toolTip = "How much do kerbals snack on", autoPersistance = true)]
         public double snacksPerMeal = 1.0f;
@@ -31,23 +113,8 @@ namespace Snacks
         [GameParameters.CustomParameterUI("Enable recycling", toolTip = "Kerbals produce Soil when snacking. Recyclers convert the Soil back to Snacks at the cost of ElectricCharge", autoPersistance = true)]
         public bool enableRecyclers = true;
         
-        [GameParameters.CustomFloatParameterUI("Recycler Efficiency", minValue = 0.1f, maxValue = 1.0f, asPercentage = true, toolTip = "How well does the recycler recyle", autoPersistance = true)]
-        public float recyclerEfficiency = 0.7f;
-
-        [GameParameters.CustomParameterUI("Hungry kerbals hurt your reputation.", toolTip = "When kerbals go hungry, you lose Reputation", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
-        public bool loseRepWhenHungry = true;
-
-        [GameParameters.CustomParameterUI("Rep loss per kerbal per meal", toolTip = "How mad your kerbals will be", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
-        public RepLoss repLostWhenHungry = RepLoss.Low;
-
-        [GameParameters.CustomParameterUI("Hungry kerbals hurt your bottom line.", toolTip = "When kerbals go hungry, you lose Funds", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
-        public bool loseFundsWhenHuntry = true;
-
-        [GameParameters.CustomIntParameterUI("Fine per kerbal", maxValue = 50000, minValue = 1000, stepSize = 1000, toolTip = "How much is it gonna cost", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
-        public int finePerKerbal = 1000;
-        
-        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
-        public bool partialControlWhenHungry = true;
+        [GameParameters.CustomFloatParameterUI("Recycler Efficiency", minValue = 0.1f, maxValue = 0.8f, asPercentage = true, toolTip = "How well does the recycler recyle", autoPersistance = true)]
+        public float recyclerEfficiency = 0.4f;
 
         #region Properties
         public static int SnackResourceID
@@ -63,8 +130,8 @@ namespace Snacks
         {
             get
             {
-                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                return snackProperties.partialControlWhenHungry;
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.partialControlWhenHungry;
             }
         }
 
@@ -117,8 +184,8 @@ namespace Snacks
         {
             get
             {
-                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                return snackProperties.loseFundsWhenHuntry;
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.loseFundsWhenHuntry;
             }
         }
 
@@ -126,8 +193,8 @@ namespace Snacks
         {
             get
             {
-                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                return snackProperties.finePerKerbal;
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.finePerKerbal;
             }
         }
 
@@ -135,8 +202,8 @@ namespace Snacks
         {
             get
             {
-                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                return snackProperties.loseRepWhenHungry;
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.loseRepWhenHungry;
             }
         }
 
@@ -144,22 +211,22 @@ namespace Snacks
         {
             get
             {
-                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                switch (snackProperties.repLostWhenHungry)
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                switch (penalties.repLostWhenHungry)
                 {
-                    case SnacksProperties.RepLoss.Low:
+                    case RepLoss.Low:
                     default:
                         return 0.0025;
 
-                    case SnacksProperties.RepLoss.Medium:
+                    case RepLoss.Medium:
                         return 0.005;
 
-                    case SnacksProperties.RepLoss.High:
+                    case RepLoss.High:
                         return 0.01;
                 }
             }
         }
-#endregion
+        #endregion
 
         #region CustomParameterNode
         public override string Title
@@ -209,18 +276,6 @@ namespace Snacks
 
         public override bool Enabled(System.Reflection.MemberInfo member, GameParameters parameters)
         {
-            Game.Modes gameMode = HighLogic.CurrentGame.Mode;
-
-            if (member.Name == "repLoss" && loseRepWhenHungry)
-                return true;
-            else if (member.Name == "repLoss")
-                return false;
-
-            if (member.Name == "finePerKerbal" && loseFundsWhenHuntry)
-                return true;
-            else if (member.Name == "finePerKerbal")
-                return false;
-
             if (member.Name == "recyclerEfficiency" && enableRecyclers)
                 return true;
             else if (member.Name == "recyclerEfficiency")
@@ -228,6 +283,7 @@ namespace Snacks
 
             return base.Enabled(member, parameters);
         }
+
         #endregion
     }
 }
