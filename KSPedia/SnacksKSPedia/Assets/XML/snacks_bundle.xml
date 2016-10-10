@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<KSPBundleDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" UrlName="snacks" Name="snacks" CreatedTime="-8587255370098745069">
+  <Author />
+  <Info />
+  <Assets>
+    <Asset Name="Default" Path="Assets/Default.prefab" Type="GameObject" Url="Default" AutoLoad="false" />
+    <Asset Name="SnackOptions" Path="Assets/SnackOptions.prefab" Type="GameObject" Url="SnackOptions" AutoLoad="false" />
+    <Asset Name="SnackProduction" Path="Assets/SnackProduction.prefab" Type="GameObject" Url="SnackProduction" AutoLoad="false" />
+    <Asset Name="SnackRecycling" Path="Assets/SnackRecycling.prefab" Type="GameObject" Url="SnackRecycling" AutoLoad="false" />
+    <Asset Name="SnackStorage" Path="Assets/SnackStorage.prefab" Type="GameObject" Url="SnackStorage" AutoLoad="false" />
+    <Asset Name="SupplyWindow" Path="Assets/SupplyWindow.prefab" Type="GameObject" Url="SupplyWindow" AutoLoad="false" />
+    <Asset Name="Title" Path="Assets/Title.prefab" Type="GameObject" Url="Title" AutoLoad="false" />
+    <Asset Name="snacks_kspedia" Path="Assets/XML/snacks_kspedia.xml" Type="TextAsset" Url="XML/snacks_kspedia" AutoLoad="false" />
+  </Assets>
+  <Dependencies />
+</KSPBundleDefinition>

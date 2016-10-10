@@ -32,6 +32,7 @@ namespace Snacks
             {
                 if (debugMode)
                     controlState = VesselControlState.Partial.ToString();
+
                 return VesselControlState.Partial;
             }
             else

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<KSPedia xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="snacks" CreatedTime="-8587255370153954252">
+  <Categories>
+    <Category Name="Snacks!">
+      <Title>Snacks!</Title>
+      <TitleScreen>Title</TitleScreen>
+      <Screens />
+      <Subcategories>
+        <Subcategory Name="options">
+          <Title>Options</Title>
+          <TitleScreen>SnackOptions</TitleScreen>
+          <Screens />
+          <Subcategories />
+        </Subcategory>
+        <Subcategory Name="Supply Window">
+          <Title>Supply Window</Title>
+          <TitleScreen>SupplyWindow</TitleScreen>
+          <Screens />
+          <Subcategories />
+        </Subcategory>
+        <Subcategory Name="Snack Storage">
+          <Title>Snack Storage</Title>
+          <TitleScreen>SnackStorage</TitleScreen>
+          <Screens />
+          <Subcategories />
+        </Subcategory>
+        <Subcategory Name="Snack Recycling">
+          <Title>Snack Recycling</Title>
+          <TitleScreen>SnackRecycling</TitleScreen>
+          <Screens />
+          <Subcategories />
+        </Subcategory>
+        <Subcategory Name="Snack Production">
+          <Title>Snack Production</Title>
+          <TitleScreen>SnackProduction</TitleScreen>
+          <Screens />
+          <Subcategories />
+        </Subcategory>
+      </Subcategories>
+    </Category>
+  </Categories>
+  <Screens>
+    <Screen Name="Title">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/Title.prefab</AssetPath>
+      <Title>Snacks!</Title>
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+    <Screen Name="SupplyWindow">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/SupplyWindow.prefab</AssetPath>
+      <Title>Snack Supply</Title>
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+    <Screen Name="SnackStorage">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/SnackStorage.prefab</AssetPath>
+      <Title>Snack Storage</Title>
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+    <Screen Name="SnackRecycling">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/SnackRecycling.prefab</AssetPath>
+      <Title>Snack Recycling</Title>
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+    <Screen Name="SnackProduction">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/SnackProduction.prefab</AssetPath>
+      <Title>Snack Production</Title>
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+    <Screen Name="SnackOptions">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/SnackOptions.prefab</AssetPath>
+      <Title>Snack Options</Title>
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+    <Screen Name="Default">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/Default.prefab</AssetPath>
+      <Title />
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+  </Screens>
+</KSPedia>

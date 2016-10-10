@@ -15,6 +15,9 @@ namespace Snacks
         [KSPField()]
         public int RecyclerCapacity;
 
+        [KSPField(guiActive = true, guiActiveEditor = true, guiName = "Max Recycling")]
+        public string recyclerStatus = string.Empty;
+
         double originalSnacksRatio;
 
         public override string GetInfo()
@@ -22,7 +25,7 @@ namespace Snacks
             StringBuilder builder = new StringBuilder();
 
             builder.AppendLine(base.GetInfo());
-            builder.AppendFormat("Recycles {0:f2} Snacks per day", GetDailySnacksRecycled());
+            builder.AppendFormat("Recycles up to {0:f2} Soil per day", GetDailySnacksRecycled());
 
             return builder.ToString();
         }
@@ -34,7 +37,7 @@ namespace Snacks
 
             GameEvents.OnGameSettingsApplied.Add(setupRecycler);
 
-            //Get crew capacity of the recycler
+            //Get recycle capacity of the recycler
             if (RecyclerCapacity == 0)
                 RecyclerCapacity = this.part.CrewCapacity;
             if (RecyclerCapacity == 0)
@@ -55,7 +58,7 @@ namespace Snacks
             setupRecycler();
 
             base.OnStart(state);
-       }
+        }
 
         public void Destroy()
         {
@@ -89,6 +92,8 @@ namespace Snacks
 
                 //Enable the module
                 EnableModule();
+                recyclerStatus = string.Format("{0:f2} Soil/day", GetDailySnacksRecycled());
+
             }
             else
             {
