@@ -16,6 +16,9 @@ namespace Snacks
 
     public class SnackPenalties : GameParameters.CustomParameterNode
     {
+        [GameParameters.CustomParameterUI("Enable random penalties", toolTip = "If enabled, then one of the enabled penalties will be randomly chosen", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
+        public bool enableRandomPenalties = true;
+
         [GameParameters.CustomParameterUI("Hungry kerbals hurt your reputation.", toolTip = "When kerbals go hungry, you lose Reputation", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
         public bool loseRepWhenHungry = true;
 
@@ -26,7 +29,13 @@ namespace Snacks
         public bool loseFundsWhenHuntry = true;
 
         [GameParameters.CustomIntParameterUI("Fine per kerbal", maxValue = 50000, minValue = 1000, stepSize = 1000, toolTip = "How much is it gonna cost", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
-        public int finePerKerbal = 5000;
+        public int finePerKerbal = 10000;
+
+        [GameParameters.CustomParameterUI("Hungry kerbals ruin science.", toolTip = "When kerbals go hungry, they ruin stored experiment results and data", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER | GameParameters.GameMode.SCIENCE)]
+        public bool loseScienceWhenHungry = true;
+
+        [GameParameters.CustomParameterUI("Data lost", toolTip = "What percentage of lab data is lost", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER | GameParameters.GameMode.SCIENCE)]
+        public RepLoss dataLostWhenHungry = RepLoss.Low;
 
         [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
         public bool partialControlWhenHungry = true;
@@ -116,13 +125,65 @@ namespace Snacks
         [GameParameters.CustomFloatParameterUI("Recycler Efficiency", minValue = 0.1f, maxValue = 0.8f, asPercentage = true, toolTip = "How well does the recycler recyle", autoPersistance = true)]
         public float recyclerEfficiency = 0.4f;
 
+        [GameParameters.CustomParameterUI("Show time in years, months, and days", toolTip = "If disabled, time estimates are in days only", autoPersistance = true)]
+        public bool yearsMonthsDaysEnabled = true;
+
         #region Properties
+
+        public static bool ShowTimeInYMD
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.yearsMonthsDaysEnabled;
+            }
+        }
+
         public static int SnackResourceID
         {
             get
             {
                 PartResourceDefinition snacksResource = PartResourceLibrary.Instance.GetDefinition("Snacks");
                 return snacksResource.id;
+            }
+        }
+
+        public static bool RandomPenaltiesEnabled
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.enableRandomPenalties;
+            }
+        }
+
+        public static bool LoseScienceWhenHungry
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.loseScienceWhenHungry;
+            }
+        }
+
+        public static float DataLostWhenHungry
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+
+                switch (penalties.dataLostWhenHungry)
+                {
+                    case RepLoss.Low:
+                    default:
+                        return 0.05f;
+
+                    case RepLoss.Medium:
+                        return 0.1f;
+
+                    case RepLoss.High:
+                        return 0.2f;
+                }
             }
         }
 

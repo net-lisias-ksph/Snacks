@@ -23,6 +23,9 @@ namespace Snacks
 
         protected string timeFormat(int days)
         {
+            if (!SnacksProperties.ShowTimeInYMD)
+                return days + " days";
+
             StringBuilder timeBuilder = new StringBuilder();
             double timeDays = days;
             double years;
