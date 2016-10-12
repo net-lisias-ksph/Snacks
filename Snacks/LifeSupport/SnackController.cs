@@ -64,6 +64,10 @@ namespace Snacks
                 GameEvents.onVesselChange.Add(OnVesselChange);
                 GameEvents.onVesselWasModified.Add(OnVesselWasModified);
                 GameEvents.OnGameSettingsApplied.Add(UpdateSnackConsumption);
+                GameEvents.onVesselLoaded.Add(onVesselLoaded);
+                GameEvents.onVesselRecovered.Add(onVesselRecovered);
+                GameEvents.onVesselWillDestroy.Add(onVesselWillDestroy);
+                GameEvents.onVesselGoOffRails.Add(onVesselLoaded);
 
                 UpdateSnackConsumption();
                 Instance = this;
@@ -143,6 +147,24 @@ namespace Snacks
         #endregion
 
         #region GameEvents
+        private void onVesselLoaded(Vessel vessel)
+        {
+            if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()) == false)
+                SnacksScenario.Instance.knownVessels.Add(vessel.id.ToString());
+        }
+
+        private void onVesselRecovered(ProtoVessel protoVessel, bool someBool)
+        {
+            if (SnacksScenario.Instance.knownVessels.Contains(protoVessel.vesselID.ToString()))
+                SnacksScenario.Instance.knownVessels.Remove(protoVessel.vesselID.ToString());
+        }
+
+        private void onVesselWillDestroy(Vessel vessel)
+        {
+            if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()))
+                SnacksScenario.Instance.knownVessels.Remove(vessel.id.ToString());
+        }
+
         private void OnVesselWasModified(Vessel data)
         {
             //Debug.Log("OnVesselWasModified");
@@ -219,6 +241,10 @@ namespace Snacks
                 GameEvents.onVesselChange.Remove(OnVesselChange);
                 GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
                 GameEvents.OnGameSettingsApplied.Remove(UpdateSnackConsumption);
+                GameEvents.onVesselLoaded.Remove(onVesselLoaded);
+                GameEvents.onVesselRecovered.Remove(onVesselRecovered);
+                GameEvents.onVesselWillDestroy.Remove(onVesselWillDestroy);
+                GameEvents.onVesselGoOffRails.Remove(onVesselLoaded);
             }
             catch (Exception ex)
             {

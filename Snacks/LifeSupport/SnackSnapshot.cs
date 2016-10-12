@@ -42,7 +42,7 @@ namespace Snacks
             int maxCrew = 0;
             Part[] parts = EditorLogic.fetch.ship.parts.ToArray();
             Part part;
-            SnacksRecycler[] recyclers;
+            SoilRecycler[] recyclers;
             VesselCrewManifest manifest = CrewAssignmentDialog.Instance.GetManifest();
 
             //No parts? Then we're done
@@ -71,10 +71,10 @@ namespace Snacks
                 //Compute snack production
                 if (SnacksProperties.RecyclersEnabled)
                 {
-                    recyclers = part.FindModulesImplementing<SnacksRecycler>().ToArray();
+                    recyclers = part.FindModulesImplementing<SoilRecycler>().ToArray();
                     for (int recyclerIndex = 0; recyclerIndex < recyclers.Length; recyclerIndex++)
                     {
-                        snackProduction += recyclers[recyclerIndex].GetDailySnacksRecycled();
+                        snackProduction += recyclers[recyclerIndex].GetDailySnacksOutput();
                         recycleCapacity += recyclers[recyclerIndex].RecyclerCapacity;
                     }
                 }
@@ -108,176 +108,234 @@ namespace Snacks
             return shipSupply;
         }
 
-        public Dictionary<int, List<ShipSupply>> TakeSnapshot()
+        protected void takeSnapshotProto(Dictionary<int, List<ShipSupply>> vessels)
         {
-            try
+            double snacksPerKerbal = SnacksProperties.MealsPerDay * SnacksProperties.SnacksPerMeal;
+            ProtoVessel pv;
+            ProtoVessel[] protoVessels;
+            double snackAmount = 0;
+            double snackMax = 0;
+            double snackConsumption = 0;
+            double snackProduction = 0;
+            double recycleCapacity = 0;
+            int crewCount;
+            int partCrewCount;
+            bool foundSnackResource = false;
+
+            protoVessels = HighLogic.CurrentGame.flightState.protoVessels.ToArray();
+            for (int index = 0; index < protoVessels.Length; index++)
             {
-                //Debug.Log("rebuilding snapshot");
-                vessels = new Dictionary<int, List<ShipSupply>>();
-                outOfSnacks = new Dictionary<Guid, bool>();
-                double snacksPerKerbal = SnacksProperties.MealsPerDay * SnacksProperties.SnacksPerMeal;
-                Vessel v;
-                ProtoVessel pv;
-                List<Guid> activeVessels = new List<Guid>();
-                Vessel[] loadedVessels;
-                ProtoVessel[] protoVessels;
-                double snackAmount = 0;
-                double snackMax = 0;
-                double snackConsumption = 0;
-                double snackProduction = 0;
-                double recycleCapacity = 0;
-                int crewCount;
-
-                loadedVessels = FlightGlobals.VesselsLoaded.ToArray();
-                for (int index = 0; index < loadedVessels.Length; index++)
+                pv = protoVessels[index];
+                //Debug.Log("processing pv:" + pv.vesselName);
+                if (!pv.vesselRef.loaded)
                 {
-                    v = loadedVessels[index];
-                    crewCount = v.GetVesselCrew().Count;
-                    //Debug.Log("processing v:" + v.vesselName);
-                    if (crewCount > 0)
+                    crewCount = pv.GetVesselCrew().Count;
+                    if (crewCount < 1)
+                        continue;
+                    snackAmount = 0;
+                    snackMax = 0;
+                    snackConsumption = crewCount * snacksPerKerbal;
+                    foreach (ProtoPartSnapshot pps in pv.protoPartSnapshots)
                     {
-                        activeVessels.Add(v.id);
-                        v.resourcePartSet.GetConnectedResourceTotals(SnacksProperties.SnackResourceID, out snackAmount, out snackMax, true);
+                        foundSnackResource = false;
+                        partCrewCount = pps.partInfo.partPrefab.CrewCapacity;
 
-                        //Calculate snack consumption
-                        snackConsumption = crewCount * snacksPerKerbal;
-                        snackProduction = 0;
-                        if (SnacksProperties.RecyclersEnabled)
+                        //Tally the snack and max snack amounts
+                        foreach (ProtoPartResourceSnapshot resource in pps.resources)
                         {
-                            SnacksRecycler[] recyclers = v.FindPartModulesImplementing<SnacksRecycler>().ToArray();
-                            for (int recyclerIndex = 0; recyclerIndex < recyclers.Length; recyclerIndex++)
+                            if (resource.resourceName == SnacksProperties.SnacksResourceName)
                             {
-                                if (recyclers[recyclerIndex].IsActivated)
+                                snackAmount += resource.amount;
+                                snackMax += resource.maxAmount;
+                                foundSnackResource = true;
+                            }
+                        }
+
+                        //Add Snacks if we don't find any
+                        if (!foundSnackResource && partCrewCount > 0)
+                        {
+                            Debug.Log("Part should have Snacks but doesn't. Trying to add Snacks");
+                            int snacksPer = SnacksProperties.SnacksPerCrewModule;
+
+                            //See if we have a command module. If so, that will affect how many snacks we have in the part.
+                            ProtoPartModuleSnapshot[] modules = pps.modules.ToArray();
+                            for (int moduleIndex = 0; moduleIndex < modules.Length; moduleIndex++)
+                            {
+                                if (modules[moduleIndex].moduleName == "ModuleCommand")
                                 {
-                                    snackProduction += recyclers[recyclerIndex].GetDailySnacksRecycled();
-                                    recycleCapacity += recyclers[recyclerIndex].RecyclerCapacity;
+                                    snacksPer = SnacksProperties.SnacksPerCommand;
+                                    break;
                                 }
                             }
 
-                            //Account for the recyclers
+                            ConfigNode snackNode = new ConfigNode("RESOURCE");
+                            int totalSnacks = pps.partInfo.partPrefab.CrewCapacity * snacksPer;
+                            snackNode.AddValue("name", SnacksProperties.SnacksResourceName);
+                            snackNode.AddValue("amount", totalSnacks);
+                            snackNode.AddValue("maxAmount", totalSnacks);
+                            pps.resources.Add(new ProtoPartResourceSnapshot(snackNode));
+                            snackAmount += totalSnacks;
+                            snackMax += totalSnacks;
+                        }
+
+                        //Check for recyclers
+                        if (SnacksProperties.RecyclersEnabled)
+                        {
+                            bool isActivated = false;
+                            ConfigNode[] snapModules = pps.partInfo.partConfig.GetNodes("MODULE");
+                            ConfigNode snapModule = null;
+                            ProtoPartModuleSnapshot[] modules = pps.modules.ToArray();
+
+                            //See if the part has a recycler
+                            for (int moduleIndex = 0; moduleIndex < snapModules.Length; moduleIndex++)
+                            {
+                                if (snapModules[moduleIndex].GetValue("name") == "SoilRecycler")
+                                {
+                                    Debug.Log("found recycler");
+                                    snapModule = snapModules[moduleIndex];
+                                    break;
+                                }
+                            }
+
+                            //Check for activation
+                            for (int snapModIndex = 0; snapModIndex < modules.Length; snapModIndex++)
+                            {
+                                if (modules[snapModIndex].moduleName == "SoilRecycler")
+                                {
+                                    //Activation status
+                                    string activated = modules[snapModIndex].moduleValues.GetValue("IsActivated").ToLower();
+                                    if (activated == "true")
+                                    {
+                                        isActivated = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            //If it has a recycler then calculate the snack production if the recycler is active
+                            if (snapModule != null && isActivated)
+                            {
+                                //Capacity
+                                if (snapModule.HasValue("RecyclerCapacity"))
+                                    recycleCapacity += int.Parse(snapModule.GetValue("RecyclerCapacity"));
+
+                                ConfigNode[] outputs = snapModule.GetNodes("OUTPUT_RESOURCE");
+                                for (int outputIndex = 0; outputIndex < outputs.Length; outputIndex++)
+                                {
+                                    if (outputs[outputIndex].GetValue("ResourceName") == SnacksProperties.SnacksResourceName)
+                                    {
+                                        snackProduction += double.Parse(outputs[outputIndex].GetValue("Ratio")) * SnacksProperties.RecyclerEfficiency * 21600;
+                                    }
+                                }
+                            }
+
+                            //Account for recyclers
                             if (crewCount >= recycleCapacity)
                                 snackConsumption -= snackProduction;
                             else
                                 snackConsumption -= snackProduction * (crewCount / recycleCapacity);
                         }
-
-                        ShipSupply supply = new ShipSupply();
-                        supply.VesselName = v.vesselName;
-                        supply.BodyName = v.mainBody.name;
-                        supply.SnackAmount = Convert.ToInt32(snackAmount);
-                        supply.SnackMaxAmount = Convert.ToInt32(snackMax);
-                        supply.CrewCount = crewCount;
-                        supply.DayEstimate = Convert.ToInt32(snackAmount / snackConsumption);
-                        supply.Percent = snackMax == 0 ? 0 : Convert.ToInt32(snackAmount / snackMax * 100);
-                        AddShipSupply(supply, v.protoVessel.orbitSnapShot.ReferenceBodyIndex);
-                        outOfSnacks.Add(v.id, snackAmount != 0.0 ? false : true);
                     }
+
+                    //If we have no snacks, make sure this is a vessel we know about.
+                    //A known vessel will have been loaded at least once.
+                    //If it isn't a vessel we know about then we're done.
+                    if (snackAmount == 0 && snackMax > 0)
+                    {
+                        if (SnacksScenario.Instance.knownVessels.Contains(pv.vesselID.ToString()) == false)
+                        {
+                            continue;
+                        }
+                    }
+
+                    //Debug.Log(pv.vesselName + "1");
+                    ShipSupply supply = new ShipSupply();
+                    supply.VesselName = pv.vesselName;
+                    supply.BodyName = pv.vesselRef.mainBody.name;
+                    supply.SnackAmount = Convert.ToInt32(snackAmount);
+                    supply.SnackMaxAmount = Convert.ToInt32(snackMax);
+                    supply.CrewCount = crewCount;
+                    //Debug.Log(pv.vesselName + supply.CrewCount);
+                    supply.DayEstimate = Convert.ToInt32(snackAmount / snackConsumption);
+                    //Debug.Log(pv.vesselName + supply.DayEstimate);
+                    //Debug.Log("sa:" + snackAmount + " sm:" + snackMax);
+                    supply.Percent = snackMax == 0 ? 0 : Convert.ToInt32(snackAmount / snackMax * 100);
+                    //Debug.Log(pv.vesselName + supply.Percent);
+                    AddShipSupply(supply, pv.orbitSnapShot.ReferenceBodyIndex);
+                    outOfSnacks.Add(pv.vesselID, snackAmount != 0.0 ? false : true);
                 }
 
-                protoVessels = HighLogic.CurrentGame.flightState.protoVessels.ToArray();
-                for (int index = 0; index < protoVessels.Length; index++)
+            }
+        }
+
+        protected void TakeSnapshotLoaded(Dictionary<int, List<ShipSupply>> vessels)
+        {
+            vessels = new Dictionary<int, List<ShipSupply>>();
+            double snacksPerKerbal = SnacksProperties.MealsPerDay * SnacksProperties.SnacksPerMeal;
+            Vessel v;
+            Vessel[] loadedVessels;
+            double snackAmount = 0;
+            double snackMax = 0;
+            double snackConsumption = 0;
+            double snackProduction = 0;
+            double recycleCapacity = 0;
+            int crewCount;
+
+            loadedVessels = FlightGlobals.VesselsLoaded.ToArray();
+            for (int index = 0; index < loadedVessels.Length; index++)
+            {
+                v = loadedVessels[index];
+                crewCount = v.GetVesselCrew().Count;
+                //Debug.Log("processing v:" + v.vesselName);
+                if (crewCount > 0)
                 {
-                    pv = protoVessels[index];
-                    //Debug.Log("processing pv:" + pv.vesselName);
-                    if (!pv.vesselRef.loaded && !activeVessels.Contains(pv.vesselID))
+                    v.resourcePartSet.GetConnectedResourceTotals(SnacksProperties.SnackResourceID, out snackAmount, out snackMax, true);
+
+                    //Calculate snack consumption
+                    snackConsumption = crewCount * snacksPerKerbal;
+                    snackProduction = 0;
+                    if (SnacksProperties.RecyclersEnabled)
                     {
-                        crewCount = pv.GetVesselCrew().Count;
-                        if (crewCount < 1)
-                            continue;
-                        snackAmount = 0;
-                        snackMax = 0;
-                        snackConsumption = crewCount * snacksPerKerbal;
-                        snackProduction = 0;
-                        recycleCapacity = 0;
-                        foreach (ProtoPartSnapshot pps in pv.protoPartSnapshots)
+                        SoilRecycler[] recyclers = v.FindPartModulesImplementing<SoilRecycler>().ToArray();
+                        for (int recyclerIndex = 0; recyclerIndex < recyclers.Length; recyclerIndex++)
                         {
-                            foreach (ProtoPartResourceSnapshot resource in pps.resources)
+                            if (recyclers[recyclerIndex].IsActivated)
                             {
-                                if (resource.resourceName == SnacksProperties.SnacksResourceName)
-                                {
-                                    snackAmount += resource.amount;
-                                    snackMax += resource.maxAmount;
-                                }
-                            }
-
-                            //Check for recyclers
-                            if (SnacksProperties.RecyclersEnabled)
-                            {
-                                bool isActivated = false;
-                                ConfigNode[] snapModules = pps.partInfo.partConfig.GetNodes("MODULE");
-                                ConfigNode snapModule = null;
-                                ProtoPartModuleSnapshot[] modules = pps.modules.ToArray();
-
-                                //See if the part has a recycler
-                                for (int moduleIndex = 0; moduleIndex < snapModules.Length; moduleIndex++)
-                                {
-                                    if (snapModules[moduleIndex].GetValue("name") == "SnacksRecycler")
-                                    {
-                                        Debug.Log("found recycler");
-                                        snapModule = snapModules[moduleIndex];
-                                        break;
-                                    }
-                                }
-
-                                //Check for activation
-                                for (int snapModIndex = 0; snapModIndex < modules.Length; snapModIndex++)
-                                {
-                                    if (modules[snapModIndex].moduleName == "SnacksRecycler")
-                                    {
-                                        //Activation status
-                                        string activated = modules[snapModIndex].moduleValues.GetValue("IsActivated").ToLower();
-                                        if (activated == "true")
-                                        {
-                                            isActivated = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                //If it has a recycler then calculate the snack production if the recycler is active
-                                if (snapModule != null && isActivated)
-                                {
-                                    //Capacity
-                                    if (snapModule.HasValue("RecyclerCapacity"))
-                                        recycleCapacity += int.Parse(snapModule.GetValue("RecyclerCapacity"));
-
-                                    ConfigNode[] outputs = snapModule.GetNodes("OUTPUT_RESOURCE");
-                                    for (int outputIndex = 0; outputIndex < outputs.Length; outputIndex++)
-                                    {
-                                        if (outputs[outputIndex].GetValue("ResourceName") == SnacksProperties.SnacksResourceName)
-                                        {
-                                            snackProduction += double.Parse(outputs[outputIndex].GetValue("Ratio")) * SnacksProperties.RecyclerEfficiency * 21600;
-                                        }
-                                    }
-                                }
-
-                                //Account for recyclers
-                                if (crewCount >= recycleCapacity)
-                                    snackConsumption -= snackProduction;
-                                else
-                                    snackConsumption -= snackProduction * (crewCount / recycleCapacity);
+                                snackProduction += recyclers[recyclerIndex].GetDailySnacksOutput();
+                                recycleCapacity += recyclers[recyclerIndex].RecyclerCapacity;
                             }
                         }
 
-                        //Debug.Log(pv.vesselName + "1");
-                        ShipSupply supply = new ShipSupply();
-                        supply.VesselName = pv.vesselName;
-                        supply.BodyName = pv.vesselRef.mainBody.name;
-                        supply.SnackAmount = Convert.ToInt32(snackAmount);
-                        supply.SnackMaxAmount = Convert.ToInt32(snackMax);
-                        supply.CrewCount = crewCount;
-                        //Debug.Log(pv.vesselName + supply.CrewCount);
-                        supply.DayEstimate = Convert.ToInt32(snackAmount / snackConsumption);
-                        //Debug.Log(pv.vesselName + supply.DayEstimate);
-                        //Debug.Log("sa:" + snackAmount + " sm:" + snackMax);
-                        supply.Percent = snackMax == 0 ? 0 : Convert.ToInt32(snackAmount / snackMax * 100);
-                        //Debug.Log(pv.vesselName + supply.Percent);
-                        AddShipSupply(supply, pv.orbitSnapShot.ReferenceBodyIndex);
-                        outOfSnacks.Add(pv.vesselID, snackAmount != 0.0 ? false : true);
+                        //Account for the recyclers
+                        if (crewCount >= recycleCapacity)
+                            snackConsumption -= snackProduction;
+                        else
+                            snackConsumption -= snackProduction * (crewCount / recycleCapacity);
                     }
 
+                    ShipSupply supply = new ShipSupply();
+                    supply.VesselName = v.vesselName;
+                    supply.BodyName = v.mainBody.name;
+                    supply.SnackAmount = Convert.ToInt32(snackAmount);
+                    supply.SnackMaxAmount = Convert.ToInt32(snackMax);
+                    supply.CrewCount = crewCount;
+                    supply.DayEstimate = Convert.ToInt32(snackAmount / snackConsumption);
+                    supply.Percent = snackMax == 0 ? 0 : Convert.ToInt32(snackAmount / snackMax * 100);
+                    AddShipSupply(supply, v.protoVessel.orbitSnapShot.ReferenceBodyIndex);
+                    outOfSnacks.Add(v.id, snackAmount != 0.0 ? false : true);
                 }
+            }
+        }
 
+        public Dictionary<int, List<ShipSupply>> TakeSnapshot()
+        {
+            try
+            {
+                vessels = new Dictionary<int, List<ShipSupply>>();
+                outOfSnacks = new Dictionary<Guid, bool>();
+
+                TakeSnapshotLoaded(vessels);
+                takeSnapshotProto(vessels);
             }
             catch (Exception ex)
             {

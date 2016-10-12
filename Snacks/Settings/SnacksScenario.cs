@@ -12,6 +12,7 @@ namespace Snacks
     {
         public static SnacksScenario Instance;
         public Dictionary<string, int> sciencePenalties = new Dictionary<string, int>();
+        public List<string> knownVessels = new List<string>();
 
         public override void OnAwake()
         {
@@ -28,18 +29,32 @@ namespace Snacks
             {
                 sciencePenalties.Add(penaltyNode.GetValue("vesselID"), int.Parse(penaltyNode.GetValue("amount")));
             }
+
+            ConfigNode[] KnownVessels = node.GetNodes("KNOWN_VESSEL");
+            foreach (ConfigNode vesselNode in KnownVessels)
+            {
+                if (knownVessels.Contains(vesselNode.GetValue("vesselID")) == false)
+                    knownVessels.Add(vesselNode.GetValue("vesselID"));
+            }
         }
 
         public override void OnSave(ConfigNode node)
         {
             base.OnSave(node);
-            ConfigNode penaltyNode;
+            ConfigNode configNode;
             foreach (string key in sciencePenalties.Keys)
             {
-                penaltyNode = new ConfigNode("SCIENCE_PENALTY");
-                penaltyNode.AddValue("vesselID", key);
-                penaltyNode.AddValue("amount", sciencePenalties[key].ToString());
-                node.AddNode(penaltyNode);
+                configNode = new ConfigNode("SCIENCE_PENALTY");
+                configNode.AddValue("vesselID", key);
+                configNode.AddValue("amount", sciencePenalties[key].ToString());
+                node.AddNode(configNode);
+            }
+
+            foreach (string vesselID in knownVessels)
+            {
+                configNode = new ConfigNode("KNOWN_VESSEL");
+                configNode.AddValue("vesselID", vesselID);
+                node.AddNode(configNode);
             }
         }
     }

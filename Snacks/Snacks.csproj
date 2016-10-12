@@ -58,7 +58,8 @@
   <ItemGroup>
     <Compile Include="LifeSupport\SnackVesselController.cs" />
     <Compile Include="LifeSupport\SnacksVesselModule.cs" />
-    <Compile Include="SnacksScenario.cs" />
+    <Compile Include="Settings\SnacksScenario.cs" />
+    <Compile Include="LifeSupport\SnackProcessor.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
     <Compile Include="Utilities\SnacksResourceSwitcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -67,7 +68,7 @@
     <Compile Include="GUI\SnackAppView.cs" />
     <Compile Include="LifeSupport\SnackConsumer.cs" />
     <Compile Include="LifeSupport\SnackController.cs" />
-    <Compile Include="LifeSupport\SnacksRecycler.cs" />
+    <Compile Include="LifeSupport\SoilRecycler.cs" />
     <Compile Include="LifeSupport\SnackSnapshot.cs" />
     <Compile Include="Settings\SnacksProperties.cs" />
     <Compile Include="Utilities\Window.cs" />

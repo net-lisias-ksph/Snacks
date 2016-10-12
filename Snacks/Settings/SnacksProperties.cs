@@ -109,6 +109,8 @@ namespace Snacks
     {
         public static string SnacksResourceName = "Snacks";
         public static string SoilResourceName = "Soil";
+        public static int SnacksPerCommand = 50;
+        public static int SnacksPerCrewModule = 400;
 
         [GameParameters.CustomFloatParameterUI("Snacks per meal", minValue = 1.0f, maxValue = 10.0f, toolTip = "How much do kerbals snack on", autoPersistance = true)]
         public double snacksPerMeal = 1.0f;
@@ -125,10 +127,21 @@ namespace Snacks
         [GameParameters.CustomFloatParameterUI("Recycler Efficiency", minValue = 0.1f, maxValue = 0.8f, asPercentage = true, toolTip = "How well does the recycler recyle", autoPersistance = true)]
         public float recyclerEfficiency = 0.4f;
 
+        public float productionEfficiency = 1.0f;
+
         [GameParameters.CustomParameterUI("Show time in years, months, and days", toolTip = "If disabled, time estimates are in days only", autoPersistance = true)]
         public bool yearsMonthsDaysEnabled = true;
 
         #region Properties
+
+        public static float ProductionEfficiency
+        {
+            get
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snackProperties.productionEfficiency;
+            }
+        }
 
         public static bool ShowTimeInYMD
         {
