@@ -176,6 +176,10 @@ namespace Snacks
                             pps.resources.Add(new ProtoPartResourceSnapshot(snackNode));
                             snackAmount += totalSnacks;
                             snackMax += totalSnacks;
+
+                            //Add the craft to the list of known vessels if it isn't there already.
+                            if (SnacksScenario.Instance.knownVessels.Contains(pv.vesselID.ToString()) == false)
+                                SnacksScenario.Instance.knownVessels.Add(pv.vesselID.ToString());
                         }
 
                         //Check for recyclers
