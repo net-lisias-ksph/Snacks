@@ -8,7 +8,7 @@ using KSP.UI;
 
 namespace Snacks
 {
-    class SnackSnapshot
+    public class SnackSnapshot
     {
 
         private SnackSnapshot()
@@ -195,7 +195,6 @@ namespace Snacks
                             {
                                 if (snapModules[moduleIndex].GetValue("name") == "SoilRecycler")
                                 {
-                                    Debug.Log("found recycler");
                                     snapModule = snapModules[moduleIndex];
                                     break;
                                 }

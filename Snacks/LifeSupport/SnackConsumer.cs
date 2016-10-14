@@ -1,6 +1,6 @@
 ﻿/**
 The MIT License (MIT)
-Copyright (c) 2014 Troy Gruetzmacher
+Copyright (c) 2014 Troy Gruetzmacher, Michael Billard
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,31 +59,34 @@ namespace Snacks
         public double GetSnackResource(List<ProtoPartSnapshot> protoPartSnapshots, double demand)
         {
             double supplied = 0;
-            bool resFound = false;
+            double remaining = demand;
+
             foreach (ProtoPartSnapshot pps in protoPartSnapshots)
             {
                 foreach (ProtoPartResourceSnapshot resource in pps.resources)
                 {
                     if (resource.resourceName == SnacksProperties.SnacksResourceName)
                     {
-                         if (resource.amount >= demand)
+                        if (resource.amount >= remaining)
                         {
-                            resource.amount -= demand;
-                            return supplied;
+                            supplied += remaining;
+                            resource.amount -= remaining;
+                            remaining = 0;
+                            break;
                         }
+
                         else
                         {
                             supplied += resource.amount;
-                            demand -= resource.amount;
-                            resFound = true;
+                            remaining -= resource.amount;
+                            resource.amount = 0;
                         }
                     }
                 }
-            }
 
-            //No resources found? Too bad!
-            if (!resFound)
-                return 0;
+                if (remaining <= 0)
+                    break;
+            }
 
             return supplied;
         }
@@ -123,65 +126,69 @@ namespace Snacks
         }
        
         /**
-         * Removes the calculated number of snacks from the vessel.
-         * returns the number of snacks that were required, but missing.
-         * */
-        public double ConsumeAndGetDeficit(ProtoVessel pv)
-        {
-            double demand = pv.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal;
-            double extra = calculateExtraSnacksRequired(pv.GetVesselCrew());
-
-            if ((demand + extra) <= 0)
-                return 0;
-
-            double fed = GetSnackResource(pv.protoPartSnapshots, demand + extra);
-            if (fed == 0)//unable to feed, no skipping or extra counted
-                return pv.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal;
-
-            //If recycling is enabled then produce soil.
-            if (SnacksProperties.RecyclersEnabled)
-                AddSoilResource(pv.protoPartSnapshots, fed);
-
-           return demand + extra - fed;
-        }
-
-        /**
         * Removes the calculated number of snacks from the vessel.
         * returns the number of snacks that were required, but missing.
         * */
-        public double ConsumeAndGetDeficit(Vessel v)
+        public double ConsumeAndGetDeficit(Vessel vessel)
         {
-            double demand = CalculateDemand(v);
+            double demand = 0;
+            double fed = 0;
 
-            //Debug.Log("SnackDemand(" + v.vesselName + "): e: " + extra + " r:" + demand);
-            if ((demand) <= 0)
-                return 0;
+            //Calculate for loaded vessel
+            if (vessel.loaded)
+            {
+                demand = vessel.GetCrewCount() * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.GetVesselCrew());
 
-            double fed = v.rootPart.RequestResource(SnacksProperties.SnacksResourceName, demand, ResourceFlowMode.ALL_VESSEL);
-            if (fed == 0)//unable to feed, no skipping or extra counted
-                return v.GetCrewCount() * SnacksProperties.SnacksPerMeal;
+                if (demand <= 0)
+                    return 0;
 
-            //If recycling is enabled then produce soil.
-            if (SnacksProperties.RecyclersEnabled)
-                v.rootPart.RequestResource(SnacksProperties.SoilResourceName, -fed, ResourceFlowMode.ALL_VESSEL);
+                fed = vessel.rootPart.RequestResource(SnacksProperties.SnacksResourceName, demand, ResourceFlowMode.ALL_VESSEL);
+            }
+
+            //Calculate for proto vessel
+            else
+            {
+                demand = vessel.protoVessel.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.protoVessel.GetVesselCrew());
+
+                if (demand <= 0)
+                    return 0;
+
+                fed = GetSnackResource(vessel.protoVessel.protoPartSnapshots, demand);
+            }
+
+            //Fire consume snacks event
+            //Gives listeners a chance to alter the values.
+            SnackConsumption snackConsumption = new SnackConsumption();
+            snackConsumption.demand = demand;
+            snackConsumption.fed = fed;
+            snackConsumption.vessel = vessel;
+            SnackController.onConsumeSnacks.Fire(snackConsumption);
+
+            //Request resource (loaded vessel)
+            if (vessel.loaded)
+            {
+                if (fed == 0)
+                    return vessel.GetCrewCount() * SnacksProperties.SnacksPerMeal;
+
+                //If recycling is enabled then produce soil.
+                if (SnacksProperties.RecyclersEnabled)
+                    vessel.rootPart.RequestResource(SnacksProperties.SoilResourceName, -fed, ResourceFlowMode.ALL_VESSEL);
+            }
+
+            //Request resource (unloaded vessel)
+            else
+            {
+                if (fed == 0)
+                {
+                    return vessel.protoVessel.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal;
+                }
+
+                //If recycling is enabled then produce soil.
+                if (SnacksProperties.RecyclersEnabled)
+                    AddSoilResource(vessel.protoVessel.protoPartSnapshots, fed);
+            }
 
             return demand - fed;
-        }
-
-        public static double CalculateDemand(ProtoVessel pv)
-        {
-            double demand = pv.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal;
-            double extra = calculateExtraSnacksRequired(pv.GetVesselCrew());
-
-            return demand + extra;
-        }
-
-        public static double CalculateDemand(Vessel v)
-        {
-            double demand = v.GetCrewCount() * SnacksProperties.SnacksPerMeal;
-            double extra = calculateExtraSnacksRequired(v.GetVesselCrew());
-
-            return demand + extra;
         }
 
         private static bool getRandomChance(double prob)

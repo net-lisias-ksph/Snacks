@@ -1,6 +1,6 @@
 ﻿/**
 The MIT License (MIT)
-Copyright (c) 2014 Troy Gruetzmacher
+Copyright (c) 2014 Troy Gruetzmacher, Michael Billard
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,19 +31,36 @@ using KSP.IO;
 
 namespace Snacks
 {
-    public delegate void PenaltyHandler(int hungryKerbals, Vessel vessel);
+    public struct SnackConsumption
+    {
+        public double demand;
+        public double fed;
+        public Vessel vessel;
+    }
+
+    public interface ISnacksPenalty
+    {
+        bool IsEnabled();
+        bool AlwaysApply();
+        void ApplyPenalty(int hungryKerbals, Vessel vessel);
+        void RemovePenalty(Vessel vessel);
+    }
 
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
     public class SnackController : MonoBehaviour
     {
         public static SnackController Instance;
-        public static event EventHandler SnackTime;
-        public static event EventHandler PreSnackTime;
+        public static EventVoid onSnackTime = new EventVoid("OnSnackTime");
+        public static EventVoid onBeforeSnackTime = new EventVoid("OnBeforeSnackTime");
+        public static EventVoid onSnackTick = new EventVoid("OnSnackTick");
+        public static EventData<Vessel, int> onKerbalsMissedMeal = new EventData<Vessel, int>("OnKerbalsMissedMeal");
+        public static EventData<SnackConsumption> onConsumeSnacks = new EventData<SnackConsumption>("OnConsumeSnacks");
 
-        protected double snackTime = -1;
+        public  double nextSnackTime = -1;
+
         protected System.Random random = new System.Random();
         protected int snackFrequency;
-        protected List<PenaltyHandler> penaltyHandlers = new List<PenaltyHandler>();
+        protected List<ISnacksPenalty> penaltyHandlers = new List<ISnacksPenalty>();
 
         private SnackConsumer consumer = new SnackConsumer();
 
@@ -92,15 +109,25 @@ namespace Snacks
             try
             {
                 //register penalty handlers
-                penaltyHandlers.Add(applyRepPenalties);
-                penaltyHandlers.Add(applyFundingPenalties);
-                penaltyHandlers.Add(applySciencePenalties);
+                penaltyHandlers.Add(new MissingMealsMonitor());
+                penaltyHandlers.Add(new FundingPenalty());
+                penaltyHandlers.Add(new RepPenalty());
+                penaltyHandlers.Add(new SciencePenalty());
+                penaltyHandlers.Add(new VesselControlPenalty());
+                penaltyHandlers.Add(new FaintPenalty());
 
                 //Calculate next snack time
                 if (SnacksProperties.EnableRandomSnacking)
-                    snackTime = random.NextDouble() * snackFrequency + Planetarium.GetUniversalTime();
+                    nextSnackTime = random.NextDouble() * snackFrequency + Planetarium.GetUniversalTime();
                 else
-                    snackTime = snackFrequency + Planetarium.GetUniversalTime();
+                    nextSnackTime = snackFrequency + Planetarium.GetUniversalTime();
+
+                Vessel[] unloadedVessels = FlightGlobals.VesselsUnloaded.ToArray();
+
+                //To handle installations to existing saves, be sure to register the crew of existing but unloaded vessels.
+                for (int index = 0; index < unloadedVessels.Length; index++)
+                    SnacksScenario.Instance.RegisterCrew(unloadedVessels[index]);
+                
             }
             catch (Exception ex)
             {
@@ -112,7 +139,6 @@ namespace Snacks
         {
             if (HighLogic.LoadedScene != GameScenes.SPACECENTER &&
                 HighLogic.LoadedScene != GameScenes.FLIGHT &&
-                HighLogic.LoadedScene != GameScenes.SPACECENTER &&
                 HighLogic.LoadedScene != GameScenes.TRACKSTATION)
                 return;
             try
@@ -120,28 +146,34 @@ namespace Snacks
 
                 double currentTime = Planetarium.GetUniversalTime();
 
-                if (currentTime > snackTime)
+                if (currentTime > nextSnackTime)
                 {
+                    //Setup next snacking time.
                     if (SnacksProperties.EnableRandomSnacking)
                     {
                         System.Random rand = new System.Random();
-                        snackTime = rand.NextDouble() * snackFrequency + currentTime;
+                        nextSnackTime = rand.NextDouble() * snackFrequency + currentTime;
                     }
                     else
                     {
-                        snackTime = snackFrequency + currentTime;
+                        nextSnackTime = snackFrequency + currentTime;
                     }
 
-                    Debug.Log("Snack time!  Next Snack Time!:" + snackTime);
+                    Debug.Log("Snack time!  Next Snack Time!:" + nextSnackTime);
 
+                    //Eat snacks!
                     EatSnacks();
 
+                    //Update the snapshot
                     SnackSnapshot.Instance().RebuildSnapshot();
+
+                    //Fire snack tick event
+                    onSnackTick.Fire();
                 }
             }
             catch (Exception ex)
             {
-                Debug.Log("Snacks - FixedUpdate: " + ex.Message + ex.StackTrace);
+                Debug.Log("[Snacks] - FixedUpdate: " + ex.Message + ex.StackTrace);
             }
         }
         #endregion
@@ -155,14 +187,22 @@ namespace Snacks
 
         private void onVesselRecovered(ProtoVessel protoVessel, bool someBool)
         {
+            //Unregister the vessel
             if (SnacksScenario.Instance.knownVessels.Contains(protoVessel.vesselID.ToString()))
                 SnacksScenario.Instance.knownVessels.Remove(protoVessel.vesselID.ToString());
+
+            //Unregister the crew
+            SnacksScenario.Instance.UnregisterCrew(protoVessel);
         }
 
         private void onVesselWillDestroy(Vessel vessel)
         {
+            //Unregister the vessel
             if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()))
                 SnacksScenario.Instance.knownVessels.Remove(vessel.id.ToString());
+
+            //Unregister the crew
+            SnacksScenario.Instance.UnregisterCrew(vessel);
         }
 
         private void OnVesselWasModified(Vessel data)
@@ -253,17 +293,21 @@ namespace Snacks
         }
         #endregion
 
+        #region API
+        public void RegisterPenaltyHandler(ISnacksPenalty handler)
+        {
+            if (penaltyHandlers.Contains(handler) == false)
+                penaltyHandlers.Add(handler);
+        }
+
+        public void UnregisterPenaltyHandler(ISnacksPenalty handler)
+        {
+            if (penaltyHandlers.Contains(handler))
+                penaltyHandlers.Remove(handler);
+        }
+        #endregion
+
         #region Helpers
-
-        public void RegisterPenaltyHandler(PenaltyHandler handler)
-        {
-            penaltyHandlers.Add(handler);
-        }
-
-        public void UnregisterPenaltyHandler(PenaltyHandler handler)
-        {
-            penaltyHandlers.Remove(handler);
-        }
 
         protected void checkAndShowWelcomeMessage()
         {
@@ -291,8 +335,8 @@ namespace Snacks
 
         public void UpdateSnackConsumption()
         {
-//            snackFrequency = 5;
-            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+            snackFrequency = 5;
+//            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
         }
 
         private void EatSnacks()
@@ -300,9 +344,10 @@ namespace Snacks
             try
             {
                 double snackDeficit;
+                int crewCount = 0;
 
                 //Post the before snack time event
-                OnPreSnackTime(EventArgs.Empty);
+                onBeforeSnackTime.Fire();
 
                 //Consume snacks for loaded vessels
                 //Debug.Log("Loaded vessles count: " + FlightGlobals.VesselsLoaded.Count);
@@ -312,29 +357,24 @@ namespace Snacks
 
                     //Consume snacks and get the deficit if any.
                     if (vessel.loaded)
-                    {
-                        if (vessel.GetCrewCount() > 0)
-                            snackDeficit = consumer.ConsumeAndGetDeficit(vessel);
-                    }
-
+                        crewCount = vessel.GetCrewCount();
                     else
-                    {
-                        if (vessel.protoVessel.GetVesselCrew().Count > 0)
-                            snackDeficit = consumer.ConsumeAndGetDeficit(vessel.protoVessel);
-                    }
+                        crewCount = vessel.protoVessel.GetVesselCrew().Count;
+
+                    if (crewCount > 0)
+                        snackDeficit = consumer.ConsumeAndGetDeficit(vessel);
 
                     //Apply penalties if we have a deficit
                     if (snackDeficit > 0)
                         applyPenalties(snackDeficit, vessel);
 
-                    //Make sure we have full control as far as we are concerned
+                    //Make sure to remove all penalties, the kerbals are all fed.
                     else
-                        applyPartialVesselControl(vessel, false);
-
+                        removePenalties(vessel);
                 }
 
                 //Post the snack time event
-                OnSnackTime(EventArgs.Empty);
+                onSnackTime.Fire();
                 
             }
             catch (Exception ex)
@@ -343,121 +383,12 @@ namespace Snacks
             }
         }
 
-        protected void applySciencePenalties(int hungryKerbals, Vessel vessel)
+        protected void removePenalties(Vessel vessel)
         {
-            //Apply science loss
-            if ((HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX) && SnacksProperties.LoseScienceWhenHungry)
-            {
-                VesselModule[] vesselModules = vessel.vesselModules.ToArray();
-                SnacksVesselModule snacksVesselModule = null;
+            ISnacksPenalty[] penalties = penaltyHandlers.ToArray();
 
-                for (int index = 0; index < vesselModules.Length; index++)
-                {
-                    if (vesselModules[index] is SnacksVesselModule)
-                    {
-                        snacksVesselModule = (SnacksVesselModule)vesselModules[index];
-                        break;
-                    }
-                }
-
-                if (snacksVesselModule != null)
-                {
-                    if (vessel.loaded)
-                    {
-                        snacksVesselModule.ApplySciencePenalties();
-                    }
-
-                    else
-                    {
-                        ScreenMessages.PostScreenMessage("Kerbals have ruined some science aboard the " + vessel.vesselName + "! Check the vessel for details.", 5f, ScreenMessageStyle.UPPER_LEFT);
-                        if (SnacksScenario.Instance.sciencePenalties.ContainsKey(vessel.id.ToString()) == false)
-                            SnacksScenario.Instance.sciencePenalties.Add(vessel.id.ToString(), 1);
-                        else
-                            SnacksScenario.Instance.sciencePenalties[vessel.id.ToString()] += 1;
-                    }
-                }
-            }
-        }
-
-        protected void applyRepPenalties(int hungryKerbals, Vessel vessel)
-        {
-            //Only applies to Career mode
-            if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
-            {
-                //Apply reputation loss
-                if (SnacksProperties.LoseRepWhenHungry)
-                {
-                    double repLoss;
-
-                    if (Reputation.CurrentRep > 0)
-                        repLoss = hungryKerbals * SnacksProperties.RepLostWhenHungry * Reputation.Instance.reputation;
-                    else
-                        repLoss = hungryKerbals;
-
-                    Reputation.Instance.AddReputation(Convert.ToSingle(-1 * repLoss), TransactionReasons.Any);
-                    ScreenMessages.PostScreenMessage("Your reputation decreased by " + Convert.ToInt32(repLoss), 5, ScreenMessageStyle.UPPER_LEFT);
-                }
-            }
-        }
-
-        protected void applyFundingPenalties(int hungryKerbals, Vessel vessel)
-        {
-            //Only applies to Career mode
-            if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
-            {
-                //Apply funding loss
-                if (SnacksProperties.LoseFundsWhenHungry)
-                {
-                    double fine = SnacksProperties.FinePerKerbal * hungryKerbals;
-
-                    Funding.Instance.AddFunds(-fine, TransactionReasons.Any);
-                    ScreenMessages.PostScreenMessage("You've been fined " + Convert.ToInt32(fine) + " Funds", 5, ScreenMessageStyle.UPPER_LEFT);
-                }
-            }
-        }
-
-        protected void applyPartialVesselControl(Vessel vessel, bool enablePartialControl)
-        {
-            //Set partial control for the vessel
-            if (SnacksProperties.PartialControlWhenHungry)
-            {
-                if (vessel.loaded)
-                {
-                    List<SnackVesselController> snackVesselControllers = vessel.FindPartModulesImplementing<SnackVesselController>();
-
-                    if (snackVesselControllers.Count > 0)
-                    {
-                        SnackVesselController[] controllers = snackVesselControllers.ToArray();
-
-                        for (int index = 0; index < controllers.Length; index++)
-                            controllers[index].partialControlEnabled = enablePartialControl;
-                    }
-                }
-
-                else
-                {
-                    ProtoPartSnapshot[] partSnapshots = vessel.protoVessel.protoPartSnapshots.ToArray();
-                    ProtoPartSnapshot partSnapshot;
-                    ProtoPartModuleSnapshot[] moduleSnapshots;
-                    ProtoPartModuleSnapshot moduleSnapshot;
-
-                    for (int partIndex = 0; partIndex < partSnapshots.Length; partIndex++)
-                    {
-                        partSnapshot = partSnapshots[partIndex];
-                        moduleSnapshots = partSnapshot.modules.ToArray();
-
-                        for (int index = 0; index < moduleSnapshots.Length; index++)
-                        {
-                            moduleSnapshot = moduleSnapshots[index];
-
-                            if (moduleSnapshot.moduleName == "SnackVesselController")
-                                moduleSnapshot.moduleValues.SetValue("partialControlEnabled", enablePartialControl.ToString());
-                        }
-                    }
-                }
-
-            }
-
+            for (int index = 0; index < penalties.Length; index++)
+                penalties[index].RemovePenalty(vessel);
         }
 
         protected void applyPenalties(double snacksMissed, Vessel vessel)
@@ -465,54 +396,48 @@ namespace Snacks
             if (snacksMissed < 0.001)
                 return;
 
-            //Let player know how many kerbals are hungry
             int hungryKerbals = Convert.ToInt32(snacksMissed / SnacksProperties.SnacksPerMeal);
+            List<ISnacksPenalty> randomPenalties = new List<ISnacksPenalty>();
+            ISnacksPenalty[] penalties;
 
+            //Let player know how many kerbals are hungry
             if (vessel.loaded)
                 ScreenMessages.PostScreenMessage(vessel.vesselName + ": " + hungryKerbals + " Kerbals are hungry for snacks.", 5, ScreenMessageStyle.UPPER_LEFT);
             else
                 ScreenMessages.PostScreenMessage(vessel.protoVessel.vesselName + ": " + hungryKerbals + " Kerbals are hungry for snacks.", 5, ScreenMessageStyle.UPPER_LEFT);
 
             //Apply the penalties
-            if (SnacksProperties.RandomPenaltiesEnabled)
+            penalties = penaltyHandlers.ToArray();
+            for (int index = 0; index < penalties.Length; index++)
             {
-                int penaltyIndex = random.Next(0, penaltyHandlers.Count);
-                if (penaltyIndex == penaltyHandlers.Count)
-                    penaltyIndex = penaltyHandlers.Count - 1;
+                //If we should always apply the penalty then do so
+                if (!SnacksProperties.RandomPenaltiesEnabled || penalties[index].AlwaysApply())
+                    penalties[index].ApplyPenalty(hungryKerbals, vessel);
 
-                penaltyHandlers[penaltyIndex](hungryKerbals, vessel);
+                //Add the penalty to the list of random penalties
+                else
+                    randomPenalties.Add(penalties[index]);
             }
 
-            else
+            //If we have random penalties to apply then do so
+            if (randomPenalties.Count > 0)
             {
-                PenaltyHandler[] handlers = penaltyHandlers.ToArray();
+                int penaltyIndex = random.Next(0, randomPenalties.Count);
+                if (penaltyIndex == randomPenalties.Count)
+                    penaltyIndex = randomPenalties.Count - 1;
 
-                for (int index = 0; index < handlers.Length; index++)
-                    handlers[index](hungryKerbals, vessel);
+                randomPenalties[penaltyIndex].ApplyPenalty(hungryKerbals, vessel);
             }
+
+            //Send the bad news
+            onKerbalsMissedMeal.Fire(vessel, hungryKerbals);
         }
 
-        #endregion
-
-        #region Events
-
-        public virtual void OnPreSnackTime(EventArgs e)
+        public static void Log(string info)
         {
-            EventHandler handler = PreSnackTime;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
+            Debug.Log(info);
         }
 
-        public virtual void OnSnackTime(EventArgs e)
-        {
-            EventHandler handler = SnackTime;
-            if (handler != null)
-            {
-                handler(this, e);
-            }
-        }
         #endregion
     }
 }

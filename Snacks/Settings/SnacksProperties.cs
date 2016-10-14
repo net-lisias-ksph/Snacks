@@ -40,6 +40,15 @@ namespace Snacks
         [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
         public bool partialControlWhenHungry = true;
 
+        [GameParameters.CustomParameterUI("Hungry kerbals can faint.", toolTip = "When kerbals go hungry, they might pass out and can't be controlled.", autoPersistance = true)]
+        public bool faintWhenHungry = true;
+
+        [GameParameters.CustomIntParameterUI("Meals before fainting", maxValue = 24, minValue = 1, stepSize = 1, toolTip = "How many meals can a kerbal miss before fainting", autoPersistance = true)]
+        public int mealsBeforeFainting = 3;
+
+        [GameParameters.CustomIntParameterUI("Nap time when fainted (minutes)", maxValue = 30, minValue = 1, stepSize = 1, toolTip = "How long will a kerbal nap for when they faint", autoPersistance = true)]
+        public int napTime = 1;
+
         #region CustomParameterNode
         public override string Section
         {
@@ -100,6 +109,11 @@ namespace Snacks
             else if (member.Name == "finePerKerbal")
                 return false;
 
+            if ((member.Name == "mealsBeforeFainting" || member.Name == "napTime") && faintWhenHungry)
+                return true;
+            else if (member.Name == "mealsBeforeFainting" || member.Name == "napTime")
+                return false;
+
             return base.Enabled(member, parameters);
         }
         #endregion
@@ -109,14 +123,14 @@ namespace Snacks
     {
         public static string SnacksResourceName = "Snacks";
         public static string SoilResourceName = "Soil";
-        public static int SnacksPerCommand = 50;
-        public static int SnacksPerCrewModule = 400;
+        private static int defaultSnacksPerCmdPod  = 50;
+        private static int defaultSnacksPerCrewPod = 200;
 
-        [GameParameters.CustomFloatParameterUI("Snacks per meal", minValue = 1.0f, maxValue = 10.0f, toolTip = "How much do kerbals snack on", autoPersistance = true)]
+        [GameParameters.CustomFloatParameterUI("Snacks per meal", minValue = 1.0f, maxValue = 12.0f, toolTip = "How much do kerbals snack on", autoPersistance = true)]
         public double snacksPerMeal = 1.0f;
 
-        [GameParameters.CustomIntParameterUI("Meals per day", minValue = 1, maxValue = 3, stepSize = 1, toolTip = "How often do kerbals eat", autoPersistance = true)]
-        public int mealsPerDay = 1;
+        [GameParameters.CustomIntParameterUI("Meals per day", minValue = 1, maxValue = 12, stepSize = 1, toolTip = "How often do kerbals eat", autoPersistance = true)]
+        public int mealsPerDay = 3;
 
         [GameParameters.CustomParameterUI("Some kerbals eat more, some eat less", toolTip = "At snack time, kerbals eat random amounts of Snacks, and the time between snacking is also random", autoPersistance = true)]
         public bool enableRandomSnacking = true;
@@ -133,6 +147,63 @@ namespace Snacks
         public bool yearsMonthsDaysEnabled = true;
 
         #region Properties
+
+        public static bool FaintWhenHungry
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.faintWhenHungry;
+            }
+        }
+
+        public static int MealsBeforeFainting
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.mealsBeforeFainting;
+            }
+        }
+
+        public static int NapTime
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.napTime;
+            }
+        }
+
+        public static int SnacksPerCrewModule
+        {
+            get
+            {
+                ConfigNode snackConfig = GameDatabase.Instance.GetConfigNode("SNACKS_SETTINGS");
+                if (snackConfig == null)
+                    return defaultSnacksPerCrewPod;
+
+                if (snackConfig.HasValue("snacksPerCrewPod"))
+                    return int.Parse(snackConfig.GetValue("snacksPerCrewPod"));
+                else
+                    return defaultSnacksPerCrewPod;
+            }
+        }
+
+        public static int SnacksPerCommand
+        {
+            get
+            {
+                ConfigNode snackConfig = GameDatabase.Instance.GetConfigNode("SNACKS_SETTINGS");
+                if (snackConfig == null)
+                    return defaultSnacksPerCmdPod;
+
+                if (snackConfig.HasValue("snacksPerCmdPod"))
+                    return int.Parse(snackConfig.GetValue("snacksPerCmdPod"));
+                else
+                    return defaultSnacksPerCmdPod;
+            }
+        }
 
         public static float ProductionEfficiency
         {

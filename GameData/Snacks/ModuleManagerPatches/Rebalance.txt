@@ -1,0 +1,47 @@
+//Rebalance.txt
+//By Angel-125
+//Use this to reblance your existing vessels.
+//Simply rename the patch.cfg to patch.txt and
+//rename Rebalance.txt to Rebalance.cfg and restart your game.
+//Once you've played the game, exit KSP and rename this file to
+//Rebalance.txt and patch.txt back to patch.cfg.
+@PART[*]:HAS[@MODULE[ModuleCommand],#CrewCapacity[*]]
+{
+	RESOURCE
+	{
+		name = Snacks
+		amount = 50
+		maxAmount = 50
+		@amount *= #$../CrewCapacity$
+		@maxAmount *= #$../CrewCapacity$
+	}
+}
+
+@PART[*]:HAS[!MODULE[ModuleCommand],#CrewCapacity[*]]
+{
+	RESOURCE
+	{
+		name = Snacks
+		amount = 200
+		maxAmount = 200
+		@amount *= #$../CrewCapacity$
+		@maxAmount *= #$../CrewCapacity$
+	}
+}
+
+@PART[seatExternalCmd]
+{
+	RESOURCE
+	{
+		name= Snacks
+		amount = 2
+		maxAmount = 2
+	}
+}
+
+
+
+
+
+	
+

@@ -23,6 +23,16 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.4.5
+- Fixed an issue with snack tins not showing up.
+- A single kerbal can now consume up to 12 snacks per meal and up to 12 snacks per day.
+- By default, a single kerbal consumes 1 snack per meal and 3 meals per day.
+- Reduced Soil storage in the Hitchhiker to 200. This only applies to new vessels.
+- Reduced Snacks per crew capacity in non-command pods to 200 per crewmember. This only applies to new vessels.
+- Added the SnacksForExistingSaves.cfg file to specify number of Snacks per command pod and snacks per non-command pod. These are used when installing Snacks into existing saves for vessels already in flight.
+- Added new ISnacksPenalty interface for mods to use when implementing new penalties. One of the options is to always apply the penalty even with random penalties turned off. Of course the implementation can decide to honor random penalties...
+- Added a Snacks Trip Planner Excel spreadsheet. You'll find it in the Docs folder. An in-game planner is in the works.
+
 1.4.0
 
 - Adjusted Snack production in the MPL; it was way too high. Ore -> Snacks is now 1:10 with mass conservation. A 1.25m Small Holding Tank (holds 300 Ore) now produce 3,000 Snacks.

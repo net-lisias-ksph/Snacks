@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Snacks
 {
-    class ShipSupply : IComparable<ShipSupply>
+    public class ShipSupply : IComparable<ShipSupply>
     {
         public string BodyName { get; set; }
         public string VesselName { get; set; }
