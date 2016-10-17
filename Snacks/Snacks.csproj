@@ -66,6 +66,7 @@
     <Compile Include="Settings\SnacksScenario.cs" />
     <Compile Include="LifeSupport\SnackProcessor.cs" />
     <Compile Include="LifeSupport\SnacksModuleCommand.cs" />
+    <Compile Include="SnacksControlSource.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
     <Compile Include="Utilities\SnacksResourceSwitcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

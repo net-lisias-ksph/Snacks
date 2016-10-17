@@ -37,7 +37,7 @@ namespace Snacks
         [GameParameters.CustomParameterUI("Data lost", toolTip = "What percentage of lab data is lost", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER | GameParameters.GameMode.SCIENCE)]
         public RepLoss dataLostWhenHungry = RepLoss.Low;
 
-        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
+//        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
         public bool partialControlWhenHungry = true;
 
         [GameParameters.CustomParameterUI("Hungry kerbals can faint.", toolTip = "When kerbals go hungry, they might pass out and can't be controlled.", autoPersistance = true)]

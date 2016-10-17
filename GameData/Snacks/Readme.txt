@@ -23,6 +23,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.5.1
+- Temporarily disable the partial vessel control penalty. Happy now?
+
 1.5.0
 - ISnacksPenalty now has a RemovePenalty method. Snacks will call this each time kerbals don't miss any meals.
 - ISnacksPenalty now has a GameSettingsApplied method. This is called at startup and when the player changes game settings.
