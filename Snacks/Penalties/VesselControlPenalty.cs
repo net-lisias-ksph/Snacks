@@ -33,6 +33,18 @@ namespace Snacks
 {
     public class VesselControlPenalty : ISnacksPenalty
     {
+        public void GameSettingsApplied()
+        {
+            //Disable partial control if the feature is turned off.
+            if (!SnacksProperties.PartialControlWhenHungry)
+            {
+                Vessel[] vessels = FlightGlobals.Vessels.ToArray();
+
+                for (int index = 0; index < vessels.Length; index++)
+                    setPartialControl(vessels[index], false);
+            }
+        }
+
         public bool IsEnabled()
         {
             return SnacksProperties.LoseScienceWhenHungry;
@@ -57,44 +69,51 @@ namespace Snacks
         {
             //Set partial control for the vessel
             if (SnacksProperties.PartialControlWhenHungry)
+                setPartialControl(vessel, enablePartialControl);
+        }
+
+        protected void setPartialControl(Vessel vessel, bool enablePartialControl)
+        {
+            if (vessel.loaded)
             {
-                if (vessel.loaded)
+                List<SnacksModuleCommand> snackVesselControllers = vessel.FindPartModulesImplementing<SnacksModuleCommand>();
+
+                if (snackVesselControllers.Count > 0)
                 {
-                    List<SnackVesselController> snackVesselControllers = vessel.FindPartModulesImplementing<SnackVesselController>();
+                    SnacksModuleCommand[] controllers = snackVesselControllers.ToArray();
 
-                    if (snackVesselControllers.Count > 0)
+                    for (int index = 0; index < controllers.Length; index++)
                     {
-                        SnackVesselController[] controllers = snackVesselControllers.ToArray();
-
-                        for (int index = 0; index < controllers.Length; index++)
-                            controllers[index].partialControlEnabled = enablePartialControl;
+                        controllers[index].partialControlEnabled = enablePartialControl;
+                        controllers[index].UpdateControlSourceState();
                     }
                 }
-
-                else
-                {
-                    ProtoPartSnapshot[] partSnapshots = vessel.protoVessel.protoPartSnapshots.ToArray();
-                    ProtoPartSnapshot partSnapshot;
-                    ProtoPartModuleSnapshot[] moduleSnapshots;
-                    ProtoPartModuleSnapshot moduleSnapshot;
-
-                    for (int partIndex = 0; partIndex < partSnapshots.Length; partIndex++)
-                    {
-                        partSnapshot = partSnapshots[partIndex];
-                        moduleSnapshots = partSnapshot.modules.ToArray();
-
-                        for (int index = 0; index < moduleSnapshots.Length; index++)
-                        {
-                            moduleSnapshot = moduleSnapshots[index];
-
-                            if (moduleSnapshot.moduleName == "SnackVesselController")
-                                moduleSnapshot.moduleValues.SetValue("partialControlEnabled", enablePartialControl.ToString());
-                        }
-                    }
-                }
-
             }
 
+            else
+            {
+                ProtoPartSnapshot[] partSnapshots = vessel.protoVessel.protoPartSnapshots.ToArray();
+                ProtoPartSnapshot partSnapshot;
+                ProtoPartModuleSnapshot[] moduleSnapshots;
+                ProtoPartModuleSnapshot moduleSnapshot;
+
+                for (int partIndex = 0; partIndex < partSnapshots.Length; partIndex++)
+                {
+                    partSnapshot = partSnapshots[partIndex];
+                    moduleSnapshots = partSnapshot.modules.ToArray();
+
+                    for (int index = 0; index < moduleSnapshots.Length; index++)
+                    {
+                        moduleSnapshot = moduleSnapshots[index];
+
+                        if (moduleSnapshot.moduleName == "SnacksModuleCommand")
+                            moduleSnapshot.moduleValues.SetValue("partialControlEnabled", enablePartialControl.ToString());
+                    }
+                }
+            }
+
+            if (enablePartialControl)
+                ScreenMessages.PostScreenMessage(vessel.vesselName + ": The crew is starving and can't fly straight!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
         }
     }
 }

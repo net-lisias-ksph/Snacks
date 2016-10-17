@@ -33,6 +33,10 @@ namespace Snacks
 {
     internal class MissingMealsMonitor : ISnacksPenalty
     {
+        public void GameSettingsApplied()
+        {
+        }
+
         public bool IsEnabled()
         {
             return true;

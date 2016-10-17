@@ -44,6 +44,7 @@ namespace Snacks
         bool AlwaysApply();
         void ApplyPenalty(int hungryKerbals, Vessel vessel);
         void RemovePenalty(Vessel vessel);
+        void GameSettingsApplied();
     }
 
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
@@ -80,13 +81,12 @@ namespace Snacks
                 GameEvents.onVesselRename.Add(OnRename);
                 GameEvents.onVesselChange.Add(OnVesselChange);
                 GameEvents.onVesselWasModified.Add(OnVesselWasModified);
-                GameEvents.OnGameSettingsApplied.Add(UpdateSnackConsumption);
+                GameEvents.OnGameSettingsApplied.Add(GameSettingsApplied);
                 GameEvents.onVesselLoaded.Add(onVesselLoaded);
                 GameEvents.onVesselRecovered.Add(onVesselRecovered);
                 GameEvents.onVesselWillDestroy.Add(onVesselWillDestroy);
                 GameEvents.onVesselGoOffRails.Add(onVesselLoaded);
-
-                UpdateSnackConsumption();
+                GameEvents.onVesselPartCountChanged.Add(OnVesselWasModified);
                 Instance = this;
             }
             catch (Exception ex)
@@ -116,18 +116,19 @@ namespace Snacks
                 penaltyHandlers.Add(new VesselControlPenalty());
                 penaltyHandlers.Add(new FaintPenalty());
 
+                //Setup the inital settings.
+                GameSettingsApplied();
+
                 //Calculate next snack time
                 if (SnacksProperties.EnableRandomSnacking)
                     nextSnackTime = random.NextDouble() * snackFrequency + Planetarium.GetUniversalTime();
                 else
                     nextSnackTime = snackFrequency + Planetarium.GetUniversalTime();
 
-                Vessel[] unloadedVessels = FlightGlobals.VesselsUnloaded.ToArray();
-
                 //To handle installations to existing saves, be sure to register the crew of existing but unloaded vessels.
+                Vessel[] unloadedVessels = FlightGlobals.VesselsUnloaded.ToArray();
                 for (int index = 0; index < unloadedVessels.Length; index++)
                     SnacksScenario.Instance.RegisterCrew(unloadedVessels[index]);
-                
             }
             catch (Exception ex)
             {
@@ -181,8 +182,6 @@ namespace Snacks
         #region GameEvents
         private void onVesselLoaded(Vessel vessel)
         {
-            if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()) == false)
-                SnacksScenario.Instance.knownVessels.Add(vessel.id.ToString());
         }
 
         private void onVesselRecovered(ProtoVessel protoVessel, bool someBool)
@@ -192,6 +191,7 @@ namespace Snacks
                 SnacksScenario.Instance.knownVessels.Remove(protoVessel.vesselID.ToString());
 
             //Unregister the crew
+            SnacksScenario.Instance.ClearMissedMeals(protoVessel);
             SnacksScenario.Instance.UnregisterCrew(protoVessel);
         }
 
@@ -202,6 +202,7 @@ namespace Snacks
                 SnacksScenario.Instance.knownVessels.Remove(vessel.id.ToString());
 
             //Unregister the crew
+            SnacksScenario.Instance.ClearMissedMeals(vessel);
             SnacksScenario.Instance.UnregisterCrew(vessel);
         }
 
@@ -280,7 +281,7 @@ namespace Snacks
                 GameEvents.onVesselRename.Remove(OnRename);
                 GameEvents.onVesselChange.Remove(OnVesselChange);
                 GameEvents.onVesselWasModified.Remove(OnVesselWasModified);
-                GameEvents.OnGameSettingsApplied.Remove(UpdateSnackConsumption);
+                GameEvents.OnGameSettingsApplied.Remove(GameSettingsApplied);
                 GameEvents.onVesselLoaded.Remove(onVesselLoaded);
                 GameEvents.onVesselRecovered.Remove(onVesselRecovered);
                 GameEvents.onVesselWillDestroy.Remove(onVesselWillDestroy);
@@ -333,10 +334,14 @@ namespace Snacks
             }
         }
 
-        public void UpdateSnackConsumption()
+        public void GameSettingsApplied()
         {
-            snackFrequency = 5;
-//            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+//            snackFrequency = 5;
+            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+
+            //Make sure that the penalties know about the update
+            foreach (ISnacksPenalty handler in penaltyHandlers)
+                handler.GameSettingsApplied();
         }
 
         private void EatSnacks()
@@ -362,15 +367,17 @@ namespace Snacks
                         crewCount = vessel.protoVessel.GetVesselCrew().Count;
 
                     if (crewCount > 0)
+                    {
                         snackDeficit = consumer.ConsumeAndGetDeficit(vessel);
 
-                    //Apply penalties if we have a deficit
-                    if (snackDeficit > 0)
-                        applyPenalties(snackDeficit, vessel);
+                        //Apply penalties if we have a deficit
+                        if (snackDeficit > 0)
+                            applyPenalties(snackDeficit, vessel);
 
-                    //Make sure to remove all penalties, the kerbals are all fed.
-                    else
-                        removePenalties(vessel);
+                        //Make sure to remove all penalties, the kerbals are all fed.
+                        else
+                            removePenalties(vessel);
+                    }
                 }
 
                 //Post the snack time event

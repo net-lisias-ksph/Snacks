@@ -23,6 +23,20 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.5.0
+- ISnacksPenalty now has a RemovePenalty method. Snacks will call this each time kerbals don't miss any meals.
+- ISnacksPenalty now has a GameSettingsApplied method. This is called at startup and when the player changes game settings.
+- The partial control loss penalty should work now.
+- New penalty: kerbals can pass out if they miss too many meals.
+- Updated the KSPedia to improve clarity and to add the new penalty option.
+
+New events
+onBeforeSnackTime: Called before snacking begins.
+onSnackTime: Called after snacking.
+onSnackTick: called during fixed update right after updating the vessel snapshot.
+onConsumeSnacks: Called right after calculating snack consumption but before applying any penalties. Gives you to the ability to alter the snack consumption.
+onKerbalsMissedMeal: Called when a vessel with kerbals have missed a meal.
+
 1.4.5
 - Fixed an issue with snack tins not showing up.
 - A single kerbal can now consume up to 12 snacks per meal and up to 12 snacks per day.

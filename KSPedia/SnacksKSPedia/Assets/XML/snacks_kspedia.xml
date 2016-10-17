@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<KSPedia xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="snacks" CreatedTime="-8587252879387442339">
+<KSPedia xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="snacks" CreatedTime="-8587249342373864577">
   <Categories>
     <Category Name="Snacks!">
       <Title>Snacks!</Title>
@@ -9,6 +9,12 @@
         <Subcategory Name="options">
           <Title>Options</Title>
           <TitleScreen>SnackOptions</TitleScreen>
+          <Screens />
+          <Subcategories />
+        </Subcategory>
+        <Subcategory Name="Penalties">
+          <Title>Penalties</Title>
+          <TitleScreen>SnackOptions2</TitleScreen>
           <Screens />
           <Subcategories />
         </Subcategory>
@@ -76,6 +82,14 @@
       <BundleName>snacks</BundleName>
       <AssetPath>Assets/SnackProduction.prefab</AssetPath>
       <Title>Snack Production</Title>
+      <Background />
+      <Text />
+      <Tooltips />
+    </Screen>
+    <Screen Name="SnackOptions2">
+      <BundleName>snacks</BundleName>
+      <AssetPath>Assets/SnackOptions2.prefab</AssetPath>
+      <Title>SnackPenalties</Title>
       <Background />
       <Text />
       <Tooltips />

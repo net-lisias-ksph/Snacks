@@ -13,7 +13,6 @@ namespace Snacks
         public string experienceTrait;
         public double lastUpdated;
         public int mealsMissed;
-        public float faintDuration;
         public DictionaryValueList<string, string> keyValuePairs;
     }
 
@@ -113,6 +112,34 @@ namespace Snacks
             return data.mealsMissed;
         }
 
+        public void ClearMissedMeals(ProtoVessel protoVessel)
+        {
+            if (protoVessel.GetVesselCrew().Count == 0)
+                return;
+
+            ProtoCrewMember[] crewMembers = protoVessel.GetVesselCrew().ToArray();
+
+            for (int index = 0; index < crewMembers.Length; index++)
+            {
+                crewMembers[index].inactive = false;
+                SetMealsMissed(crewMembers[index], 0);
+            }
+        }
+
+        public void ClearMissedMeals(Vessel vessel)
+        {
+            if (vessel.GetVesselCrew().Count == 0)
+                return;
+
+            ProtoCrewMember[] crewMembers = vessel.GetVesselCrew().ToArray();
+
+            for (int index = 0; index < crewMembers.Length; index++)
+            {
+                crewMembers[index].inactive = false;
+                SetMealsMissed(crewMembers[index], 0);
+            }
+        }
+
         public void SetMealsMissed(ProtoCrewMember astronaut, int mealsMissed)
         {
             AstronautData data = getAstronautData(astronaut);
@@ -158,7 +185,6 @@ namespace Snacks
                     data.name = astronaut.GetValue("name");
                     data.experienceTrait = astronaut.GetValue("experienceTrait");
                     data.mealsMissed = int.Parse(astronaut.GetValue("mealsMissed"));
-                    data.faintDuration = float.Parse(astronaut.GetValue("faintDuration"));
                     data.lastUpdated = double.Parse(astronaut.GetValue("lastUpdated"));
                     data.keyValuePairs = new DictionaryValueList<string, string>();
 
@@ -208,7 +234,6 @@ namespace Snacks
                 configNode.AddValue("name", data.name);
                 configNode.AddValue("experienceTrait", data.experienceTrait);
                 configNode.AddValue("mealsMissed", data.mealsMissed);
-                configNode.AddValue("faintDuration", data.faintDuration);
                 configNode.AddValue("lastUpdated", data.lastUpdated);
 
                 keyValueEnumerator = data.keyValuePairs.GetListEnumerator();
@@ -232,7 +257,6 @@ namespace Snacks
                 AstronautData data = new AstronautData();
                 data.name = astronaut.name;
                 data.mealsMissed = 0;
-                data.faintDuration = 0f;
                 data.experienceTrait = astronaut.experienceTrait.Title;
                 data.lastUpdated = Planetarium.GetUniversalTime();
                 data.keyValuePairs = new DictionaryValueList<string, string>();

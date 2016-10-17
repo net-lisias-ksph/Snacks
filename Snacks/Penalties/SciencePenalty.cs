@@ -33,6 +33,10 @@ namespace Snacks
 {
     public class SciencePenalty : ISnacksPenalty
     {
+        public void GameSettingsApplied()
+        {
+        }
+
         public bool IsEnabled()
         {
             return SnacksProperties.LoseScienceWhenHungry;

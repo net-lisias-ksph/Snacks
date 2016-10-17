@@ -35,24 +35,11 @@ namespace Snacks
     {
         public const string FaintMessage = " has fainted from a lack of Snacks!";
 
-        public FaintPenalty()
-        {
-            //Watch vessel and option related events so that we can wake the sleeping crew
-            //and avoid persistence problems if the user uninstalls the mod.
-            /*
-            GameEvents.onVesselChange.Add(OnVesselChange);
-            GameEvents.onVesselWasModified.Add(OnVesselWasModified);
-            GameEvents.OnGameSettingsApplied.Add(UpdateSnackConsumption);
-            GameEvents.onVesselLoaded.Add(onVesselLoaded);
-            GameEvents.onVesselRecovered.Add(onVesselRecovered);
-            GameEvents.onVesselWillDestroy.Add(onVesselWillDestroy);
-            GameEvents.onVesselGoOffRails.Add(onVesselLoaded);
-             */
-        }
-
         public static void CheckFaintKerbals(Vessel vessel)
         {
             if (!SnacksProperties.FaintWhenHungry)
+                return;
+            if (vessel.loaded == false)
                 return;
 
             int mealsBeforeFainting = SnacksProperties.MealsBeforeFainting;
@@ -60,10 +47,7 @@ namespace Snacks
             ProtoCrewMember[] astronauts;
             AstronautData data;
 
-            if (vessel.loaded)
-                astronauts = vessel.GetVesselCrew().ToArray();
-            else
-                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+            astronauts = vessel.GetVesselCrew().ToArray();
 
             //If crew member has gone hungry too many times then it's time
             //for the crew member to pass out.
@@ -73,19 +57,26 @@ namespace Snacks
 
                 if (data.mealsMissed >= mealsBeforeFainting)
                 {
-                    //If the vessel is loaded, then Make the kerbal pass out.
-                    if (vessel.loaded)
-                    {
-                        astronauts[index].SetInactive(faintDuration);
-                        ScreenMessages.PostScreenMessage(astronauts[index].name + FaintMessage, 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                    }
-
-                    //Vessel is unloaded, schedule the faint for a later date.
-                    else
-                    {
-                        data.faintDuration = faintDuration;
-                    }
+                    astronauts[index].SetInactive(faintDuration);
+                    ScreenMessages.PostScreenMessage(astronauts[index].name + FaintMessage, 5.0f, ScreenMessageStyle.UPPER_LEFT);
                 }
+            }
+        }
+
+        public void GameSettingsApplied()
+        {
+            bool faintWhenHungry = SnacksProperties.FaintWhenHungry;
+
+            foreach (Vessel vessel in FlightGlobals.Vessels)
+            {
+                if (faintWhenHungry)
+                {
+                    if (vessel.loaded)
+                        CheckFaintKerbals(vessel);
+                }
+
+                else
+                    ClearFainting(vessel);
             }
         }
 
@@ -105,10 +96,9 @@ namespace Snacks
             CheckFaintKerbals(vessel);
         }
 
-        public void RemovePenalty(Vessel vessel)
+        public static void ClearFainting(Vessel vessel)
         {
             ProtoCrewMember[] astronauts;
-            AstronautData data;
 
             if (vessel.loaded)
                 astronauts = vessel.GetVesselCrew().ToArray();
@@ -117,9 +107,14 @@ namespace Snacks
 
             for (int index = 0; index < astronauts.Length; index++)
             {
-                data = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
-                data.faintDuration = 0f;
+                astronauts[index].inactive = false;
+                SnacksScenario.Instance.SetMealsMissed(astronauts[index], 0);
             }
+        }
+
+        public void RemovePenalty(Vessel vessel)
+        {
+            ClearFainting(vessel);
         }
         #endregion
 

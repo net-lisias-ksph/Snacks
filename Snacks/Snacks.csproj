@@ -60,12 +60,12 @@
     <Compile Include="Penalties\MissingMealsMonitor.cs" />
     <Compile Include="Penalties\FaintPenalty.cs" />
     <Compile Include="Penalties\FundingPenalty.cs" />
-    <Compile Include="LifeSupport\SnackVesselController.cs" />
     <Compile Include="LifeSupport\SnacksVesselModule.cs" />
     <Compile Include="Penalties\RepPenalty.cs" />
     <Compile Include="Penalties\SciencePenalty.cs" />
     <Compile Include="Settings\SnacksScenario.cs" />
     <Compile Include="LifeSupport\SnackProcessor.cs" />
+    <Compile Include="LifeSupport\SnacksModuleCommand.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
     <Compile Include="Utilities\SnacksResourceSwitcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
