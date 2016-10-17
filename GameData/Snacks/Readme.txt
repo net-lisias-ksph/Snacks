@@ -24,7 +24,8 @@ Copy the files in the zip folder over to GameData/Snacks
 REVISION HISTORY
 
 1.5.1
-- Temporarily disable the partial vessel control penalty. Happy now?
+- Temporarily disable the partial vessel control penalty.
+- Added additional checks for vessels created through rescue contracts; any crew listed as "Unowned" will be ignore.
 
 1.5.0
 - ISnacksPenalty now has a RemovePenalty method. Snacks will call this each time kerbals don't miss any meals.

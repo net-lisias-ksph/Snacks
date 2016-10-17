@@ -350,6 +350,8 @@ namespace Snacks
             {
                 double snackDeficit;
                 int crewCount = 0;
+                ProtoCrewMember[] astronauts = null;
+                bool hasUnownedCrew = false;
 
                 //Post the before snack time event
                 onBeforeSnackTime.Fire();
@@ -359,15 +361,39 @@ namespace Snacks
                 foreach (Vessel vessel in FlightGlobals.Vessels)
                 {
                     snackDeficit = 0;
+                    hasUnownedCrew = false;
 
                     //Consume snacks and get the deficit if any.
                     if (vessel.loaded)
+                    {
                         crewCount = vessel.GetCrewCount();
+                        if (crewCount > 0)
+                            astronauts = vessel.GetVesselCrew().ToArray();
+                    }
                     else
+                    {
                         crewCount = vessel.protoVessel.GetVesselCrew().Count;
+                        if (crewCount > 0)
+                            astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+                    }
 
                     if (crewCount > 0)
                     {
+                        //If any crew is unowned, then ignore the vessel
+                        for (int index = 0; index < astronauts.Length; index++)
+                        {
+                            if (astronauts[index].type == ProtoCrewMember.KerbalType.Unowned)
+                            {
+                                hasUnownedCrew = true;
+                                break;
+                            }
+                        }
+                        if (hasUnownedCrew)
+                        {
+                            Debug.Log("Skipping " + vessel.vesselName + " due to unowned crew");
+                            continue;
+                        }
+
                         snackDeficit = consumer.ConsumeAndGetDeficit(vessel);
 
                         //Apply penalties if we have a deficit
