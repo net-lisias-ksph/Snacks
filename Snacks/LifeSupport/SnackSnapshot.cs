@@ -178,8 +178,8 @@ namespace Snacks
                             snackMax += totalSnacks;
 
                             //Add the craft to the list of known vessels if it isn't there already.
-                            if (SnacksScenario.Instance.knownVessels.Contains(pv.vesselID.ToString()) == false)
-                                SnacksScenario.Instance.knownVessels.Add(pv.vesselID.ToString());
+//                            if (SnacksScenario.Instance.knownVessels.Contains(pv.vesselID.ToString()) == false)
+//                                SnacksScenario.Instance.knownVessels.Add(pv.vesselID.ToString());
                         }
 
                         //Check for recyclers
@@ -243,6 +243,7 @@ namespace Snacks
                     //If we have no snacks, make sure this is a vessel we know about.
                     //A known vessel will have been loaded at least once.
                     //If it isn't a vessel we know about then we're done.
+                    /*
                     if (snackAmount == 0 && snackMax > 0)
                     {
                         if (SnacksScenario.Instance.knownVessels.Contains(pv.vesselID.ToString()) == false)
@@ -250,6 +251,7 @@ namespace Snacks
                             continue;
                         }
                     }
+                     */
 
                     //Debug.Log(pv.vesselName + "1");
                     ShipSupply supply = new ShipSupply();

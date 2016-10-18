@@ -187,8 +187,8 @@ namespace Snacks
         private void onVesselRecovered(ProtoVessel protoVessel, bool someBool)
         {
             //Unregister the vessel
-            if (SnacksScenario.Instance.knownVessels.Contains(protoVessel.vesselID.ToString()))
-                SnacksScenario.Instance.knownVessels.Remove(protoVessel.vesselID.ToString());
+//            if (SnacksScenario.Instance.knownVessels.Contains(protoVessel.vesselID.ToString()))
+//                SnacksScenario.Instance.knownVessels.Remove(protoVessel.vesselID.ToString());
 
             //Unregister the crew
             SnacksScenario.Instance.ClearMissedMeals(protoVessel);
@@ -198,8 +198,8 @@ namespace Snacks
         private void onVesselWillDestroy(Vessel vessel)
         {
             //Unregister the vessel
-            if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()))
-                SnacksScenario.Instance.knownVessels.Remove(vessel.id.ToString());
+//            if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()))
+//                SnacksScenario.Instance.knownVessels.Remove(vessel.id.ToString());
 
             //Unregister the crew
             SnacksScenario.Instance.ClearMissedMeals(vessel);
@@ -394,6 +394,7 @@ namespace Snacks
                             continue;
                         }
 
+                        //Consume snacks and get the deficit (if any)
                         snackDeficit = consumer.ConsumeAndGetDeficit(vessel);
 
                         //Apply penalties if we have a deficit

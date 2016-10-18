@@ -21,7 +21,7 @@ namespace Snacks
     {
         public static SnacksScenario Instance;
         public DictionaryValueList<string, int> sciencePenalties = new DictionaryValueList<string, int>();
-        public List<string> knownVessels = new List<string>();
+//        public List<string> knownVessels = new List<string>();
         public DictionaryValueList<string, AstronautData> crewData = new DictionaryValueList<string, AstronautData>();
 
         public override void OnAwake()
@@ -168,12 +168,14 @@ namespace Snacks
                 sciencePenalties.Add(penaltyNode.GetValue("vesselID"), int.Parse(penaltyNode.GetValue("amount")));
             }
 
+            /*
             ConfigNode[] KnownVessels = node.GetNodes("KNOWN_VESSEL");
             foreach (ConfigNode vesselNode in KnownVessels)
             {
                 if (knownVessels.Contains(vesselNode.GetValue("vesselID")) == false)
                     knownVessels.Add(vesselNode.GetValue("vesselID"));
             }
+             */
 
             ConfigNode[] astronauts = node.GetNodes("ASTRONAUT");
             foreach (ConfigNode astronaut in astronauts)
@@ -215,12 +217,14 @@ namespace Snacks
                 node.AddNode(configNode);
             }
 
+            /*
             foreach (string vesselID in knownVessels)
             {
                 configNode = new ConfigNode("KNOWN_VESSEL");
                 configNode.AddValue("vesselID", vesselID);
                 node.AddNode(configNode);
             }
+             */
 
             List<AstronautData>.Enumerator dataValues = crewData.GetListEnumerator();
             List<string>.Enumerator keyValueEnumerator;
