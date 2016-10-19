@@ -35,6 +35,36 @@ namespace Snacks
     {
         private static System.Random random = new System.Random();
 
+        public static bool hasUnownedCrew(Vessel vessel)
+        {
+            int crewCount = 0;
+            ProtoCrewMember[] astronauts = null;
+
+            if (vessel.loaded)
+            {
+                crewCount = vessel.GetCrewCount();
+                if (crewCount > 0)
+                    astronauts = vessel.GetVesselCrew().ToArray();
+            }
+            else
+            {
+                crewCount = vessel.protoVessel.GetVesselCrew().Count;
+                if (crewCount > 0)
+                    astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+            }
+
+            if (crewCount > 0)
+            {
+                for (int index = 0; index < astronauts.Length; index++)
+                {
+                    if (astronauts[index].type == ProtoCrewMember.KerbalType.Unowned)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         public double GetSnackResource(Part part, double demand)
         {
             PartResource resource = part.Resources[SnacksProperties.SnacksResourceName];

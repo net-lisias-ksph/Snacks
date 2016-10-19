@@ -23,10 +23,6 @@ namespace Snacks
         {
             base.OnStart();
 
-            //Add our vessel ID to the list of known vessels.
-//            if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()) == false)
-//                SnacksScenario.Instance.knownVessels.Add(vessel.id.ToString());
-
             //Apply science penalties
             SciencePenalty.CheckSciencePenalties(vessel);
 

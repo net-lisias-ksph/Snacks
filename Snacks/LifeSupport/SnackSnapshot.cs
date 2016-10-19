@@ -126,6 +126,11 @@ namespace Snacks
             for (int index = 0; index < protoVessels.Length; index++)
             {
                 pv = protoVessels[index];
+
+                //Skip vessels with unowned crew
+                if (SnackConsumer.hasUnownedCrew(pv.vesselRef))
+                    continue;
+
                 //Debug.Log("processing pv:" + pv.vesselName);
                 if (!pv.vesselRef.loaded)
                 {
@@ -176,10 +181,6 @@ namespace Snacks
                             pps.resources.Add(new ProtoPartResourceSnapshot(snackNode));
                             snackAmount += totalSnacks;
                             snackMax += totalSnacks;
-
-                            //Add the craft to the list of known vessels if it isn't there already.
-//                            if (SnacksScenario.Instance.knownVessels.Contains(pv.vesselID.ToString()) == false)
-//                                SnacksScenario.Instance.knownVessels.Add(pv.vesselID.ToString());
                         }
 
                         //Check for recyclers
@@ -240,19 +241,6 @@ namespace Snacks
                         }
                     }
 
-                    //If we have no snacks, make sure this is a vessel we know about.
-                    //A known vessel will have been loaded at least once.
-                    //If it isn't a vessel we know about then we're done.
-                    /*
-                    if (snackAmount == 0 && snackMax > 0)
-                    {
-                        if (SnacksScenario.Instance.knownVessels.Contains(pv.vesselID.ToString()) == false)
-                        {
-                            continue;
-                        }
-                    }
-                     */
-
                     //Debug.Log(pv.vesselName + "1");
                     ShipSupply supply = new ShipSupply();
                     supply.VesselName = pv.vesselName;
@@ -290,6 +278,11 @@ namespace Snacks
             for (int index = 0; index < loadedVessels.Length; index++)
             {
                 v = loadedVessels[index];
+
+                //Skip vessels with unowned crew
+                if (SnackConsumer.hasUnownedCrew(v))
+                    continue;
+
                 crewCount = v.GetVesselCrew().Count;
                 //Debug.Log("processing v:" + v.vesselName);
                 if (crewCount > 0)

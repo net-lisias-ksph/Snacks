@@ -21,7 +21,6 @@ namespace Snacks
     {
         public static SnacksScenario Instance;
         public DictionaryValueList<string, int> sciencePenalties = new DictionaryValueList<string, int>();
-//        public List<string> knownVessels = new List<string>();
         public DictionaryValueList<string, AstronautData> crewData = new DictionaryValueList<string, AstronautData>();
 
         public override void OnAwake()
@@ -87,7 +86,7 @@ namespace Snacks
 
         public void RegisterCrew(ProtoCrewMember astronaut)
         {
-            getAstronautData(astronaut);
+            GetAstronautData(astronaut);
         }
 
         public void UnregisterCrew(ProtoCrewMember astronaut)
@@ -98,7 +97,7 @@ namespace Snacks
 
         public int AddMissedMeals(ProtoCrewMember astronaut, int mealsMissed)
         {
-            AstronautData data = getAstronautData(astronaut);
+            AstronautData data = GetAstronautData(astronaut);
 
             data.mealsMissed += mealsMissed;
 
@@ -107,7 +106,7 @@ namespace Snacks
 
         public int GetMealsMissed(ProtoCrewMember astronaut)
         {
-            AstronautData data = getAstronautData(astronaut);
+            AstronautData data = GetAstronautData(astronaut);
 
             return data.mealsMissed;
         }
@@ -142,14 +141,26 @@ namespace Snacks
 
         public void SetMealsMissed(ProtoCrewMember astronaut, int mealsMissed)
         {
-            AstronautData data = getAstronautData(astronaut);
+            AstronautData data = GetAstronautData(astronaut);
 
             data.mealsMissed = mealsMissed;
         }
 
         public AstronautData GetAstronautData(ProtoCrewMember astronaut)
         {
-            return getAstronautData(astronaut);
+            if (crewData.Contains(astronaut.name) == false)
+            {
+                AstronautData data = new AstronautData();
+                data.name = astronaut.name;
+                data.mealsMissed = 0;
+                data.experienceTrait = astronaut.experienceTrait.Title;
+                data.lastUpdated = Planetarium.GetUniversalTime();
+                data.keyValuePairs = new DictionaryValueList<string, string>();
+
+                crewData.Add(data.name, data);
+            }
+
+            return crewData[astronaut.name];
         }
 
         public void SetAstronautData(AstronautData data)
@@ -167,15 +178,6 @@ namespace Snacks
             {
                 sciencePenalties.Add(penaltyNode.GetValue("vesselID"), int.Parse(penaltyNode.GetValue("amount")));
             }
-
-            /*
-            ConfigNode[] KnownVessels = node.GetNodes("KNOWN_VESSEL");
-            foreach (ConfigNode vesselNode in KnownVessels)
-            {
-                if (knownVessels.Contains(vesselNode.GetValue("vesselID")) == false)
-                    knownVessels.Add(vesselNode.GetValue("vesselID"));
-            }
-             */
 
             ConfigNode[] astronauts = node.GetNodes("ASTRONAUT");
             foreach (ConfigNode astronaut in astronauts)
@@ -217,15 +219,6 @@ namespace Snacks
                 node.AddNode(configNode);
             }
 
-            /*
-            foreach (string vesselID in knownVessels)
-            {
-                configNode = new ConfigNode("KNOWN_VESSEL");
-                configNode.AddValue("vesselID", vesselID);
-                node.AddNode(configNode);
-            }
-             */
-
             List<AstronautData>.Enumerator dataValues = crewData.GetListEnumerator();
             List<string>.Enumerator keyValueEnumerator;
             string keyValueKey;
@@ -252,23 +245,6 @@ namespace Snacks
 
                 node.AddNode(configNode);
             }
-        }
-
-        protected AstronautData getAstronautData(ProtoCrewMember astronaut)
-        {
-            if (crewData.Contains(astronaut.name) == false)
-            {
-                AstronautData data = new AstronautData();
-                data.name = astronaut.name;
-                data.mealsMissed = 0;
-                data.experienceTrait = astronaut.experienceTrait.Title;
-                data.lastUpdated = Planetarium.GetUniversalTime();
-                data.keyValuePairs = new DictionaryValueList<string, string>();
-
-                crewData.Add(data.name, data);
-            }
-
-            return crewData[astronaut.name];
         }
     }
 }

@@ -186,10 +186,6 @@ namespace Snacks
 
         private void onVesselRecovered(ProtoVessel protoVessel, bool someBool)
         {
-            //Unregister the vessel
-//            if (SnacksScenario.Instance.knownVessels.Contains(protoVessel.vesselID.ToString()))
-//                SnacksScenario.Instance.knownVessels.Remove(protoVessel.vesselID.ToString());
-
             //Unregister the crew
             SnacksScenario.Instance.ClearMissedMeals(protoVessel);
             SnacksScenario.Instance.UnregisterCrew(protoVessel);
@@ -197,10 +193,6 @@ namespace Snacks
 
         private void onVesselWillDestroy(Vessel vessel)
         {
-            //Unregister the vessel
-//            if (SnacksScenario.Instance.knownVessels.Contains(vessel.id.ToString()))
-//                SnacksScenario.Instance.knownVessels.Remove(vessel.id.ToString());
-
             //Unregister the crew
             SnacksScenario.Instance.ClearMissedMeals(vessel);
             SnacksScenario.Instance.UnregisterCrew(vessel);
@@ -239,6 +231,7 @@ namespace Snacks
                 double kerbalSnacks = consumer.GetSnackResource(evaKerbal, 1.0);
                 boardedPart.RequestResource(SnacksProperties.SnackResourceID, -kerbalSnacks, ResourceFlowMode.ALL_VESSEL);
                 SnackSnapshot.Instance().RebuildSnapshot();
+                SnacksScenario.Instance.RegisterCrew(boardedPart.vessel);
             }
             catch (Exception ex)
             {
@@ -350,8 +343,6 @@ namespace Snacks
             {
                 double snackDeficit;
                 int crewCount = 0;
-                ProtoCrewMember[] astronauts = null;
-                bool hasUnownedCrew = false;
 
                 //Post the before snack time event
                 onBeforeSnackTime.Fire();
@@ -361,39 +352,26 @@ namespace Snacks
                 foreach (Vessel vessel in FlightGlobals.Vessels)
                 {
                     snackDeficit = 0;
-                    hasUnownedCrew = false;
+
+                    //Skip the vessel if it has unowned crew
+                    if (SnackConsumer.hasUnownedCrew(vessel))
+                    {
+                        Debug.Log("Skipping " + vessel.vesselName + " due to unowned crew");
+                        continue;
+                    }
 
                     //Consume snacks and get the deficit if any.
                     if (vessel.loaded)
                     {
                         crewCount = vessel.GetCrewCount();
-                        if (crewCount > 0)
-                            astronauts = vessel.GetVesselCrew().ToArray();
                     }
                     else
                     {
                         crewCount = vessel.protoVessel.GetVesselCrew().Count;
-                        if (crewCount > 0)
-                            astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
                     }
 
                     if (crewCount > 0)
                     {
-                        //If any crew is unowned, then ignore the vessel
-                        for (int index = 0; index < astronauts.Length; index++)
-                        {
-                            if (astronauts[index].type == ProtoCrewMember.KerbalType.Unowned)
-                            {
-                                hasUnownedCrew = true;
-                                break;
-                            }
-                        }
-                        if (hasUnownedCrew)
-                        {
-                            Debug.Log("Skipping " + vessel.vesselName + " due to unowned crew");
-                            continue;
-                        }
-
                         //Consume snacks and get the deficit (if any)
                         snackDeficit = consumer.ConsumeAndGetDeficit(vessel);
 
