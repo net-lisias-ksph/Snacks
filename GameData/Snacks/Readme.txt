@@ -23,7 +23,7 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
-1.5.2
+1.5.3
 - When kerbals go EVA, they take one day's worth of snacks with them.
 - More code cleanup.
 - Bug Fixes
