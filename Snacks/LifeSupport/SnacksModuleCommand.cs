@@ -23,7 +23,8 @@ namespace Snacks
         [KSPEvent(guiActive = false)]
         public void TogglePartialControl()
         {
-            partialControlEnabled = !partialControlEnabled;
+//            partialControlEnabled = !partialControlEnabled;
+            partialControlEnabled = true;
 
             CheckPartialControl();
         }
@@ -35,10 +36,21 @@ namespace Snacks
             originalLocalVesselControl = localVesselControlState;
             originalModuleState = moduleState;
 
+            foreach (BaseEvent baseEvent in Events)
+                baseEvent.active = false;
+            foreach (BaseField field in Fields)
+            {
+                field.guiActive = false;
+                field.guiActiveEditor = false;
+            }
+
             CheckPartialControl();
 
             if (debugMode)
+            {
+                Events["TogglePartialControl"].active = true;
                 Events["TogglePartialControl"].guiActive = true;
+            }
         }
 
         public override VesselControlState UpdateControlSourceState()

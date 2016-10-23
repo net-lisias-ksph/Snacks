@@ -91,14 +91,12 @@ namespace Snacks
         {
             get
             {
-                return true;
+                return false;
             }
         }
 
         public override bool Enabled(System.Reflection.MemberInfo member, GameParameters parameters)
         {
-            Game.Modes gameMode = HighLogic.CurrentGame.Mode;
-
             if (member.Name == "repLoss" && loseRepWhenHungry)
                 return true;
             else if (member.Name == "repLoss")

@@ -23,9 +23,14 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.5.2
+- When kerbals go EVA, they take one day's worth of snacks with them.
+- More code cleanup.
+- Bug Fixes
+
 1.5.1
 - Temporarily disable the partial vessel control penalty.
-- Added additional checks for vessels created through rescue contracts; any crew listed as "Unowned" will be ignore.
+- Added additional checks for vessels created through rescue contracts; any crew listed as "Unowned" will be ignored.
 
 1.5.0
 - ISnacksPenalty now has a RemovePenalty method. Snacks will call this each time kerbals don't miss any meals.

@@ -228,7 +228,7 @@ namespace Snacks
             {
                 Part evaKerbal = data.from;
                 Part boardedPart = data.to;
-                double kerbalSnacks = consumer.GetSnackResource(evaKerbal, 1.0);
+                double kerbalSnacks = consumer.GetSnackResource(evaKerbal, SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay);
                 boardedPart.RequestResource(SnacksProperties.SnackResourceID, -kerbalSnacks, ResourceFlowMode.ALL_VESSEL);
                 SnackSnapshot.Instance().RebuildSnapshot();
                 SnacksScenario.Instance.RegisterCrew(boardedPart.vessel);
@@ -245,7 +245,7 @@ namespace Snacks
             {
                 Part evaKerbal = data.to;
                 Part partExited = data.from;
-                double snacksAmount = consumer.GetSnackResource(partExited, 1.0);
+                double snacksAmount = consumer.GetSnackResource(partExited, SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay);
 
                 if (evaKerbal.Resources.Contains(SnacksProperties.SnackResourceID) == false)
                 {
