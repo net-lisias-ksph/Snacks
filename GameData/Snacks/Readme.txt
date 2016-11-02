@@ -23,6 +23,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.5.5
+- Fixed some NREs.
+- Fixed a situation where the ModuleManager patch wasn't adding snacks to crewed parts; Snacks can now dynamically add them when adding parts to vessels in the VAB/SPH.
+
 1.5.3
 - When kerbals go EVA, they take one day's worth of snacks with them.
 - More code cleanup.

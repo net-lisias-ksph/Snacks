@@ -61,6 +61,21 @@ namespace Snacks
                 //Update max crew
                 maxCrew += part.CrewCapacity;
 
+                //Make sure the crewed part has snacks
+                if (!part.Resources.Contains(SnacksProperties.SnacksResourceName) && part.CrewCapacity >= 1)
+                {
+                    ConfigNode node = new ConfigNode("RESOURCE");
+                    double amount = 0;
+                    node.AddValue("name", SnacksProperties.SnacksResourceName);
+                    if (part.FindModuleImplementing<ModuleCommand>() != null)
+                        amount = SnacksProperties.SnacksPerCommand * part.CrewCapacity;
+                    else
+                        amount = SnacksProperties.SnacksPerCrewModule * part.CrewCapacity;
+                    node.AddValue("amount", amount.ToString());
+                    node.AddValue("maxAmount", amount.ToString());
+                    part.AddResource(node);
+                }
+                
                 //Update snack resource values
                 if (part.Resources.Contains(SnacksProperties.SnacksResourceName))
                 {
