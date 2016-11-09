@@ -12,6 +12,7 @@ namespace Snacks
     {
         private const double DaysPerYear = 426.08f;
         private const double DaysPerMonth = 6.43f;
+        private const double HoursPerDay = 6f;
 
         private Vector2 scrollPos = new Vector2();
 
@@ -86,6 +87,10 @@ namespace Snacks
             if (SnacksProperties.EnableRandomSnacking || SnacksProperties.RecyclersEnabled)
                 GUILayout.Label("<color=yellow>The following are estimates</color>");
 
+            GUILayout.Label("<color=white>Snacks: " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
+            //GUILayout.Label("<color=white>Days (Cur Crew): " + supply.DayEstimate + "</color>");
+            //GUILayout.Label("<color=white>Days (Max Crew): " + supply.MaxDayEstimate + "</color>");
+
             if (supply.DayEstimate > 0)
             {
                 GUILayout.Label("<color=white>Current Crew: " + supply.CrewCount + "</color>");
@@ -140,24 +145,28 @@ namespace Snacks
                     {
                         GUILayout.Label("<color=white>" + supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
                         GUILayout.Label("<color=white>Crew: " + supply.CrewCount + "</color>");
+                        //GUILayout.Label("<color=white>Days: " + supply.DayEstimate + "</color>");
                         GUILayout.Label("<color=white>Duration: Indefinite</color>");
                     }
                     else if (supply.Percent > 50)
                     {
                         GUILayout.Label(supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount);
                         GUILayout.Label("Crew: " + supply.CrewCount);
+                        GUILayout.Label("Days: " + supply.DayEstimate);
                         GUILayout.Label("Duration: " + timeFormat(supply.DayEstimate));
                     }
                     else if (supply.Percent > 25)
                     {
                         GUILayout.Label("<color=yellow>" + supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
                         GUILayout.Label("<color=yellow>Crew: " + supply.CrewCount + "</color>");
+                        //GUILayout.Label("<color=yellow>Days: " + supply.DayEstimate + "</color>");
                         GUILayout.Label("<color=yellow>Duration: " + timeFormat(supply.DayEstimate) + "</color>");
                     }
                     else
                     {
                         GUILayout.Label("<color=red>" + supply.VesselName + ": " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
                         GUILayout.Label("<color=red>Crew: " + supply.CrewCount + "</color>");
+                        //GUILayout.Label("<color=red>Days: " + supply.DayEstimate + "</color>");
                         GUILayout.Label("<color=red>Duration: " + timeFormat(supply.DayEstimate) + "</color>");
                     }
                 }

@@ -195,19 +195,32 @@ namespace Snacks
 
         private void onEditorPartPlaced(Part part)
         {
-            //Make sure the crewed part has snacks
-            if (!part.Resources.Contains(SnacksProperties.SnacksResourceName) && part.CrewCapacity >= 1)
+            if (part == null)
             {
-                ConfigNode node = new ConfigNode("RESOURCE");
-                double amount = 0;
-                node.AddValue("name", SnacksProperties.SnacksResourceName);
-                if (part.FindModuleImplementing<ModuleCommand>() != null)
-                    amount = SnacksProperties.SnacksPerCommand * part.CrewCapacity;
-                else
-                    amount = SnacksProperties.SnacksPerCrewModule * part.CrewCapacity;
-                node.AddValue("amount", amount.ToString());
-                node.AddValue("maxAmount", amount.ToString());
-                part.AddResource(node);
+                Debug.Log("[Snacks] Nothing to do in onEditorPartPlaced, returning.");
+                return;
+            }
+
+            try
+            {
+                //Make sure the crewed part has snacks
+                if (!part.Resources.Contains(SnacksProperties.SnacksResourceName) && part.CrewCapacity >= 1)
+                {
+                    ConfigNode node = new ConfigNode("RESOURCE");
+                    double amount = 0;
+                    node.AddValue("name", SnacksProperties.SnacksResourceName);
+                    if (part.FindModuleImplementing<ModuleCommand>() != null)
+                        amount = SnacksProperties.SnacksPerCommand * part.CrewCapacity;
+                    else
+                        amount = SnacksProperties.SnacksPerCrewModule * part.CrewCapacity;
+                    node.AddValue("amount", amount.ToString());
+                    node.AddValue("maxAmount", amount.ToString());
+                    part.AddResource(node);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("[Snacks] Encountered an error during onEditorPartPlaced: " + ex);
             }
         }
 
@@ -383,7 +396,8 @@ namespace Snacks
         public void GameSettingsApplied()
         {
 //            snackFrequency = 5;
-            snackFrequency = 6 * 60 * 60 * 2 / SnacksProperties.MealsPerDay;
+            //Seconds per day = 6 * 60 * 60 = 21600
+            snackFrequency = (6 * 60 * 60) / SnacksProperties.MealsPerDay;
 
             //Make sure that the penalties know about the update
             foreach (ISnacksPenalty handler in penaltyHandlers)

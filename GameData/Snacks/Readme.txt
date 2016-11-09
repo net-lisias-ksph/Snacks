@@ -23,6 +23,12 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.5.6
+- Fixed NRE's that happen in the editor (VAB/SPH)
+- Snacking frequency is correctly calculated now.
+- Updated to KSP 1.2.1
+- Added recyclers to the Mk3 shuttle cockpit and the Mk2 crew cabin.
+
 1.5.5
 - Fixed some NREs.
 - Fixed a situation where the ModuleManager patch wasn't adding snacks to crewed parts; Snacks can now dynamically add them when adding parts to vessels in the VAB/SPH.
