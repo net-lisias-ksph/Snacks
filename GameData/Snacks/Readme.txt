@@ -23,6 +23,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.5.7
+- Fixed snacks calculations and minor GUI update. Thanks for the patch, bounty123! :)
+
 1.5.6
 - Fixed NRE's that happen in the editor (VAB/SPH)
 - Snacking frequency is correctly calculated now.
