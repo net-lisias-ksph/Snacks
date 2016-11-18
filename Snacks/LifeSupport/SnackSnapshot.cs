@@ -247,13 +247,16 @@ namespace Snacks
                                     }
                                 }
                             }
-
-                            //Account for recyclers
-                            if (crewCount >= recycleCapacity)
-                                snackConsumption -= snackProduction;
-                            else
-                                snackConsumption -= snackProduction * (crewCount / recycleCapacity);
                         }
+                    }
+
+                   if (SnacksProperties.RecyclersEnabled)
+                    {
+                        //Account for recyclers
+                        if (crewCount >= recycleCapacity)
+                            snackConsumption -= snackProduction;
+                        else
+                            snackConsumption -= snackProduction * (crewCount / recycleCapacity);
                     }
 
                     //Debug.Log(pv.vesselName + "1");
