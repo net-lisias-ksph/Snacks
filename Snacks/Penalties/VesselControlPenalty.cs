@@ -28,6 +28,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using KSP.IO;
+using CommNet;
 
 namespace Snacks
 {
@@ -47,7 +48,7 @@ namespace Snacks
 
         public bool IsEnabled()
         {
-            return SnacksProperties.LoseScienceWhenHungry;
+            return SnacksProperties.PartialControlWhenHungry;
         }
 
         public bool AlwaysApply()
@@ -76,16 +77,15 @@ namespace Snacks
         {
             if (vessel.loaded)
             {
-                List<SnacksModuleCommand> snackVesselControllers = vessel.FindPartModulesImplementing<SnacksModuleCommand>();
+                List<SnacksControlSource> snacksControlSources = vessel.FindPartModulesImplementing<SnacksControlSource>();
 
-                if (snackVesselControllers.Count > 0)
+                if (snacksControlSources.Count > 0)
                 {
-                    SnacksModuleCommand[] controllers = snackVesselControllers.ToArray();
+                    SnacksControlSource[] controlSources = snacksControlSources.ToArray();
 
-                    for (int index = 0; index < controllers.Length; index++)
+                    for (int index = 0; index < controlSources.Length; index++)
                     {
-                        controllers[index].partialControlEnabled = enablePartialControl;
-                        controllers[index].UpdateControlSourceState();
+                        controlSources[index].partialControlEnabled = enablePartialControl;
                     }
                 }
             }
@@ -106,7 +106,7 @@ namespace Snacks
                     {
                         moduleSnapshot = moduleSnapshots[index];
 
-                        if (moduleSnapshot.moduleName == "SnacksModuleCommand")
+                        if (moduleSnapshot.moduleName == "SnacksControlSource")
                             moduleSnapshot.moduleValues.SetValue("partialControlEnabled", enablePartialControl.ToString());
                     }
                 }

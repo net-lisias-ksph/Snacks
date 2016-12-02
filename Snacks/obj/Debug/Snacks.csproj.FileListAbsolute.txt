@@ -28,8 +28,6 @@ C:\Projects\KSP\Snacks\Snacks\bin\Debug\UnityEngine.xml
 C:\Projects\KSP\Snacks\Snacks\obj\Debug\Snacks.csprojResolveAssemblyReference.cache
 C:\Projects\KSP\Snacks\Snacks\obj\Debug\Snacks.dll
 C:\Projects\KSP\Snacks\Snacks\obj\Debug\Snacks.pdb
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Snacks.dll
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Snacks.pdb
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Assembly-CSharp-firstpass.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Assembly-CSharp.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\KSPAssets.dll
@@ -41,5 +39,7 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\TDx.TDxInput.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Mono.Security.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.xml
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csprojResolveAssemblyReference.cache
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.dll
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.pdb
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\SnacksUtils.dll
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\SnacksUtils.pdb
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.dll
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.pdb

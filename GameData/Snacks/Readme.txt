@@ -23,6 +23,11 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.6
+- Plugin renamed to SnacksUtils to alleviate issues with ModuleManager.
+- When kerbals faint due to lack of snacks, you now choose from 1 minute, 5 minutes, 10 minutes, 30 minutes, an hour, 2 hours, or a day.
+- Snacks now supports 24-hour days in addition to 6-hour days. Snack frequency is calculated accordingly.
+
 1.5.7
 - Fixed snacks calculations and minor GUI update. Thanks for the patch, bounty123! :)
 

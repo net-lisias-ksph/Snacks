@@ -14,6 +14,17 @@ namespace Snacks
         High
     }
 
+    public enum FaintTime
+    {
+        OneMinute,
+        FiveMinutes,
+        TenMinutes,
+        ThirtyMinutes,
+        OneHour,
+        TwoHours,
+        OneDay
+    }
+
     public class SnackPenalties : GameParameters.CustomParameterNode
     {
         [GameParameters.CustomParameterUI("Enable random penalties", toolTip = "If enabled, then one of the enabled penalties will be randomly chosen", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER)]
@@ -46,8 +57,8 @@ namespace Snacks
         [GameParameters.CustomIntParameterUI("Meals before fainting", maxValue = 24, minValue = 1, stepSize = 1, toolTip = "How many meals can a kerbal miss before fainting", autoPersistance = true)]
         public int mealsBeforeFainting = 3;
 
-        [GameParameters.CustomIntParameterUI("Nap time when fainted (minutes)", maxValue = 30, minValue = 1, stepSize = 1, toolTip = "How long will a kerbal nap for when they faint", autoPersistance = true)]
-        public int napTime = 1;
+        [GameParameters.CustomParameterUI("Nap time when fainted", toolTip = "How long will a kerbal nap for when they faint", autoPersistance = true)]
+        public FaintTime napTime = FaintTime.OneMinute;
 
         #region CustomParameterNode
         public override string Section
@@ -169,7 +180,34 @@ namespace Snacks
             get
             {
                 SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
-                return penalties.napTime;
+                
+                switch (penalties.napTime)
+                {
+                    case FaintTime.OneMinute:
+                    default:
+                        return 1;
+
+                    case FaintTime.FiveMinutes:
+                        return 5;
+
+                    case FaintTime.TenMinutes:
+                        return 10;
+
+                    case FaintTime.ThirtyMinutes:
+                        return 30;
+
+                    case FaintTime.OneHour:
+                        return 60;
+
+                    case FaintTime.TwoHours:
+                        return 120;
+
+                    case FaintTime.OneDay:
+                        if (GameSettings.KERBIN_TIME)
+                            return 360;
+                        else
+                            return 1440;
+                }
             }
         }
 

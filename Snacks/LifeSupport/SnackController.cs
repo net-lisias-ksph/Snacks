@@ -204,7 +204,7 @@ namespace Snacks
             try
             {
                 //Make sure the crewed part has snacks
-                if (!part.Resources.Contains(SnacksProperties.SnacksResourceName) && part.CrewCapacity >= 1)
+                if (part.Resources.Contains(SnacksProperties.SnacksResourceName) == false && part.CrewCapacity >= 1)
                 {
                     ConfigNode node = new ConfigNode("RESOURCE");
                     double amount = 0;
@@ -397,7 +397,10 @@ namespace Snacks
         {
 //            snackFrequency = 5;
             //Seconds per day = 6 * 60 * 60 = 21600
-            snackFrequency = (6 * 60 * 60) / SnacksProperties.MealsPerDay;
+            if (GameSettings.KERBIN_TIME)
+                snackFrequency = (6 * 3600) / SnacksProperties.MealsPerDay;
+            else
+                snackFrequency = (24 * 3600) / SnacksProperties.MealsPerDay;
 
             //Make sure that the penalties know about the update
             foreach (ISnacksPenalty handler in penaltyHandlers)

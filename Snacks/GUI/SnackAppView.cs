@@ -10,16 +10,45 @@ namespace Snacks
 {
     public class SnackAppView : Window<SnackAppView>
     {
-        private const double DaysPerYear = 426.08f;
-        private const double DaysPerMonth = 6.43f;
-        private const double HoursPerDay = 6f;
-
         private Vector2 scrollPos = new Vector2();
 
         public SnackAppView() :
         base("Snack Supply", 300, 300)
         {
             Resizable = false;
+        }
+
+        protected double DaysPerYear
+        {
+            get
+            {
+                if (GameSettings.KERBIN_TIME)
+                    return 426.08f;
+                else
+                    return 365f;
+            }
+        }
+
+        protected double DaysPerMonth
+        {
+            get
+            {
+                if (GameSettings.KERBIN_TIME)
+                    return 6.43f;
+                else
+                    return 30.41666666666667f;
+            }
+        }
+
+        double HoursPerDay
+        {
+            get
+            {
+                if (GameSettings.KERBIN_TIME)
+                    return 6f;
+                else
+                    return 24f;
+            }
         }
 
         protected string timeFormat(int days)
@@ -62,9 +91,10 @@ namespace Snacks
                 months = 0;
             }
 
-            if (timeDays > 0.001)
+            if (timeDays >= 1.0f)
             {
-                timeBuilder.AppendFormat("{0:f2} days", timeDays);
+                int intDays = Convert.ToInt32(timeDays);
+                timeBuilder.Append(intDays.ToString() + " days");
             }
 
             return timeBuilder.ToString();
@@ -83,6 +113,9 @@ namespace Snacks
             ShipSupply supply = SnackSnapshot.Instance().TakeEditorSnapshot();
 
             scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height(300), GUILayout.Width(300));
+
+            if (!GameSettings.KERBIN_TIME)
+                GUILayout.Label("<color=lightblue>Time format: 24hr/day, 365 day/year</color>");
 
             if (SnacksProperties.EnableRandomSnacking || SnacksProperties.RecyclersEnabled)
                 GUILayout.Label("<color=yellow>The following are estimates</color>");
@@ -132,6 +165,9 @@ namespace Snacks
                     GUILayout.Label("Can't seem to get supplies");
                     GUILayout.EndScrollView();
                 }
+
+                if (!GameSettings.KERBIN_TIME)
+                    GUILayout.Label("<color=lightblue>Time format: 24hr/day, 365 day/year</color>");
 
                 if (SnacksProperties.EnableRandomSnacking)
                 {

@@ -11,34 +11,38 @@ namespace Snacks
 {
     public class SnacksControlSource : PartModule, ICommNetControlSource
     {
-        bool partial;
-        ModuleCommand commandModule;
+        [KSPField(isPersistant = true)]
+        public bool partialControlEnabled;
 
-        [KSPEvent(guiActive = true)]
-        public void SetPartial()
+        [KSPField]
+        public bool debugMode;
+
+        [KSPField]
+        public VesselControlState controlState = VesselControlState.Full;
+
+        [KSPEvent(guiName = "Toggle partial control")]
+        public void TogglePartial()
         {
-            partial = true;
+            partialControlEnabled = !partialControlEnabled;
         }
 
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
+            if (this.part.vessel == null)
+                return;
 
-            commandModule = this.part.FindModuleImplementing<ModuleCommand>();
+            if (this.part.vessel.connection.CommandSources.Contains(this) == false)
+                this.part.vessel.connection.RegisterCommandSource(this);
+            UpdateNetwork();
+
+            Events["TogglePartial"].guiActive = debugMode;
+            Fields["controlState"].guiActive = debugMode;
         }
 
         public VesselControlState GetControlSourceState()
         {
-            if (partial)
-            {
-                this.part.vessel.maxControlLevel = Vessel.ControlLevel.PARTIAL_MANNED;
-                return VesselControlState.KerbalPartial;
-            }
-            else
-            {
-                return commandModule.VesselControlState;
-            }
-
+            return controlState;
         }
 
         public bool IsCommCapable()
@@ -48,6 +52,24 @@ namespace Snacks
 
         public void UpdateNetwork()
         {
+            if (partialControlEnabled)
+            {
+                controlState = VesselControlState.Partial;
+                this.part.vessel.maxControlLevel = Vessel.ControlLevel.PARTIAL_MANNED;
+            }
+            else
+            {
+                controlState = VesselControlState.Full;
+                this.part.vessel.maxControlLevel = Vessel.ControlLevel.FULL;
+            }
+        }
+
+        string ICommNetControlSource.name
+        {
+            get 
+            {
+                return "SnacksControlSource";
+            }
         }
     }
 }
