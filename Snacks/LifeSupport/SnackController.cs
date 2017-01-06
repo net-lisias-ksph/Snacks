@@ -354,6 +354,19 @@ namespace Snacks
         #endregion
 
         #region API
+        public static bool IsExperienceEnabled()
+        {
+            if (HighLogic.CurrentGame == null)
+                return false;
+
+            GameParameters.AdvancedParams advancedParams = HighLogic.CurrentGame.Parameters.CustomParams<GameParameters.AdvancedParams>();
+            if (advancedParams != null)
+            {
+                return advancedParams.KerbalExperienceEnabled(HighLogic.CurrentGame.Mode);
+            }
+            return false;
+        }
+        
         public void RegisterPenaltyHandler(ISnacksPenalty handler)
         {
             if (penaltyHandlers.Contains(handler) == false)

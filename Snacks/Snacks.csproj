@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="BlackoutTest.cs" />
     <Compile Include="CommNetController.cs" />
+    <Compile Include="LifeSupport\EVARefiller.cs" />
     <Compile Include="Penalties\MissingMealsMonitor.cs" />
     <Compile Include="Penalties\FaintPenalty.cs" />
     <Compile Include="Penalties\FundingPenalty.cs" />

@@ -23,6 +23,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.6.5
+- Added a radial snack tin. It holds 150 snacks, 150 Soil, or 75 Snacks and 75 Soil.
+
 1.6
 - Plugin renamed to SnacksUtils to alleviate issues with ModuleManager.
 - When kerbals faint due to lack of snacks, you now choose from 1 minute, 5 minutes, 10 minutes, 30 minutes, an hour, 2 hours, or a day.
