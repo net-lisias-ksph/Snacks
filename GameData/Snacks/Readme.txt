@@ -23,6 +23,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.7.0
+- You can now exempt certain kerbals from consuming Snacks and suffering the effects of a lack of Snacks. This is particularly helpful for holograms...
+
 1.6.5
 - Added a radial snack tin. It holds 150 snacks, 150 Soil, or 75 Snacks and 75 Soil.
 

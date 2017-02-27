@@ -11,11 +11,29 @@ namespace Snacks
     public class SnackAppView : Window<SnackAppView>
     {
         private Vector2 scrollPos = new Vector2();
+        public string exemptKerbals = "Ted";
 
         public SnackAppView() :
         base("Snack Supply", 300, 300)
         {
             Resizable = false;
+        }
+
+        public override void SetVisible(bool newValue)
+        {
+            base.SetVisible(newValue);
+
+            if (newValue)
+            {
+                exemptKerbals = SnacksScenario.Instance.exemptKerbals;
+                SnacksScenario.Instance.SetExemptCrew(exemptKerbals);
+            }
+
+            else
+            {
+                SnacksScenario.Instance.exemptKerbals = exemptKerbals;
+
+            }
         }
 
         protected double DaysPerYear
@@ -102,7 +120,9 @@ namespace Snacks
 
         protected override void DrawWindowContents(int windowId)
         {
-            if (HighLogic.LoadedSceneIsEditor == false)
+            if (HighLogic.LoadedScene == GameScenes.SPACECENTER)
+                drawSpaceCenterWindow();
+            else if (HighLogic.LoadedSceneIsEditor == false)
                 drawFlightWindow();
             else
                 drawEditorWindow();
@@ -148,6 +168,17 @@ namespace Snacks
 
 
             GUILayout.EndScrollView();
+        }
+
+        public void drawSpaceCenterWindow()
+        {
+            GUILayout.Label("<color=white><b>Exempt Kerbals:</b> separate names by semicolon, first name only</color>");
+            GUILayout.Label("<color=yellow>These kerbals won't consume Snacks and won't suffer penalties from a lack of Snacks.</color>");
+            if (string.IsNullOrEmpty(exemptKerbals))
+                exemptKerbals = string.Empty;
+            exemptKerbals = GUILayout.TextField(exemptKerbals);
+
+            drawFlightWindow();
         }
 
         public void drawFlightWindow()

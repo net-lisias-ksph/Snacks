@@ -163,6 +163,7 @@ namespace Snacks
         {
             double demand = 0;
             double fed = 0;
+            double crewCount = SnacksScenario.Instance.GetNonExemptCrewCount(vessel);
 
             //Calculate for loaded vessel
             if (vessel.loaded)
@@ -236,6 +237,10 @@ namespace Snacks
             double extra = 0;
             foreach (ProtoCrewMember pc in crew)
             {
+                AstronautData data = SnacksScenario.Instance.GetAstronautData(pc);
+                if (data.isExempt)
+                    continue;
+
                 if (getRandomChance(pc.courage / 2.0))
                     extra += SnacksProperties.SnacksPerMeal;
                 if (getRandomChance(pc.stupidity / 2.0))

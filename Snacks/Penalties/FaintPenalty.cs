@@ -55,6 +55,10 @@ namespace Snacks
             {
                 data = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
 
+                //Handle exemptions
+                if (data.isExempt)
+                    continue;
+
                 if (data.mealsMissed >= mealsBeforeFainting)
                 {
                     astronauts[index].SetInactive(faintDuration);
