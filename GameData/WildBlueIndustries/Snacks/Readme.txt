@@ -15,6 +15,7 @@ Snacks Continued retains the simplicity of the original mod while adding new opt
 LICENSE
 Source code: The MIT License (MIT)
 Snack Tin artwork by SQUAD/Porkjet: CC-BY-NC 3.0
+Greenhouse artwork by ZZZ: public domain license
 Portions of this codebase are CC-BY-NC 3.0 and derived from Taranis Elsu's Window class.
 
 INSTALLATION
@@ -23,8 +24,15 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.8.0
+- Time estimates are now measured in years and days; months, though accurate, was getting too confusing.
+- Snack processors and soil recyclers now run in the background when vessels aren't loaded.
+
 1.7.0
-- You can now exempt certain kerbals from consuming Snacks and suffering the effects of a lack of Snacks. This is particularly helpful for holograms...
+
+- Adjusted snack production rates for the snack grinder (found on the Hitchhiker).
+- Added hooks for Snacks Plus. You can download Snacks Plus from: 
+- Revised the Snacks Trip Planner spreadsheet.
 
 1.6.5
 - Added a radial snack tin. It holds 150 snacks, 150 Soil, or 75 Snacks and 75 Soil.

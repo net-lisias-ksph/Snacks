@@ -220,7 +220,8 @@ namespace Snacks
         {
             base.OnLoad(node);
 
-            exemptKerbals = node.GetValue("exemptKerbals");
+            if (node.HasValue("exemptkerbals"))
+                exemptKerbals = node.GetValue("exemptKerbals");
 
             ConfigNode[] penalties = node.GetNodes("SCIENCE_PENALTY");
             foreach (ConfigNode penaltyNode in penalties)
@@ -261,7 +262,8 @@ namespace Snacks
             base.OnSave(node);
             ConfigNode configNode;
 
-            node.AddValue("exemptKerbals", exemptKerbals);
+            if (string.IsNullOrEmpty(exemptKerbals) == false)
+                node.AddValue("exemptKerbals", exemptKerbals);
 
             foreach (string key in sciencePenalties.Keys)
             {

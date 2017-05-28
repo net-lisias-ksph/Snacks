@@ -71,13 +71,9 @@ namespace Snacks
 
         protected string timeFormat(int days)
         {
-            if (!SnacksProperties.ShowTimeInYMD)
-                return days + " days";
-
             StringBuilder timeBuilder = new StringBuilder();
             double timeDays = days;
             double years;
-            double months;
 
             years = Math.Floor(timeDays / DaysPerYear);
             if (years >= 1.0)
@@ -92,21 +88,6 @@ namespace Snacks
             else
             {
                 years = 0;
-            }
-
-            months = Math.Floor(timeDays / DaysPerMonth);
-            if (months >= 1.0)
-            {
-                timeDays -= months * DaysPerMonth;
-                if (months > 1.0)
-                    timeBuilder.AppendFormat("{0:f0} months", months);
-                else
-                    timeBuilder.Append("1 month");
-                timeBuilder.Append(", ");
-            }
-            else
-            {
-                months = 0;
             }
 
             if (timeDays >= 1.0f)

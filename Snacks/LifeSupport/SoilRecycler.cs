@@ -9,11 +9,8 @@ namespace Snacks
 {
     public class SoilRecycler : SnackProcessor
     {
-        private const float kBaseSoilAmount = 400f;
-
         [KSPField()]
         public int RecyclerCapacity;
-
 
         public override void OnStart(StartState state)
         {
@@ -22,11 +19,25 @@ namespace Snacks
             Fields["dailyOutput"].guiName = "Max Recycling";
         }
 
-        protected override void setupProcessor()
+        public override double GetDailySnacksOutput()
         {
-            efficiency = SnacksProperties.RecyclerEfficiency;
-            dailyOutput = string.Format("{0:f2} Soil/day", GetDailySnacksOutput());
+            productionEfficiency = getProductionEfficiency();
+
+            return productionEfficiency * (originalSnacksRatio * 21600);
         }
 
+        protected double getProductionEfficiency()
+        {
+            return SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay * RecyclerCapacity * SnacksProperties.RecyclerEfficiency;
+        }
+
+        protected override void updateSettings()
+        {
+            productionEfficiency = getProductionEfficiency();
+
+            SetEfficiencyBonus((float)productionEfficiency);
+
+            dailyOutput = string.Format("{0:f2} Soil/day", productionEfficiency * originalSnacksRatio * 21600);
+        }
     }
 }

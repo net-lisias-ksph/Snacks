@@ -58,9 +58,9 @@ namespace Snacks
         public static EventData<SnackConsumption> onConsumeSnacks = new EventData<SnackConsumption>("OnConsumeSnacks");
 
         public  double nextSnackTime = -1;
+        public int snackFrequency;
 
         protected System.Random random = new System.Random();
-        protected int snackFrequency;
         protected List<ISnacksPenalty> penaltyHandlers = new List<ISnacksPenalty>();
 
         private SnackConsumer consumer = new SnackConsumer();
@@ -465,6 +465,8 @@ namespace Snacks
                         //Make sure to remove all penalties, the kerbals are all fed.
                         else
                             removePenalties(vessel);
+
+                        //Set vessel's last update time.
                     }
                 }
 

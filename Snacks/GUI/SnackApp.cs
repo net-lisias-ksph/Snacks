@@ -17,7 +17,7 @@ namespace Snacks
 
         public void Awake()
         {
-            appIcon = GameDatabase.Instance.GetTexture("Snacks/Textures/snacks", false);
+            appIcon = GameDatabase.Instance.GetTexture("WildBlueIndustries/Snacks/Textures/snacks", false);
             GameEvents.onGUIApplicationLauncherReady.Add(SetupGUI);
         }
 

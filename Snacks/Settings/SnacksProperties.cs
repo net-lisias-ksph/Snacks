@@ -61,6 +61,15 @@ namespace Snacks
         public FaintTime napTime = FaintTime.OneMinute;
 
         #region CustomParameterNode
+
+        public override string DisplaySection
+        {
+            get
+            {
+                return Section;
+            }
+        }
+
         public override string Section
         {
             get
@@ -135,8 +144,8 @@ namespace Snacks
         private static int defaultSnacksPerCmdPod  = 50;
         private static int defaultSnacksPerCrewPod = 200;
 
-        [GameParameters.CustomFloatParameterUI("Snacks per meal", minValue = 1.0f, maxValue = 12.0f, toolTip = "How much do kerbals snack on", autoPersistance = true)]
-        public double snacksPerMeal = 1.0f;
+        [GameParameters.CustomIntParameterUI("Snacks per meal", minValue = 1, maxValue = 12, stepSize = 1, toolTip = "How much do kerbals snack on", autoPersistance = true)]
+        public int snacksPerMeal = 1;
 
         [GameParameters.CustomIntParameterUI("Meals per day", minValue = 1, maxValue = 12, stepSize = 1, toolTip = "How often do kerbals eat", autoPersistance = true)]
         public int mealsPerDay = 3;
@@ -146,14 +155,11 @@ namespace Snacks
 
         [GameParameters.CustomParameterUI("Enable recycling", toolTip = "Kerbals produce Soil when snacking. Recyclers convert the Soil back to Snacks at the cost of ElectricCharge", autoPersistance = true)]
         public bool enableRecyclers = true;
-        
-        [GameParameters.CustomFloatParameterUI("Recycler Efficiency", minValue = 0.1f, maxValue = 0.8f, asPercentage = true, toolTip = "How well does the recycler recyle", autoPersistance = true)]
-        public float recyclerEfficiency = 0.4f;
+
+        [GameParameters.CustomIntParameterUI("Recycler Efficiency %", minValue = 10, maxValue = 100, stepSize = 10, toolTip = "How well does the recycler recyle", autoPersistance = true)]
+        public int recyclerEfficiency2 = 40;
 
         public float productionEfficiency = 1.0f;
-
-        [GameParameters.CustomParameterUI("Show time in years, months, and days", toolTip = "If disabled, time estimates are in days only", autoPersistance = true)]
-        public bool yearsMonthsDaysEnabled = true;
 
         #region Properties
 
@@ -250,15 +256,6 @@ namespace Snacks
             }
         }
 
-        public static bool ShowTimeInYMD
-        {
-            get
-            {
-                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                return snackProperties.yearsMonthsDaysEnabled;
-            }
-        }
-
         public static int SnackResourceID
         {
             get
@@ -330,7 +327,9 @@ namespace Snacks
             get
             {
                 SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                return snackProperties.recyclerEfficiency;
+                if (snackProperties.recyclerEfficiency2 < 10)
+                    snackProperties.recyclerEfficiency2 = 40;
+                return snackProperties.recyclerEfficiency2 / 100.0f;
             }
         }
 
@@ -415,6 +414,14 @@ namespace Snacks
             get
             {
                 return "Snacking";
+            }
+        }
+
+        public override string DisplaySection
+        {
+            get
+            {
+                return Section;
             }
         }
 
