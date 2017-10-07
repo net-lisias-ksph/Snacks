@@ -35,6 +35,12 @@ namespace Snacks
     {
         private static System.Random random = new System.Random();
 
+        protected void Log(string message)
+        {
+            if (SnackController.debugMode)
+                Debug.Log("[SnackConsumer] - " + message);
+        }
+
         public static bool hasUnownedCrew(Vessel vessel)
         {
             int crewCount = 0;
@@ -176,34 +182,41 @@ namespace Snacks
         * */
         public double ConsumeAndGetDeficit(Vessel vessel)
         {
+            Log("ConsumeAndGetDeficit called for vessel:" + vessel.vesselName);
             double demand = 0;
             double fed = 0;
             double crewCount = SnacksScenario.Instance.GetNonExemptCrewCount(vessel);
+            Log("Non-exempt crewCount: " + crewCount);
 
             //Calculate for loaded vessel
             if (vessel.loaded)
             {
-                demand = vessel.GetCrewCount() * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.GetVesselCrew());
+                demand = crewCount * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.GetVesselCrew());
+                Log("(Loaded vessel) demand: " + demand);
 
                 if (demand <= 0)
                     return 0;
 
                 fed = vessel.rootPart.RequestResource(SnacksProperties.SnacksResourceName, demand, ResourceFlowMode.ALL_VESSEL);
+                Log("(Loaded vessel) fed: " + fed);
             }
 
             //Calculate for proto vessel
             else
             {
                 //Unloaded vessels need to run their recyclers and snack processors.
+                Log("Calling runConverters");
                 runConverters(vessel.protoVessel);
 
                 //Now calculate demand.
-                demand = vessel.protoVessel.GetVesselCrew().Count * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.protoVessel.GetVesselCrew());
+                demand = crewCount * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.protoVessel.GetVesselCrew());
+                Log("(Unloaded vessel) demand: " + demand);
 
                 if (demand <= 0)
                     return 0;
 
                 fed = GetSnackResource(vessel.protoVessel.protoPartSnapshots, demand);
+                Log("(Unloaded vessel) fed: " + fed);
             }
 
             //Fire consume snacks event
@@ -212,6 +225,7 @@ namespace Snacks
             snackConsumption.demand = demand;
             snackConsumption.fed = fed;
             snackConsumption.vessel = vessel;
+            Log("Fired event onConsumeSnacks");
             SnackController.onConsumeSnacks.Fire(snackConsumption);
 
             //Request resource (loaded vessel)
@@ -222,7 +236,10 @@ namespace Snacks
 
                 //If recycling is enabled then produce soil.
                 if (SnacksProperties.RecyclersEnabled)
+                {
                     vessel.rootPart.RequestResource(SnacksProperties.SoilResourceName, -fed, ResourceFlowMode.ALL_VESSEL);
+                    Log("Produced soil: " + fed);
+                }
             }
 
             //Request resource (unloaded vessel)
@@ -235,59 +252,87 @@ namespace Snacks
 
                 //If recycling is enabled then produce soil.
                 if (SnacksProperties.RecyclersEnabled)
+                {
                     AddSoilResource(vessel.protoVessel.protoPartSnapshots, fed);
+                    Log("Produced soil: " + fed);
+                }
             }
 
             return demand - fed;
         }
 
-        protected void getResourceRatios(string className, ProtoPartSnapshot protoPartSnapshot, Dictionary<string, double> inputs, Dictionary<string, double> outputs, out double recyclerCapacity)
+        protected void getResourceRatios(ProtoPartSnapshot protoPartSnapshot, Dictionary<string, double> inputs, Dictionary<string, double> outputs, out double recyclerCapacity)
         {
             recyclerCapacity = 0f;
-            ConfigNode[] nodes = protoPartSnapshot.partInfo.partConfig.GetNodes("MODULE");
-            ConfigNode processorNode = null;
-            ConfigNode node = null;
-            string moduleName;
-            string resourceName;
-            double resourceRatio;
+            ProtoPartModuleSnapshot[] moduleSnapshots;
+            ProtoPartModuleSnapshot moduleSnapshot;
+            string resourceRatios = string.Empty;
 
-            //Get the processor config node.
-            for (int index = 0; index < nodes.Length; index++)
+            //Go through all the snapshots and see if we find a recycler or snack processor.
+            moduleSnapshots = protoPartSnapshot.modules.ToArray();
+            for (int moduleIndex = 0; moduleIndex < moduleSnapshots.Length; moduleIndex++)
             {
-                node = nodes[index];
-                if (node.HasValue("name"))
+                moduleSnapshot = moduleSnapshots[moduleIndex];
+
+                //Resource ratio string.
+                if (moduleSnapshot.moduleValues.HasValue("resourceRatios"))
+                    resourceRatios = moduleSnapshot.moduleValues.GetValue("resourceRatios");
+
+                //Snack Processor
+                if (moduleSnapshot.moduleName == "SnackProcessor")
                 {
-                    moduleName = node.GetValue("name");
-                    if (moduleName == className)
+                    if (string.IsNullOrEmpty(resourceRatios))
+                        resourceRatios = SnackProcessor.DefaultProcessorRatios;
+                }
+
+                //Soil Recycler
+                if (moduleSnapshot.moduleName == "SoilRecycler")
+                {
+                    if (string.IsNullOrEmpty(resourceRatios))
+                        resourceRatios = SoilRecycler.DefaultRecyclerRatios;
+
+                    //Get recycler capacity
+                    if (moduleSnapshot.moduleValues.HasValue("RecyclerCapacity"))
                     {
-                        processorNode = node;
-                        break;
+                        recyclerCapacity = double.Parse(moduleSnapshot.moduleValues.GetValue("RecyclerCapacity"));
+                        Log("Recycler supports " + recyclerCapacity + " kerbals.");
+                    }
+
+                    //Estimate based on part crew capacity.
+                    else if (protoPartSnapshot.partInfo != null && protoPartSnapshot.partInfo.partConfig != null)
+                    {
+                        if (protoPartSnapshot.partInfo.partConfig.HasValue("CrewCapacity"))
+                        {
+                            recyclerCapacity = int.Parse(protoPartSnapshot.partInfo.partConfig.GetValue("CrewCapacity"));
+                            Log("Estimated recyclerCapacity: " + recyclerCapacity + " kerbals.");
+                        }
                     }
                 }
             }
-            if (processorNode == null)
-                return;
 
-            //Get the nodes we're interested in
-            nodes = processorNode.GetNodes("INPUT_RESOURCE");
-            for (int index = 0; index < nodes.Length; index++)
+            //Now parse the inputs and outputs.
+            string[] inputOutputArray = resourceRatios.Split('|');
+
+            //Inputs
+            string[] resources = inputOutputArray[0].Split(';');
+            string[] resourceValues;
+            foreach (string inputResource in resources)
             {
-                resourceName = nodes[index].GetValue("ResourceName");
-                resourceRatio = double.Parse(nodes[index].GetValue("Ratio"));
-                inputs.Add(resourceName, resourceRatio);
+                resourceValues = inputResource.Split(',');
+
+                //First index is the resource name, second index is the amount.
+                inputs.Add(resourceValues[0], double.Parse(resourceValues[1]));
             }
 
-            nodes = processorNode.GetNodes("OUTPUT_RESOURCE");
-            for (int index = 0; index < nodes.Length; index++)
+            //Outputs
+            resources = inputOutputArray[1].Split(';');
+            foreach (string outputResource in resources)
             {
-                resourceName = nodes[index].GetValue("ResourceName");
-                resourceRatio = double.Parse(nodes[index].GetValue("Ratio"));
-                outputs.Add(resourceName, resourceRatio);
-            }
+                resourceValues = outputResource.Split(',');
 
-            //Recycler: get capacity
-            if (processorNode.HasValue("RecyclerCapacity"))
-                recyclerCapacity = double.Parse(processorNode.GetValue("RecyclerCapacity"));
+                //First index is the resource name, second index is the amount.
+                outputs.Add(resourceValues[0], double.Parse(resourceValues[1]));
+            }
         }
 
         protected void runConverters(ProtoVessel vessel)
@@ -356,11 +401,12 @@ namespace Snacks
 
                 if (recycler != null)
                 {
+                    Log("Running soil recycler...");
                     lastUpdateTime = double.Parse(recycler.moduleValues.GetValue("lastUpdateTime"));
                     elapsedTime = currentTime - lastUpdateTime;
 
                     //Get the resource ratios
-                    getResourceRatios("SoilRecycler", pps, inputs, outputs, out recyclerCapacity);
+                    getResourceRatios(pps, inputs, outputs, out recyclerCapacity);
 
                     //Calculate base demand
                     baseDemand = elapsedTime * recyclerCapacity * SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay;
@@ -406,6 +452,7 @@ namespace Snacks
 
                 if (snackProcessor != null)
                 {
+                    Log("Running snack processor...");
                     lastUpdateTime = double.Parse(recycler.moduleValues.GetValue("lastUpdateTime"));
                     elapsedTime = currentTime - lastUpdateTime;
 
@@ -413,7 +460,7 @@ namespace Snacks
                     recyclerCapacity = 0f;
                     inputs.Clear();
                     outputs.Clear();
-                    getResourceRatios("SnackProcessor", pps, inputs, outputs, out recyclerCapacity);
+                    getResourceRatios(pps, inputs, outputs, out recyclerCapacity);
 
                     //Calculate base demand
                     baseDemand = elapsedTime * SnacksProperties.ProductionEfficiency;
@@ -468,7 +515,11 @@ namespace Snacks
         private static double calculateExtraSnacksRequired(List<ProtoCrewMember> crew)
         {
             if (SnacksProperties.EnableRandomSnacking == false)
+            {
+                if (SnackController.debugMode)
+                    Debug.Log("[SnackConsumer] - Extra Snacks: 0");
                 return 0;
+            }
 
             double extra = 0;
             foreach (ProtoCrewMember pc in crew)
@@ -484,6 +535,9 @@ namespace Snacks
                 if (pc.isBadass && getRandomChance(.2))
                     extra -= SnacksProperties.SnacksPerMeal;
             }
+
+            if (SnackController.debugMode)
+                Debug.Log("[SnackConsumer] - Extra Snacks: " + extra);
             return extra;
         }
 

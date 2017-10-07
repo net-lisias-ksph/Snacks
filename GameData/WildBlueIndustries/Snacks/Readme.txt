@@ -24,6 +24,11 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.8.5
+- Fixed background processing of snacks and soil issues with WBI mods (Pathfinder, Buffalo, etc.).
+NOTE: Be sure to visit your spacecraft at least once to ensure that the changes take effect.
+- Updated to KSP 1.3.1.
+
 1.8.0
 - Time estimates are now measured in years and days; months, though accurate, was getting too confusing.
 - Snack processors and soil recyclers now run in the background when vessels aren't loaded.

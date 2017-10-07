@@ -9,7 +9,10 @@ namespace Snacks
 {
     public class SoilRecycler : SnackProcessor
     {
-        [KSPField()]
+        //Default resource ratios used for background processing.
+        public const string DefaultRecyclerRatios = "Soil,0.000034723|Snacks,0.000034723";
+
+        [KSPField(isPersistant = true)]
         public int RecyclerCapacity;
 
         public override void OnStart(StartState state)

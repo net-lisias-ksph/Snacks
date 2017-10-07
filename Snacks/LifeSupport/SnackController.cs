@@ -24,6 +24,7 @@ SOFTWARE.
  * */
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -57,6 +58,7 @@ namespace Snacks
         public static EventData<Vessel, int> onKerbalsMissedMeal = new EventData<Vessel, int>("OnKerbalsMissedMeal");
         public static EventData<SnackConsumption> onConsumeSnacks = new EventData<SnackConsumption>("OnConsumeSnacks");
 
+        public static bool debugMode = true;
         public  double nextSnackTime = -1;
         public int snackFrequency;
 
@@ -420,14 +422,16 @@ namespace Snacks
                 handler.GameSettingsApplied();
         }
 
-        private void EatSnacks()
+        public void EatSnacks()
         {
             try
             {
+                Log("[SnackController] - EatSnacks called");
                 double snackDeficit;
                 int crewCount = 0;
 
                 //Post the before snack time event
+                Log("[SnackController] - Firing before snack time event");
                 onBeforeSnackTime.Fire();
 
                 //Consume snacks for loaded vessels
@@ -439,7 +443,7 @@ namespace Snacks
                     //Skip the vessel if it has unowned crew
                     if (SnackConsumer.hasUnownedCrew(vessel))
                     {
-                        Debug.Log("Skipping " + vessel.vesselName + " due to unowned crew");
+                        Debug.Log("[SnackController] - Skipping " + vessel.vesselName + " due to unowned crew");
                         continue;
                     }
 
@@ -471,6 +475,7 @@ namespace Snacks
                 }
 
                 //Post the snack time event
+                Log("[SnackController] - Firing onSnackTime");
                 onSnackTime.Fire();
                 
             }
@@ -532,6 +537,9 @@ namespace Snacks
 
         public static void Log(string info)
         {
+            if (!debugMode)
+                return;
+
             Debug.Log(info);
         }
 

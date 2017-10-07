@@ -9,13 +9,22 @@ namespace Snacks
 {
     public class SnackProcessor : ModuleResourceConverter
     {
+        //Default resource ratios used for background processing.
+        public const string DefaultProcessorRatios = "Ore,0.002|Snacks,0.01";
+
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "Max Production")]
         public string dailyOutput = string.Empty;
 
         [KSPField(isPersistant = true)]
         public double lastBackgroundUpdateTime;
 
+        //This string is used for background processing.
+        [KSPField(isPersistant = true)]
+        public string resourceRatios = string.Empty;
+
+        [KSPField(isPersistant = true)]
         protected double originalSnacksRatio;
+
         protected double productionEfficiency = 0f;
 
         public virtual double GetDailySnacksOutput()
@@ -27,21 +36,54 @@ namespace Snacks
 
         public override void OnStart(StartState state)
         {
-            ResourceRatio[] outputs = outputList.ToArray();
-            ResourceRatio output;
+            ResourceRatio ratio;
+            StringBuilder resourceBuilder = new StringBuilder();
+            string inputRatios, outputRatios;
 
             base.OnStart(state);
             GameEvents.OnGameSettingsApplied.Add(updateSettings);
 
-            //Find the Snacks output ratio
-            for (int index = 0; index < outputs.Length; index++)
+            //Build the resource ratios string if needed
+            if (string.IsNullOrEmpty(resourceRatios))
             {
-                output = outputs[index];
-                if (output.ResourceName == SnacksProperties.SnacksResourceName)
+                //Inputs
+                for (int index = 0; index < inputList.Count; index++)
                 {
-                    originalSnacksRatio = output.Ratio;
-                    break;
+                    ratio = inputList[index];
+                    if (ratio.ResourceName == "ElectricCharge")
+                        continue;
+
+                    resourceBuilder.Append(ratio.ResourceName);
+                    resourceBuilder.Append(",");
+                    resourceBuilder.Append(ratio.Ratio.ToString());
+                    resourceBuilder.Append(";");
                 }
+
+                //Trim the trailing ";" character.
+                inputRatios = resourceBuilder.ToString();
+                inputRatios = inputRatios.TrimEnd(new char[] { ';' });
+
+                //Outputs
+                resourceBuilder = new StringBuilder();
+                for (int index = 0; index < outputList.Count; index++)
+                {
+                    ratio = outputList[index];
+                    resourceBuilder.Append(ratio.ResourceName);
+                    resourceBuilder.Append(",");
+                    resourceBuilder.Append(ratio.Ratio.ToString());
+                    resourceBuilder.Append(";");
+
+                    if (ratio.ResourceName == SnacksProperties.SnacksResourceName)
+                        originalSnacksRatio = ratio.Ratio;
+                }
+
+                //Trim the trailing ";" character.
+                outputRatios = resourceBuilder.ToString();
+                outputRatios = outputRatios.TrimEnd(new char[] { ';' });
+
+                resourceRatios = inputRatios + "|" + outputRatios;
+                if (SnackController.debugMode)
+                    Debug.Log("[" + this.ClassName + "] - resourceRatios: " + resourceRatios);
             }
 
             //Now set up the processor

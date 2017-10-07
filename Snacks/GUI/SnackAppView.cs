@@ -159,6 +159,12 @@ namespace Snacks
                 exemptKerbals = string.Empty;
             exemptKerbals = GUILayout.TextField(exemptKerbals);
 
+            if (SnackController.debugMode)
+            {
+                if (GUILayout.Button("Snack Time!"))
+                    SnackController.Instance.EatSnacks();
+            }
+
             drawFlightWindow();
         }
 

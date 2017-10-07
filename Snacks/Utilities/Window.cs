@@ -37,6 +37,8 @@ namespace Snacks
 {
     public abstract class Window<T> : MonoBehaviour
     {
+        private const string kWindowLock = "SNACKSWINDOWLOCK";
+
         private int windowId;
         private string configNodeName;
         private bool mouseDown;
@@ -80,10 +82,7 @@ namespace Snacks
 
             if (!newValue)
             {
-                if (HighLogic.LoadedSceneIsFlight)
-                    InputLockManager.RemoveControlLock("WindowLock" + windowId);
-                else if (HighLogic.LoadedSceneIsEditor)
-                    EditorLogic.fetch.Unlock("WindowLock" + windowId);
+                InputLockManager.SetControlLock(ControlTypes.None, kWindowLock + this.windowId);
             }
         }
 
@@ -169,6 +168,15 @@ namespace Snacks
                         GUILayout.ExpandHeight(true), GUILayout.MinWidth(64), GUILayout.MinHeight(64));
                 }
 
+                Vector3 mousePosition = Input.mousePosition;
+                if (windowPos.Contains(mousePosition))
+                {
+                    InputLockManager.SetControlLock(ControlTypes.All, kWindowLock + this.windowId);
+                }
+                else
+                {
+                    InputLockManager.SetControlLock(ControlTypes.None, kWindowLock + this.windowId);
+                }
             }
         }
 
@@ -209,72 +217,7 @@ namespace Snacks
                 HandleWindowEvents(resizeRect);
             }
 
-            preventClickthrough();
-
             GUI.DragWindow();
-        }
-
-        bool lockedUI;
-        private void preventClickthrough()
-        {
-            bool mouseInWindow = windowPos.Contains(Input.mousePosition);
-
-            /*
-            if (mouseInWindow && !mouseDown && (Event.current.type == EventType.mouseDown || Event.current.type == EventType.MouseDown))
-            {
-                Debug.Log("FRED eating mouse event");
-                Event.current.Use();
-                mouseDown = true;
-            }
-
-            else if (mouseInWindow)
-            {
-                mouseDown = false;
-            }
-             */
-
-            if (mouseInWindow && !lockedUI)
-            {
-                lockedUI = true;
-
-                /*
-                //Context menus
-                UIPartActionWindow[] actionWindows = (UIPartActionWindow[])GameObject.FindObjectsOfType<UIPartActionWindow>();
-                UIPartActionWindow actionWindow;
-                if (actionWindows != null)
-                {
-                    Debug.Log("FRED locking action windows");
-                    for (int index = 0; index < actionWindows.Length; index++)
-                    {
-                        Debug.Log("FRED locking action window " + index);
-                        actionWindow = actionWindows[index];
-                        if (actionWindow.Display == UIPartActionWindow.DisplayType.Selected)
-                        {
-                            Debug.Log("FRED disabling window");
-                            actionWindow.enabled = false;
-//                            MonoUtilities.RefreshContextWindows(this.part);
-                        }
-                    }
-                }
-                 */
-
-                //Lock game controls
-                if (HighLogic.LoadedSceneIsFlight)
-                    InputLockManager.SetControlLock(ControlTypes.All, "WindowLock" + windowId);
-                else if (HighLogic.LoadedSceneIsEditor)
-                    EditorLogic.fetch.Lock(true, true, true, "WindowLock" + windowId);
-            }
-
-            else if (!mouseInWindow && lockedUI)
-            {
-                lockedUI = false;
-
-                //Unlock game controls
-                if (HighLogic.LoadedSceneIsFlight)
-                    InputLockManager.RemoveControlLock("WindowLock" + windowId);
-                else if (HighLogic.LoadedSceneIsEditor)
-                    EditorLogic.fetch.Unlock("WindowLock" + windowId);
-            }
         }
 
         protected abstract void DrawWindowContents(int windowId);
