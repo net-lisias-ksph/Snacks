@@ -160,7 +160,7 @@ namespace Snacks
         public int recyclerEfficiency2 = 40;
 
         [GameParameters.CustomIntParameterUI("Production Efficiency %", minValue = 10, maxValue = 100, stepSize = 10, toolTip = "How well does the processor produce snacks?", autoPersistance = true)]
-        public float productionEfficiency = 1.0f;
+        public float productionEfficiency = 100f;
 
         #region Properties
 

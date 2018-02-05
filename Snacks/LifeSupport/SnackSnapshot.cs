@@ -79,8 +79,11 @@ namespace Snacks
                 //Update snack resource values
                 if (part.Resources.Contains(SnacksProperties.SnacksResourceName))
                 {
-                    currentSnacks += part.Resources[SnacksProperties.SnacksResourceName].amount;
-                    maxSnacks += part.Resources[SnacksProperties.SnacksResourceName].maxAmount;
+                    if (part.Resources[SnacksProperties.SnacksResourceName].flowState)
+                    {
+                        currentSnacks += part.Resources[SnacksProperties.SnacksResourceName].amount;
+                        maxSnacks += part.Resources[SnacksProperties.SnacksResourceName].maxAmount;
+                    }
                 }
 
                 //Compute snack production
@@ -165,8 +168,12 @@ namespace Snacks
                         {
                             if (resource.resourceName == SnacksProperties.SnacksResourceName)
                             {
-                                snackAmount += resource.amount;
-                                snackMax += resource.maxAmount;
+                                if (resource.flowState)
+                                {
+//                                    Debug.Log("Found snacks in " + pps.partName);
+                                    snackAmount += resource.amount;
+                                    snackMax += resource.maxAmount;
+                                }
                                 foundSnackResource = true;
                             }
                         }
@@ -174,7 +181,7 @@ namespace Snacks
                         //Add Snacks if we don't find any
                         if (!foundSnackResource && partCrewCount > 0)
                         {
-                            Debug.Log("Part should have Snacks but doesn't. Trying to add Snacks");
+//                            Debug.Log("Part should have Snacks but doesn't. Trying to add Snacks to " + pps.partName);
                             int snacksPer = SnacksProperties.SnacksPerCrewModule;
 
                             //See if we have a command module. If so, that will affect how many snacks we have in the part.
