@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System.Text;
+using System.IO;
 using UnityEngine;
 using KSP.IO;
 
@@ -314,7 +315,7 @@ namespace Snacks
                 if (evaKerbal.Resources.Contains(SnacksProperties.SnackResourceID) == false)
                 {
                     ConfigNode node = new ConfigNode("RESOURCE");
-                    node.AddValue("name", "Snacks");
+                    node.AddValue("name", SnacksProperties.SnacksResourceName);
                     node.AddValue("maxAmount", "1");
                     evaKerbal.Resources.Add(node);
                 }
@@ -386,9 +387,12 @@ namespace Snacks
 
         protected void checkAndShowWelcomeMessage()
         {
-            string settingsPath = AssemblyLoader.loadedAssemblies.GetPathByType(typeof(SnackController)) + "/Settings.cfg";
-            ConfigNode nodeSettings = ConfigNode.Load(settingsPath);
+            string settingsPath = AssemblyLoader.loadedAssemblies.GetPathByType(typeof(SnackController)) + "/Settings.cfg";           
+            ConfigNode nodeSettings = null;
             bool haveShownWelcome = false;
+
+            if (System.IO.File.Exists(settingsPath))
+                nodeSettings = ConfigNode.Load(settingsPath);
 
             if (nodeSettings == null)
             {

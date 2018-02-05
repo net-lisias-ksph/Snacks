@@ -76,6 +76,9 @@ namespace Snacks
             PartResource resource = part.Resources[resourceName];
             double supplied = 0;
 
+            if (resource.flowState == false)
+                return supplied;
+
             if (resource.amount >= demand)
             {
                 resource.amount -= demand;
@@ -101,7 +104,7 @@ namespace Snacks
             {
                 foreach (ProtoPartResourceSnapshot resource in pps.resources)
                 {
-                    if (resource.resourceName == resourceName)
+                    if (resource.resourceName == resourceName && resource.flowState == true)
                     {
                         if (resource.amount >= remaining)
                         {

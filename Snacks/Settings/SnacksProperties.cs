@@ -144,21 +144,22 @@ namespace Snacks
         private static int defaultSnacksPerCmdPod  = 50;
         private static int defaultSnacksPerCrewPod = 200;
 
-        [GameParameters.CustomIntParameterUI("Snacks per meal", minValue = 1, maxValue = 12, stepSize = 1, toolTip = "How much do kerbals snack on", autoPersistance = true)]
+        [GameParameters.CustomIntParameterUI("Snacks per meal", minValue = 1, maxValue = 12, stepSize = 1, toolTip = "How much do kerbals snack on?", autoPersistance = true)]
         public int snacksPerMeal = 1;
 
-        [GameParameters.CustomIntParameterUI("Meals per day", minValue = 1, maxValue = 12, stepSize = 1, toolTip = "How often do kerbals eat", autoPersistance = true)]
+        [GameParameters.CustomIntParameterUI("Meals per day", minValue = 1, maxValue = 12, stepSize = 1, toolTip = "How often do kerbals eat?", autoPersistance = true)]
         public int mealsPerDay = 3;
 
-        [GameParameters.CustomParameterUI("Some kerbals eat more, some eat less", toolTip = "At snack time, kerbals eat random amounts of Snacks, and the time between snacking is also random", autoPersistance = true)]
+        [GameParameters.CustomParameterUI("Some kerbals eat more, some eat less", toolTip = "At snack time, kerbals eat random amounts of Snacks, and the time between snacking is also random.", autoPersistance = true)]
         public bool enableRandomSnacking = true;
 
-        [GameParameters.CustomParameterUI("Enable recycling", toolTip = "Kerbals produce Soil when snacking. Recyclers convert the Soil back to Snacks at the cost of ElectricCharge", autoPersistance = true)]
+        [GameParameters.CustomParameterUI("Enable recycling", toolTip = "Kerbals produce Soil when snacking. Recyclers convert the Soil back to Snacks at the cost of ElectricCharge.", autoPersistance = true)]
         public bool enableRecyclers = true;
 
-        [GameParameters.CustomIntParameterUI("Recycler Efficiency %", minValue = 10, maxValue = 100, stepSize = 10, toolTip = "How well does the recycler recyle", autoPersistance = true)]
+        [GameParameters.CustomIntParameterUI("Recycler Efficiency %", minValue = 10, maxValue = 100, stepSize = 10, toolTip = "How well does the recycler recyle?", autoPersistance = true)]
         public int recyclerEfficiency2 = 40;
 
+        [GameParameters.CustomIntParameterUI("Production Efficiency %", minValue = 10, maxValue = 100, stepSize = 10, toolTip = "How well does the processor produce snacks?", autoPersistance = true)]
         public float productionEfficiency = 1.0f;
 
         #region Properties
@@ -260,7 +261,7 @@ namespace Snacks
         {
             get
             {
-                PartResourceDefinition snacksResource = PartResourceLibrary.Instance.GetDefinition("Snacks");
+                PartResourceDefinition snacksResource = PartResourceLibrary.Instance.GetDefinition(SnacksResourceName);
                 return snacksResource.id;
             }
         }
