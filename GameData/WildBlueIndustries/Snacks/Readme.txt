@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.8.7
+- Fixed NRE and production issues with the SnackProcessor.
+
 1.8.6
 - Snack consumption now honors resource locks.
 - Retextured radial snack tin - Thanks JadeOfMaar! :)

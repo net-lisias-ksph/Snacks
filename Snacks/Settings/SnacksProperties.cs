@@ -255,6 +255,12 @@ namespace Snacks
                 SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
                 return snackProperties.productionEfficiency;
             }
+
+            set
+            {
+                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                snackProperties.productionEfficiency = value;
+            }
         }
 
         public static int SnackResourceID

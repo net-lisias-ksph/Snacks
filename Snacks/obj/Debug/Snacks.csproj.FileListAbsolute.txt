@@ -42,4 +42,3 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Mono.Security.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.xml
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.pdb
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csprojResolveAssemblyReference.cache

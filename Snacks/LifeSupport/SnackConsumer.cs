@@ -185,7 +185,7 @@ namespace Snacks
         * */
         public double ConsumeAndGetDeficit(Vessel vessel)
         {
-            Log("ConsumeAndGetDeficit called for vessel:" + vessel.vesselName);
+            Log("ConsumeAndGetDeficit called for vessel:" + vessel.vesselName + " type: " + vessel.vesselType.ToString());
             double demand = 0;
             double fed = 0;
             double crewCount = SnacksScenario.Instance.GetNonExemptCrewCount(vessel);
@@ -209,27 +209,57 @@ namespace Snacks
             {
                 //Unloaded vessels need to run their recyclers and snack processors.
                 Log("Calling runConverters");
-                runConverters(vessel.protoVessel);
+                try
+                {
+                    runConverters(vessel.protoVessel);
+                }
+                catch (Exception ex)
+                {
+                    Log("runConverters encountered an error: " + ex.ToString());
+                }
 
                 //Now calculate demand.
-                demand = crewCount * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.protoVessel.GetVesselCrew());
-                Log("(Unloaded vessel) demand: " + demand);
+                try
+                {
+                    demand = crewCount * SnacksProperties.SnacksPerMeal + calculateExtraSnacksRequired(vessel.protoVessel.GetVesselCrew());
+                    Log("(Unloaded vessel) demand: " + demand);
 
-                if (demand <= 0)
+                    if (demand <= 0)
+                        return 0;
+                }
+                catch (Exception ex)
+                {
+                    Log("calculateExtraSnacksRequired encountered an error: " + ex.ToString());
                     return 0;
+                }
 
-                fed = GetSnackResource(vessel.protoVessel.protoPartSnapshots, demand);
-                Log("(Unloaded vessel) fed: " + fed);
+                try
+                {
+                    fed = GetSnackResource(vessel.protoVessel.protoPartSnapshots, demand);
+                    Log("(Unloaded vessel) fed: " + fed);
+                }
+                catch (Exception ex)
+                {
+                    Log("GetSnackResource encountered an error: " + ex.ToString());
+                    return 0;
+                }
             }
 
             //Fire consume snacks event
             //Gives listeners a chance to alter the values.
-            SnackConsumption snackConsumption = new SnackConsumption();
-            snackConsumption.demand = demand;
-            snackConsumption.fed = fed;
-            snackConsumption.vessel = vessel;
-            Log("Fired event onConsumeSnacks");
-            SnackController.onConsumeSnacks.Fire(snackConsumption);
+            try
+            {
+                SnackConsumption snackConsumption = new SnackConsumption();
+                snackConsumption.demand = demand;
+                snackConsumption.fed = fed;
+                snackConsumption.vessel = vessel;
+                Log("Fired event onConsumeSnacks");
+                SnackController.onConsumeSnacks.Fire(snackConsumption);
+            }
+            catch (Exception ex)
+            {
+                Log("onConsumeSnacks event encountered an error: " + ex.ToString());
+            }
 
             //Request resource (loaded vessel)
             if (vessel.loaded)
@@ -340,8 +370,6 @@ namespace Snacks
 
         protected void runConverters(ProtoVessel vessel)
         {
-            if (!SnacksProperties.RecyclersEnabled)
-                return;
             ProtoPartModuleSnapshot[] modules = null;
             ProtoPartModuleSnapshot recycler = null;
             ProtoPartModuleSnapshot snackProcessor = null;
@@ -357,6 +385,7 @@ namespace Snacks
             double totalObtained = 0f;
             double baseOutput = 0f;
             double output = 0f;
+            ConfigNode moduleValues = null;
 
             //For each recycler and snack processor, run them manually.
             foreach (ProtoPartSnapshot pps in vessel.protoPartSnapshots)
@@ -378,23 +407,32 @@ namespace Snacks
                 //See if the part has a recycler or snack processor that's active.
                 for (int snapModIndex = 0; snapModIndex < modules.Length; snapModIndex++)
                 {
+                    moduleValues = modules[snapModIndex].moduleValues;
                     if (modules[snapModIndex].moduleName == "SoilRecycler")
                     {
                         //Activation status
-                        activated = modules[snapModIndex].moduleValues.GetValue("IsActivated").ToLower();
-                        if (activated == "true")
+                        if (moduleValues.HasValue("IsActivated"))
                         {
-                            recycler = modules[snapModIndex];
+                            activated = moduleValues.GetValue("IsActivated").ToLower();
+                            if (activated == "true")
+                            {
+                                Log("Found an active soil recycler");
+                                recycler = modules[snapModIndex];
+                            }
                         }
                     }
 
                     else if (modules[snapModIndex].moduleName == "SnackProcessor")
                     {
                         //Activation status
-                        activated = modules[snapModIndex].moduleValues.GetValue("IsActivated").ToLower();
-                        if (activated == "true")
+                        if (moduleValues.HasValue("IsActivated"))
                         {
-                            snackProcessor = modules[snapModIndex];
+                            activated = moduleValues.GetValue("IsActivated").ToLower();
+                            if (activated == "true")
+                            {
+                                Log("Found an active snack processor");
+                                snackProcessor = modules[snapModIndex];
+                            }
                         }
                     }
 
@@ -456,7 +494,7 @@ namespace Snacks
                 if (snackProcessor != null)
                 {
                     Log("Running snack processor...");
-                    lastUpdateTime = double.Parse(recycler.moduleValues.GetValue("lastUpdateTime"));
+                    lastUpdateTime = double.Parse(snackProcessor.moduleValues.GetValue("lastUpdateTime"));
                     elapsedTime = currentTime - lastUpdateTime;
 
                     //Get the resource ratios
@@ -466,7 +504,10 @@ namespace Snacks
                     getResourceRatios(pps, inputs, outputs, out recyclerCapacity);
 
                     //Calculate base demand
-                    baseDemand = elapsedTime * SnacksProperties.ProductionEfficiency;
+                    float efficiency = SnacksProperties.ProductionEfficiency;
+                    if (efficiency == 1.0f)
+                        SnacksProperties.ProductionEfficiency = 100.0f;
+                    baseDemand = elapsedTime * (SnacksProperties.ProductionEfficiency / 100);
 
                     //Now request all the input resources
                     percentAcquired = 1.0f;
@@ -484,13 +525,14 @@ namespace Snacks
 
                         //Request the resource
                         totalObtained += GetResource(vessel.protoPartSnapshots, resourceName, demand);
+                        Log("Requested " + demand + " units of " + resourceName + " and received " + totalObtained + " units");
                     }
 
                     //Calculate base output
                     percentAcquired = totalObtained / totalDemand;
                     if (percentAcquired > 0.999)
                         percentAcquired = 1.0f;
-                    baseOutput = baseDemand * recyclerCapacity * percentAcquired;
+                    baseOutput = baseDemand * percentAcquired;
                     if (baseOutput < 0.00000000f)
                         baseOutput = 0f;
 
@@ -499,7 +541,10 @@ namespace Snacks
                     {
                         output = outputs[resourceName] * baseOutput;
                         if (output > 0f)
+                        {
                             AddResource(vessel.protoPartSnapshots, resourceName, output);
+                            Log("Added " + output + " units of " + resourceName);
+                        }
                     }
 
                     //Update the last update time.
