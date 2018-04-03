@@ -60,6 +60,12 @@ namespace Snacks
         [GameParameters.CustomParameterUI("Nap time when fainted", toolTip = "How long will a kerbal nap for when they faint", autoPersistance = true)]
         public FaintTime napTime = FaintTime.OneMinute;
 
+        [GameParameters.CustomParameterUI("Kerbals can starve to death.", toolTip = "If they skip too many meals, kerbals can starve to death.", autoPersistance = true)]
+        public bool canStarveToDeath = false;
+
+        [GameParameters.CustomIntParameterUI("Skipped meals before death", maxValue = 42, minValue = 1, stepSize = 1, toolTip = "How many meals can a kerbal miss before dying", autoPersistance = true)]
+        public int mealsSkippedBeforeDeath = 42;
+
         #region CustomParameterNode
 
         public override string DisplaySection
@@ -132,7 +138,12 @@ namespace Snacks
             else if (member.Name == "mealsBeforeFainting" || member.Name == "napTime")
                 return false;
 
-            return base.Enabled(member, parameters);
+            if (member.Name == "mealsSkippedBeforeDeath" && canStarveToDeath)
+                return true;
+            else if (member.Name == "mealsSkippedBeforeDeath")
+                return false;
+
+            return true;
         }
         #endregion
     }
@@ -160,9 +171,27 @@ namespace Snacks
         public int recyclerEfficiency2 = 40;
 
         [GameParameters.CustomIntParameterUI("Production Efficiency %", minValue = 10, maxValue = 100, stepSize = 10, toolTip = "How well does the processor produce snacks?", autoPersistance = true)]
-        public float productionEfficiency = 100f;
+        public int processorEfficiency = 100;
 
         #region Properties
+
+        public static int MealsSkippedBeforeDeath
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.mealsSkippedBeforeDeath;
+            }
+        }
+
+        public static bool CanStarveToDeath
+        {
+            get
+            {
+                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
+                return penalties.canStarveToDeath;
+            }
+        }
 
         public static bool FaintWhenHungry
         {
@@ -253,13 +282,7 @@ namespace Snacks
             get
             {
                 SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                return snackProperties.productionEfficiency;
-            }
-
-            set
-            {
-                SnacksProperties snackProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
-                snackProperties.productionEfficiency = value;
+                return (float)snackProperties.processorEfficiency;
             }
         }
 

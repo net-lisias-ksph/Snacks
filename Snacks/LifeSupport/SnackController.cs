@@ -122,6 +122,7 @@ namespace Snacks
                 penaltyHandlers.Add(new SciencePenalty());
 //                penaltyHandlers.Add(new VesselControlPenalty());
                 penaltyHandlers.Add(new FaintPenalty());
+                penaltyHandlers.Add(new DeathPenalty());
 
                 //Setup the inital settings.
                 GameSettingsApplied();

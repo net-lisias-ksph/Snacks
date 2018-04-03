@@ -115,6 +115,12 @@ namespace Snacks
                 crewData.Remove(astronaut.name);
         }
 
+        public void UnregisterCrew(AstronautData data)
+        {
+            if (crewData.Contains(data.name))
+                crewData.Remove(data.name);
+        }
+
         public int GetNonExemptCrewCount(Vessel vessel)
         {
             ProtoCrewMember[] astronauts;

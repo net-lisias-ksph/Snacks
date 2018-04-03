@@ -28,6 +28,9 @@ namespace Snacks
 
             //Apply fainting penalties
             FaintPenalty.CheckFaintKerbals(this.vessel);
+
+            //Apply death penalties
+            DeathPenalty.CheckDeadKerbals(this.vessel);
         }
     }
 }

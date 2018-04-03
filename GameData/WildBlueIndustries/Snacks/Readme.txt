@@ -1,7 +1,7 @@
 Snacks! Continued
 
 Original mod by: Troy Gruetzmacher (tgruetzm)
-Continuation by: Michael Billard (Angel-125)
+Continuation by: Angel-125
 
 Snacks was originally published by Troy Gruetzmacher (tgruetzm) in August of 2014. It offered a novel and lightweight solution to life support for those that didn't want the complexity of more sophisticated mods like TAC Life Support. Two years later, the game has advanced and while the original author appears to have moved on, it was time to give Snacks an update.
 
@@ -23,6 +23,13 @@ Delete any previous instances in GameData/Snacks
 Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
+
+1.10.0
+- Fixed NRE causing the Settings menu to not appear.
+- Kerbals can now die from a lack of Snacks! This penalty is trned OFF by default, and you can change the number of skipped meals before a kerbal dies in the settings menu. Kerbals listed as exempt will never starve to death.
+
+1.9.0
+- Recompiled for KSP 1.4.1
 
 1.8.7
 - Fixed NRE and production issues with the SnackProcessor.

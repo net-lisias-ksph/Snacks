@@ -505,8 +505,6 @@ namespace Snacks
 
                     //Calculate base demand
                     float efficiency = SnacksProperties.ProductionEfficiency;
-                    if (efficiency == 1.0f)
-                        SnacksProperties.ProductionEfficiency = 100.0f;
                     baseDemand = elapsedTime * (SnacksProperties.ProductionEfficiency / 100);
 
                     //Now request all the input resources
