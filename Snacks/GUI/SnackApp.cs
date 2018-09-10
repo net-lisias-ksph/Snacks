@@ -13,10 +13,11 @@ namespace Snacks
     {
         static protected Texture2D appIcon = null;
         static protected ApplicationLauncherButton appLauncherButton = null;
-        static protected SnackAppView snackView = new SnackAppView();
+        static protected SnackAppView snackView;
 
         public void Awake()
         {
+            snackView = new SnackAppView();
             appIcon = GameDatabase.Instance.GetTexture("WildBlueIndustries/Snacks/Textures/snacks", false);
             GameEvents.onGUIApplicationLauncherReady.Add(SetupGUI);
         }
