@@ -24,6 +24,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.11.0
+- Updated for KSP 1.5.X
+- The Snack Processor and Soil Recycler will now automatically shut down if the vessel's ElectricCharge reserves drop below 5%.
+
 1.10.0
 - Fixed NRE causing the Settings menu to not appear.
 - Kerbals can now die from a lack of Snacks! This penalty is trned OFF by default, and you can change the number of skipped meals before a kerbal dies in the settings menu. Kerbals listed as exempt will never starve to death.

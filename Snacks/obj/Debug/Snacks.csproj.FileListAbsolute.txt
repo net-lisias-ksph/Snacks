@@ -43,3 +43,4 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CoreCom
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CopyComplete
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.pdb
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csprojAssemblyReference.cache

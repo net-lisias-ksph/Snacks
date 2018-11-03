@@ -1,0 +1,2 @@
+- Updated for KSP 1.5.X
+- The Snack Processor and Soil Recycler will now automatically shut down if the vessel's ElectricCharge reserves drop below 5%.
