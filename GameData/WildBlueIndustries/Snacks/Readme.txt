@@ -1,16 +1,16 @@
-Snacks! Continued
+Snacks!
 
 Original mod by: Troy Gruetzmacher (tgruetzm)
 Continuation by: Angel-125
 
-Snacks was originally published by Troy Gruetzmacher (tgruetzm) in August of 2014. It offered a novel and lightweight solution to life support for those that didn't want the complexity of more sophisticated mods like TAC Life Support. Two years later, the game has advanced and while the original author appears to have moved on, it was time to give Snacks an update.
+Snacks was originally published by Troy Gruetzmacher (tgruetzm) in August of 2014. It offered a novel and lightweight solution to life support for those that didn't want the complexity of more sophisticated mods like TAC Life Support. Two years later, the game advanced and while the original author moved on, it was time to give Snacks an update.
 
 Features:
 - Friendly, lightweight life support system
 - Highly configurable to support your play style
 - Optional consequences that won't brick your mission
 
-Snacks Continued retains the simplicity of the original mod while adding new options. You can configure things like snacks consumed per meal, meals per day, enable/disable recycling, recycling efficiency, and various penalties for hungry kerbals including reputation loss, fines, and partial loss of vehicle control. You can even enable/disable random snacking if desired. Just like with the stock CommNet, the penalties won't brick your mission. All of these options are found in the Game Difficulty screen. And if you're new to Snacks Continued, please consult the KSPedia.
+You can configure things like snacks consumed per meal, meals per day, enable/disable recycling, recycling efficiency, and various penalties for hungry kerbals including reputation loss, fines, and partial loss of vehicle control. You can even enable/disable random snacking if desired. Just like with the stock CommNet, the penalties won't brick your mission. All of these options are found in the Game Difficulty screen. And if you're new to Snacks, please consult the KSPedia.
 
 LICENSE
 Source code: The MIT License (MIT)
@@ -23,6 +23,25 @@ Delete any previous instances in GameData/Snacks
 Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
+
+1.13
+- Fixed recycler and processor efficiency calculations.
+- Other bug fixes.
+
+1.12
+- Updated for KSP 1.7
+- Bug fixes
+
+1.11.5
+- Fixed empty mass for the radial snack tin to be in line with similar parts.
+- Fixed snack resources being locked by default when Snacks are added to in-flight vessels.
+- Fixed efficiency processing; processors and recyclers output efficiency should now be 10% to 100% efficient based on their efficiency setting.
+- Fixed issue where converters and processors wouldn't run in the background without at least one Kerbal aboard.
+- Fixed issue where the Snacks Processor and Soil Recycler wouldn't produce the proper amount of resources while the vessel is in physics range.
+- Reduced the amount of Snacks per day produced by the stock Mobile Processing Lab. It was a bit OP...
+- Snack tins now tell you what their resource options are in the part info view.
+- Added new SnacksConverter part module. It serves as the basis for the existing Snacks Processor and Soil Recycler. It can also produce "YIELD_RESOURCE" units over time just like the greenhouse from Wild Blue Tools. You can even assign effects to the converter!
+NOTE: Snacks won't be getting a greenhouse of its own; it's intended to be a lightweight life support system, but I recognize that some players want more sophisticated capabilities. So the tools are there for others to expand upon...
 
 1.11.1
 - Recompiled for KSP 1.6

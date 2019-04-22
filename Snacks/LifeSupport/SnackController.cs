@@ -1,6 +1,7 @@
 ﻿/**
 The MIT License (MIT)
-Copyright (c) 2014 Troy Gruetzmacher, Michael Billard
+Copyright (c) 2014-2019 by Michael Billard
+Original concept by Troy Gruetzmacher
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,8 +20,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- * 
- * 
  * */
 using System;
 using System.Collections.Generic;
@@ -52,6 +51,10 @@ namespace Snacks
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
     public class SnackController : MonoBehaviour
     {
+        #region Constants
+        public double secondsPerCycle = 3600.0;
+        #endregion
+
         public static SnackController Instance;
         public static EventVoid onSnackTime = new EventVoid("OnSnackTime");
         public static EventVoid onBeforeSnackTime = new EventVoid("OnBeforeSnackTime");
@@ -59,14 +62,17 @@ namespace Snacks
         public static EventData<Vessel, int> onKerbalsMissedMeal = new EventData<Vessel, int>("OnKerbalsMissedMeal");
         public static EventData<SnackConsumption> onConsumeSnacks = new EventData<SnackConsumption>("OnConsumeSnacks");
 
-        public static bool debugMode = true;
         public  double nextSnackTime = -1;
         public int snackFrequency;
+        public double cycleStartTime;
+        public Dictionary<string, Dictionary<string, SnacksBackgroundConverter>> backgroundConverters;
+        public List<Part> createdParts;
 
         protected System.Random random = new System.Random();
         protected List<ISnacksPenalty> penaltyHandlers = new List<ISnacksPenalty>();
 
         private SnackConsumer consumer = new SnackConsumer();
+
 
         #region Lifecycle
         void Awake()
@@ -75,6 +81,9 @@ namespace Snacks
                 HighLogic.LoadedScene != GameScenes.SPACECENTER &&
                 HighLogic.LoadedScene != GameScenes.TRACKSTATION)
                 return;
+
+            backgroundConverters = new Dictionary<string, Dictionary<string, SnacksBackgroundConverter>>();
+            createdParts = new List<Part>();
 
             try
             {
@@ -156,9 +165,8 @@ namespace Snacks
                 return;
             try
             {
-
+                //Now check for snack processing
                 double currentTime = Planetarium.GetUniversalTime();
-
                 if (currentTime > nextSnackTime)
                 {
                     //Setup next snacking time.
@@ -210,16 +218,19 @@ namespace Snacks
                 //Make sure the crewed part has snacks
                 if (part.Resources.Contains(SnacksProperties.SnacksResourceName) == false && part.CrewCapacity >= 1)
                 {
-                    ConfigNode node = new ConfigNode("RESOURCE");
+                    PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
+
                     double amount = 0;
-                    node.AddValue("name", SnacksProperties.SnacksResourceName);
                     if (part.FindModuleImplementing<ModuleCommand>() != null)
                         amount = SnacksProperties.SnacksPerCommand * part.CrewCapacity;
                     else
                         amount = SnacksProperties.SnacksPerCrewModule * part.CrewCapacity;
-                    node.AddValue("amount", amount.ToString());
-                    node.AddValue("maxAmount", amount.ToString());
-                    part.AddResource(node);
+
+                    //First, does the resource definition exist?
+                    if (definitions.Contains(SnacksProperties.SnacksResourceName))
+                    {
+                        part.Resources.Add(SnacksProperties.SnacksResourceName, amount, amount, true, true, false, true, PartResource.FlowMode.Both);
+                    }
                 }
             }
             catch (Exception ex)
@@ -431,12 +442,12 @@ namespace Snacks
         {
             try
             {
-                Log("[SnackController] - EatSnacks called");
+                Log("EatSnacks called");
                 double snackDeficit;
                 int crewCount = 0;
 
                 //Post the before snack time event
-                Log("[SnackController] - Firing before snack time event");
+                Log("Firing before snack time event");
                 onBeforeSnackTime.Fire();
 
                 //Consume snacks for loaded vessels
@@ -448,7 +459,7 @@ namespace Snacks
                     //Skip the vessel if it has unowned crew
                     if (SnackConsumer.hasUnownedCrew(vessel))
                     {
-                        Debug.Log("[SnackController] - Skipping " + vessel.vesselName + " due to unowned crew");
+                        Debug.Log("Skipping " + vessel.vesselName + " due to unowned crew");
                         continue;
                     }
 
@@ -480,7 +491,7 @@ namespace Snacks
                 }
 
                 //Post the snack time event
-                Log("[SnackController] - Firing onSnackTime");
+                Log("Firing onSnackTime");
                 onSnackTime.Fire();
                 
             }
@@ -542,10 +553,10 @@ namespace Snacks
 
         public static void Log(string info)
         {
-            if (!debugMode)
+            if (!SnacksProperties.DebugLoggingEnabled)
                 return;
 
-            Debug.Log(info);
+            Debug.Log("[SnacksController] - " + info);
         }
 
         #endregion

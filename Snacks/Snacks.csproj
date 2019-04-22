@@ -59,31 +59,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BlackoutTest.cs" />
-    <Compile Include="CommNetController.cs" />
-    <Compile Include="DeathPenalty.cs" />
-    <Compile Include="LifeSupport\EVARefiller.cs" />
+    <Compile Include="LifeSupport\AstronautData.cs" />
+    <Compile Include="Experimental\BlackoutTest.cs" />
+    <Compile Include="Experimental\CommNetController.cs" />
+    <Compile Include="Penalties\DeathPenalty.cs" />
+    <Compile Include="Experimental\EVARefiller.cs" />
     <Compile Include="Penalties\MissingMealsMonitor.cs" />
     <Compile Include="Penalties\FaintPenalty.cs" />
     <Compile Include="Penalties\FundingPenalty.cs" />
     <Compile Include="LifeSupport\SnacksVesselModule.cs" />
     <Compile Include="Penalties\RepPenalty.cs" />
     <Compile Include="Penalties\SciencePenalty.cs" />
-    <Compile Include="Settings\SnacksScenario.cs" />
-    <Compile Include="LifeSupport\SnackProcessor.cs" />
-    <Compile Include="LifeSupport\SnacksModuleCommand.cs" />
-    <Compile Include="SnacksControlSource.cs" />
+    <Compile Include="SettingsAndScenario\SnacksScenario.cs" />
+    <Compile Include="Converters\SnackProcessor.cs" />
+    <Compile Include="Experimental\SnacksModuleCommand.cs" />
+    <Compile Include="Experimental\SnacksBackgroundConverter.cs" />
+    <Compile Include="Experimental\SnacksControlSource.cs" />
+    <Compile Include="Converters\SnacksConverter.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
     <Compile Include="Utilities\SnacksResourceSwitcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LifeSupport\ShipSupply.cs" />
     <Compile Include="GUI\SnackApp.cs" />
     <Compile Include="GUI\SnackAppView.cs" />
-    <Compile Include="LifeSupport\SnackConsumer.cs" />
+    <Compile Include="Consumers\SnackConsumer.cs" />
     <Compile Include="LifeSupport\SnackController.cs" />
-    <Compile Include="LifeSupport\SoilRecycler.cs" />
+    <Compile Include="Converters\SoilRecycler.cs" />
     <Compile Include="LifeSupport\SnackSnapshot.cs" />
-    <Compile Include="Settings\SnacksProperties.cs" />
+    <Compile Include="SettingsAndScenario\SnacksProperties.cs" />
     <Compile Include="Utilities\Window.cs" />
     <Compile Include="Utilities\WindowUtils.cs" />
     <Compile Include="Penalties\VesselControlPenalty.cs" />

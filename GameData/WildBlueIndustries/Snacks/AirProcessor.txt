@@ -1,0 +1,32 @@
+SNACKS_RESOURCE_PROCESSOR
+{
+	processName = Air!
+	cyclesPerDay = 6 //Meals Per Day analog
+	failedCycleMessage = Kerbals are gasping for air!
+
+	INPUT_RESOURCE
+	{
+		resourceName = FreshAir
+		unitsPerKerbalPerCycle = 0.166667 // Snacks Per Meal analog
+		addToSnapshot = true //Vessel current/max shown in snapshot, with time estimates
+		evaAmount = 1 //How many units to take when going on EVA
+	{
+
+	OUTPUT_RESOURCE
+	{
+		resourceName = StaleAir 
+		unitsPerKerbalPerCycle = 0.166667
+	{
+
+	allowRandomPenalties = false
+	PENALTY
+	{
+		penaltyName = FaintingPenalty
+		applyAfterFailedCycles = 1
+	{
+	PENALTY
+	{
+		penaltyName = DeathPenalty
+		applyAfterFailedCycles = 3
+	{
+}
