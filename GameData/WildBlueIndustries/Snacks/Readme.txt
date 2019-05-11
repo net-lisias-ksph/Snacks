@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.14
+- Fixed restock whitelist
+
 1.13
 - Fixed recycler and processor efficiency calculations.
 - Other bug fixes.
