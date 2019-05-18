@@ -1,3 +1,5 @@
+//Deprecated. Check out SNACKS_PART_RESOURCE config node in Resources.cfg.
+// This file will be deleted in a future release.
 @PART:HAS[@MODULE[ModuleCommand],#CrewCapacity[>0],!RESOURCE[Snacks]]:FOR[Snacks]
 {
 	RESOURCE

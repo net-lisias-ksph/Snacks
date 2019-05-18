@@ -59,6 +59,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Consumers\BaseResourceConsumer.cs" />
     <Compile Include="LifeSupport\AstronautData.cs" />
     <Compile Include="Experimental\BlackoutTest.cs" />
     <Compile Include="Experimental\CommNetController.cs" />
@@ -73,9 +74,12 @@
     <Compile Include="SettingsAndScenario\SnacksScenario.cs" />
     <Compile Include="Converters\SnackProcessor.cs" />
     <Compile Include="Experimental\SnacksModuleCommand.cs" />
-    <Compile Include="Experimental\SnacksBackgroundConverter.cs" />
+    <Compile Include="Converters\SnacksBackgroundConverter.cs" />
     <Compile Include="Experimental\SnacksControlSource.cs" />
     <Compile Include="Converters\SnacksConverter.cs" />
+    <Compile Include="Consumers\SnacksResourceConsumer.cs" />
+    <Compile Include="ResourceClasses\SnacksPartResource.cs" />
+    <Compile Include="ResourceClasses\SnacksEVAResource.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
     <Compile Include="Utilities\SnacksResourceSwitcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -96,5 +96,61 @@ namespace Snacks
             inputEfficiency = crewEfficiencyBonus;
             outputEfficiency = productionEfficiency * crewEfficiencyBonus;
         }
+
+        public override string GetInfo()
+        {
+            StringBuilder infoBuilder = new StringBuilder();
+            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
+            string resourceName;
+
+            int resourceCount = inputList.Count;
+            if (resourceCount > 0)
+            {
+                infoBuilder.AppendLine("<color=#7FFF00><b>Inputs</b></color>");
+                for (int index = 0; index < resourceCount; index++)
+                {
+                    resourceName = definitions[inputList[index].ResourceName].displayName;
+                    infoBuilder.AppendLine(" -" + resourceName);
+                }
+            }
+
+            resourceCount = outputList.Count;
+            if (resourceCount > 0)
+            {
+                infoBuilder.AppendLine("<color=#7FFF00><b>Outputs</b></color>");
+                for (int index = 0; index < resourceCount; index++)
+                {
+                    resourceName = definitions[outputList[index].ResourceName].displayName;
+                    infoBuilder.AppendLine(" -" + resourceName);
+                }
+            }
+            infoBuilder.AppendLine(" ");
+            infoBuilder.AppendLine("<b>Note: </b> Production rates vary depending upon game settings. Consult the Part Action Window for details.");
+
+            if (!string.IsNullOrEmpty(ExperienceEffect))
+            {
+                List<string> traits;
+                Experience.ExperienceSystemConfig config = new Experience.ExperienceSystemConfig();
+                config.LoadTraitConfigs();
+                traits = config.GetTraitsWithEffect(ExperienceEffect);
+
+                if (traits != null)
+                {
+                    int traitCount = traits.Count;
+                    StringBuilder traitBuilder = new StringBuilder();
+
+                    for (int index = 0; index < traitCount; index++)
+                        traitBuilder.Append(traits[index] + ",");
+                    char[] charsToTrim = {','};
+                    string traitList = traitBuilder.ToString().TrimEnd(charsToTrim);
+
+                    infoBuilder.AppendLine(" ");
+                    infoBuilder.AppendLine("<b>Kerbal(s) that improve production: </b>");
+                    infoBuilder.AppendLine(traitList);
+                }
+            }
+
+            return infoBuilder.ToString();
+        }
     }
 }

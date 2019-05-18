@@ -24,6 +24,13 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.15
+- Fixed issue where vessels spawned in game for rescue contracts lacked Snacks.
+- Fixed integration issue with WalkAbout.
+- The Soil Recycler now uses the Converter Skill from Engineers instead of the Science Skill. Yup, Scientists make Snacks from rocks and (sanitation) Engineers recycle Soil into Snacks.
+- The converter and recycler won't automatically shut down if they lack an input resource or an output resource is full. Instead they'll wait until they get what they need.
+- Updated the recycler/processor info view in the editor's part description window.
+
 1.14
 - Fixed restock whitelist
 

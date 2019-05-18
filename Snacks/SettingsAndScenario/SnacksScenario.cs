@@ -49,6 +49,12 @@ namespace Snacks
         public double cycleStartTime;
         public Dictionary<string, SnacksBackgroundConverter> backgroundConverters;
         public List<Part> createdParts;
+        public List<BaseResourceConsumer> resourceConsumers;
+        public SnacksPartResource[] snacksPartResources;
+        public SnacksEVAResource[] snacksEVAResources;
+
+        private Part lastEVAKerbal;
+        private Part lastBoardedKerbal;
         #endregion
 
         public static double GetHoursPerDay()
@@ -400,11 +406,33 @@ namespace Snacks
             }
             Instance = this;
             LoggingEnabled = SnacksProperties.DebugLoggingEnabled;
+
+            //Game events
+            GameEvents.onVesselLoaded.Add(onVesselLoaded);
+            GameEvents.onCrewOnEva.Add(onCrewOnEva);
+            GameEvents.onCrewBoardVessel.Add(onCrewBoardVessel);
+
+            //Create part resource list.
+            snacksPartResources = SnacksPartResource.LoadPartResources();
+
+            //Create eva resource list.
+            snacksEVAResources = SnacksEVAResource.LoadEVAResources();
+
+            //Create resource consumers list and snacks consumer
+            resourceConsumers = new List<BaseResourceConsumer>();
+            SnacksResourceConsumer snacksConsumer = new SnacksResourceConsumer();
+            snacksConsumer.Initialize();
+            resourceConsumers.Add(snacksConsumer);
+
+            //If we have other consumers, add them.
         }
 
-        public void Destroy()
+        public void OnDestroy()
         {
             GameEvents.onEditorPartEvent.Remove(onEditorPartEvent);
+            GameEvents.onVesselLoaded.Remove(onVesselLoaded);
+            GameEvents.onCrewOnEva.Remove(onCrewOnEva);
+            GameEvents.onCrewBoardVessel.Remove(onCrewBoardVessel);
         }
 
         public override void OnLoad(ConfigNode node)
@@ -457,6 +485,75 @@ namespace Snacks
         #endregion
 
         #region Game Events
+        private void onCrewBoardVessel(GameEvents.FromToAction<Part, Part> data)
+        {
+            try
+            {
+                Part evaKerbal = data.from;
+                Part boardedPart = data.to;
+
+                if (lastBoardedKerbal == evaKerbal)
+                    return;
+                lastBoardedKerbal = evaKerbal;
+
+                //Inform all eva resources
+                for (int index = 0; index < snacksEVAResources.Length; index++)
+                    snacksEVAResources[index].onCrewBoardedVessel(evaKerbal, boardedPart);
+
+                //Rebuild snapshots
+                SnackSnapshot.Instance().RebuildSnapshot();
+                SnacksScenario.Instance.RegisterCrew(boardedPart.vessel);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("[Snacks] - OnCrewBoardVessel " + ex.Message + ex.StackTrace);
+            }
+        }
+
+        private void onCrewOnEva(GameEvents.FromToAction<Part, Part> data)
+        {
+            try
+            {
+                Part evaKerbal = data.to;
+                Part partExited = data.from;
+
+                if (lastEVAKerbal == evaKerbal)
+                    return;
+                lastEVAKerbal = evaKerbal;
+
+                //Update the snacks EVA resource to reflect current game settings.
+                SnacksEVAResource.snacksEVAResource.amount = SnacksProperties.SnacksPerMeal;
+                SnacksEVAResource.snacksEVAResource.maxAmount = SnacksProperties.SnacksPerMeal;
+
+                //Inform all eva resources
+                for (int index = 0; index < snacksEVAResources.Length; index++)
+                    snacksEVAResources[index].onCrewEVA(evaKerbal, partExited);
+
+                //Rebuild snapshots
+                SnackSnapshot.Instance().RebuildSnapshot();
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("[Snacks] - OnCrewOnEva " + ex.Message + ex.StackTrace);
+            }
+        }
+
+        private void onVesselLoaded(Vessel vessel)
+        {
+            if (vessel.isEVA)
+            {
+                //Inform all eva resources
+                for (int index = 0; index < snacksEVAResources.Length; index++)
+                    snacksEVAResources[index].addResourcesIfNeeded(vessel);
+            }
+            else
+            {
+                //Inform all part resources
+                for (int index = 0; index < snacksPartResources.Length; index++)
+                    snacksPartResources[index].addResourcesIfNeeded(vessel);
+            }
+        }
+
         public void onEditorPartEvent(ConstructionEventType eventType, Part part)
         {
             if (!HighLogic.LoadedSceneIsEditor)
@@ -469,6 +566,10 @@ namespace Snacks
                 case ConstructionEventType.PartCreated:
                     if (!createdParts.Contains(part))
                         createdParts.Add(part);
+
+                    //Inform all part resources
+                    for (int index = 0; index < snacksPartResources.Length; index++)
+                        snacksPartResources[index].addResourcesIfNeeded(part);
                     break;
 
                 case ConstructionEventType.PartDeleted:

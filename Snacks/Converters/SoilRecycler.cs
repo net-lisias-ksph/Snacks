@@ -44,6 +44,17 @@ namespace Snacks
             Fields["dailyOutput"].guiName = "Max Recycling";
         }
 
+        public override string GetInfo()
+        {
+            StringBuilder infoBuilder = new StringBuilder();
+
+            infoBuilder.AppendLine(base.GetInfo());
+            infoBuilder.AppendLine(" ");
+            infoBuilder.AppendLine("<b>Recycler Capacity: </b>" + RecyclerCapacity + " kerbals");
+
+            return infoBuilder.ToString();
+        }
+
         protected override void updateSettings()
         {
             //Recyclers are calibrated for 1 snack per meal, 1 meal per day, at 100% efficiency.

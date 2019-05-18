@@ -87,8 +87,6 @@ namespace Snacks
 
             try
             {
-                GameEvents.onCrewOnEva.Add(OnCrewOnEva);
-                GameEvents.onCrewBoardVessel.Add(OnCrewBoardVessel);
                 GameEvents.onGameStateLoad.Add(onLoad);
                 GameEvents.onVesselRename.Add(OnRename);
                 GameEvents.onVesselChange.Add(OnVesselChange);
@@ -99,10 +97,6 @@ namespace Snacks
                 GameEvents.onVesselWillDestroy.Add(onVesselWillDestroy);
                 GameEvents.onVesselGoOffRails.Add(onVesselLoaded);
                 GameEvents.onVesselPartCountChanged.Add(OnVesselWasModified);
-                GameEvents.onEditorPartPlaced.Add(onEditorPartPlaced);
-                GameEvents.onEditorPodPicked.Add(onEditorPartPlaced);
-                GameEvents.onEditorPartEvent.Add(onEditorPartEvent);
-                GameEvents.onEditorPodSelected.Add(onEditorPartPlaced);
                 Instance = this;
             }
             catch (Exception ex)
@@ -200,44 +194,6 @@ namespace Snacks
         #endregion
 
         #region GameEvents
-        private void onEditorPartEvent(ConstructionEventType constructionEvent, Part part)
-        {
-            onEditorPartPlaced(part);
-        }
-
-        private void onEditorPartPlaced(Part part)
-        {
-            if (part == null)
-            {
-                Debug.Log("[Snacks] Nothing to do in onEditorPartPlaced, returning.");
-                return;
-            }
-
-            try
-            {
-                //Make sure the crewed part has snacks
-                if (part.Resources.Contains(SnacksProperties.SnacksResourceName) == false && part.CrewCapacity >= 1)
-                {
-                    PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
-
-                    double amount = 0;
-                    if (part.FindModuleImplementing<ModuleCommand>() != null)
-                        amount = SnacksProperties.SnacksPerCommand * part.CrewCapacity;
-                    else
-                        amount = SnacksProperties.SnacksPerCrewModule * part.CrewCapacity;
-
-                    //First, does the resource definition exist?
-                    if (definitions.Contains(SnacksProperties.SnacksResourceName))
-                    {
-                        part.Resources.Add(SnacksProperties.SnacksResourceName, amount, amount, true, true, false, true, PartResource.FlowMode.Both);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("[Snacks] Encountered an error during onEditorPartPlaced: " + ex);
-            }
-        }
 
         private void onVesselLoaded(Vessel vessel)
         {
@@ -299,54 +255,10 @@ namespace Snacks
             SnackSnapshot.Instance().RebuildSnapshot();
         }
 
-        private void OnCrewBoardVessel(GameEvents.FromToAction<Part, Part> data)
-        {
-            try
-            {
-                Part evaKerbal = data.from;
-                Part boardedPart = data.to;
-                double kerbalSnacks = consumer.GetSnackResource(evaKerbal, SnacksProperties.SnacksPerMeal);
-                boardedPart.RequestResource(SnacksProperties.SnackResourceID, -kerbalSnacks, ResourceFlowMode.ALL_VESSEL);
-                SnackSnapshot.Instance().RebuildSnapshot();
-                SnacksScenario.Instance.RegisterCrew(boardedPart.vessel);
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("Snacks - OnCrewBoardVessel: " + ex.Message + ex.StackTrace);
-            }
-        }
-
-        private void OnCrewOnEva(GameEvents.FromToAction<Part, Part> data)
-        {
-            try
-            {
-                Part evaKerbal = data.to;
-                Part partExited = data.from;
-                double snacksAmount = consumer.GetSnackResource(partExited, SnacksProperties.SnacksPerMeal);
-
-                if (evaKerbal.Resources.Contains(SnacksProperties.SnackResourceID) == false)
-                {
-                    ConfigNode node = new ConfigNode("RESOURCE");
-                    node.AddValue("name", SnacksProperties.SnacksResourceName);
-                    node.AddValue("maxAmount", "1");
-                    evaKerbal.Resources.Add(node);
-                }
-                evaKerbal.Resources[SnacksProperties.SnacksResourceName].amount = snacksAmount;
-                SnackSnapshot.Instance().RebuildSnapshot();
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("Snacks - OnCrewOnEva " + ex.Message + ex.StackTrace);
-            }
-
-        }
-
         void OnDestroy()
         {
             try
             {
-                GameEvents.onCrewOnEva.Remove(OnCrewOnEva);
-                GameEvents.onCrewBoardVessel.Remove(OnCrewBoardVessel);
                 GameEvents.onGameStateLoad.Remove(onLoad);
                 GameEvents.onVesselRename.Remove(OnRename);
                 GameEvents.onVesselChange.Remove(OnVesselChange);
@@ -356,10 +268,6 @@ namespace Snacks
                 GameEvents.onVesselRecovered.Remove(onVesselRecovered);
                 GameEvents.onVesselWillDestroy.Remove(onVesselWillDestroy);
                 GameEvents.onVesselGoOffRails.Remove(onVesselLoaded);
-//                GameEvents.onEditorPartPlaced.Remove(onEditorPartPlaced);
-//                GameEvents.onEditorPodPicked.Remove(onEditorPartPlaced);
-//                GameEvents.onEditorPartEvent.Remove(onEditorPartEvent);
-//                GameEvents.onEditorPodSelected.Remove(onEditorPartPlaced);
             }
             catch (Exception ex)
             {

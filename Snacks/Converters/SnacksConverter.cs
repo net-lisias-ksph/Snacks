@@ -314,7 +314,25 @@ namespace Snacks
 
                 //TODO: Handle required resources
 
+                //Make sure we have room for the outputs
+                count = recipe.Outputs.Count;
+                for (int index = 0; index < count; index++)
+                {
+                    resourceRatio = recipe.Outputs[index];
+
+                    resourceDef = definitions[resourceRatio.ResourceName];
+                    this.part.GetConnectedResourceTotals(resourceDef.id, out amount, out maxAmount, true);
+                    if (amount >= maxAmount)
+                    {
+                        status = resourceDef.displayName + " is full";
+                        if (AutoShutdown)
+                            StopResourceConverter();
+                        return;
+                    }
+                }
+
                 //Make sure we have enough of the inputs
+                count = recipe.Inputs.Count;
                 for (int index = 0; index < count; index++)
                 {
                     resourceRatio = recipe.Inputs[index];
@@ -328,15 +346,15 @@ namespace Snacks
                     this.part.GetConnectedResourceTotals(resourceDef.id, out amount, out maxAmount, true);
                     if (amount < resourceRatio.Ratio)
                     {
-                        StopResourceConverter();
                         status = "Missing " + resourceDef.displayName;
+                        if (AutoShutdown)
+                            StopResourceConverter();
                         return;
                     }
 
                     //Check for mininum EC
                     else if (resourceRatio.ResourceName == "ElectricCharge" && (amount / maxAmount) <= (minimumVesselPercentEC / 100.0f))
                     {
-                        StopResourceConverter();
                         status = "Needs more " + resourceDef.displayName;
                         return;
                     }
@@ -363,10 +381,11 @@ namespace Snacks
                     resourceDef = definitions[resourceRatio.ResourceName];
 
                     amountObtained = this.part.RequestResource(resourceDef.id, -resourceRatio.Ratio, resourceRatio.FlowMode);
-                    if (amountObtained >= maxAmount && (resourceRatio.DumpExcess == false || AutoShutdown))
+                    if (amountObtained >= maxAmount)
                     {
                         status = resourceDef.displayName + " is full";
-                        StopResourceConverter();
+//                        if ((resourceRatio.DumpExcess == false || AutoShutdown))
+//                            StopResourceConverter();
                     }
                 }
 
