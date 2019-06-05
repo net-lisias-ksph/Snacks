@@ -63,8 +63,8 @@ namespace Snacks
         /// <summary>
         /// Loads the SNACKS_EVA_RESOURCE config nodes, if any, and returns SnacksEVAResource objects.
         /// </summary>
-        /// <returns>An array of SnacksEVAResource objects.</returns>
-        public static SnacksEVAResource[] LoadEVAResources()
+        /// <returns>A list of SnacksEVAResource objects.</returns>
+        public static List<SnacksEVAResource> LoadEVAResources()
         {
             ConfigNode[] evaResourceNodes = GameDatabase.Instance.GetConfigNodes("SNACKS_EVA_RESOURCE");
             ConfigNode node;
@@ -98,7 +98,7 @@ namespace Snacks
                 resourceList.Add(resource);
             }
 
-            return resourceList.ToArray();
+            return resourceList;
         }
 
         /// <summary>

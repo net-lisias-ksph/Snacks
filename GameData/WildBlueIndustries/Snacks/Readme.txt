@@ -24,6 +24,29 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.16.1
+- Updated Snacks Trip Planner in the Docs folder - new Timewarp Calcs tab.
+- SnacksConverter now has new options:
+  requiresHomeConnection - Requires connection to homeworld to operate.
+  minimumCrew - Minimum number of crew that must be in the host part in order to run the converter.
+- Fixed NREs generated when converters are added in the editor.
+- Fixed issue where Snacks wasn't being added to parts in the editor.
+- Fixed debug info in SnacksProcessor.
+- Fixed issue where Snack supply window wasn't being updated when the window is opened and snack time happens.
+
+1.16
+- Added new celestial bodies filter to the snacks supply window.
+
+- Snacks will now run simulations on a vessel's supplies and converters to estimate how long the vessel's snacks will last.
+NOTE: For the simulator to work properly, be sure to visit all your in-flight vessels that have crews aboard after installing this update.
+NOTE: The simulator cannot simulate drill operations.
+
+- Made some improvements to background converter processing. As a bonus, power production & consumption are also run in the background- with Kopernicus support for solar arrays.
+
+- SnacksConverter now lists the yield resources in the part info window, and shows yield production time remaining in the PAW.
+
+- Snacks and other resources consumed per day are now calculated based on the solar day length of the homeworld instead of set to the stock 6hrs/24hrs. I'm looking at you, JNSQ...
+
 1.15
 - Fixed issue where vessels spawned in game for rescue contracts lacked Snacks.
 - Fixed integration issue with WalkAbout.

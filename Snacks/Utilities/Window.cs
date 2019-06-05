@@ -35,7 +35,13 @@ using KSP.UI.Dialogs;
 
 namespace Snacks
 {
-    public abstract class Window<T> : MonoBehaviour
+    public interface IManagedSnackWindow
+    {
+        bool IsVisible();
+        void DrawWindow();
+    }
+
+    public abstract class Window<T> : MonoBehaviour, IManagedSnackWindow
     {
         private const string kWindowLock = "SNACKSWINDOWLOCK";
 
@@ -80,9 +86,15 @@ namespace Snacks
         {
             this.visible = newValue;
 
-            if (!newValue)
+            if (SnacksScenario.Instance == null)
+                return;
+
+            if (newValue)
+                SnacksScenario.Instance.RegisterWindow(this);
+            else
             {
                 InputLockManager.SetControlLock(ControlTypes.None, kWindowLock + this.windowId);
+                SnacksScenario.Instance.UnregisterWindow(this);
             }
         }
 

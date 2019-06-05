@@ -75,8 +75,9 @@ namespace Snacks
 
         protected override void PreProcessing()
         {
-            int specialistBonus = HasSpecialist(this.ExperienceEffect);
-            float crewEfficiencyBonus = 1.0f;
+            int specialistBonus = 0;
+            if (HighLogic.LoadedSceneIsFlight)
+                specialistBonus = HasSpecialist(this.ExperienceEffect);
 
             if (specialistBonus > 0)
                 crewEfficiencyBonus = 1.0f + (SpecialistBonusBase + (1.0f + (float)specialistBonus) * SpecialistEfficiencyFactor);

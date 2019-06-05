@@ -72,8 +72,8 @@ namespace Snacks
         /// <summary>
         /// Loads the SNACKS_PART_RESOURCE config nodes, if any, and returns SnacksPartResource objects.
         /// </summary>
-        /// <returns>An array of SnacksPartResource objects.</returns>
-        public static SnacksPartResource[] LoadPartResources()
+        /// <returns>A list of SnacksPartResource objects.</returns>
+        public static List<SnacksPartResource> LoadPartResources()
         {
             ConfigNode[] partResourceNodes = GameDatabase.Instance.GetConfigNodes("SNACKS_PART_RESOURCE");
             ConfigNode node;
@@ -117,7 +117,7 @@ namespace Snacks
             }
 
             //Return the resources
-            return partResourceList.ToArray();
+            return partResourceList;
         }
 
         /// <summary>

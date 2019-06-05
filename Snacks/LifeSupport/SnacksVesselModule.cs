@@ -56,5 +56,13 @@ namespace Snacks
             //Apply death penalties
             DeathPenalty.CheckDeadKerbals(this.vessel);
         }
+
+        protected override void OnSave(ConfigNode node)
+        {
+            base.OnSave(node);
+
+            //Record solar flux for simulations and background processing.
+            node.AddValue("solarFlux", SnacksScenario.GetSolarFlux(vessel));
+        }
     }
 }

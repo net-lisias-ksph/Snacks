@@ -36,7 +36,10 @@ namespace Snacks
         public string dailyOutput = string.Empty;
 
         [KSPField(isPersistant = true)]
-        protected double originalSnacksRatio;
+        public double originalSnacksRatio;
+
+        [KSPField(isPersistant = true)]
+        public double sourceInputRatio;
 
         protected double productionEfficiency = 0f;
 
@@ -44,7 +47,7 @@ namespace Snacks
         {
             updateProductionEfficiency();
 
-            return originalSnacksRatio * productionEfficiency * SnacksScenario.GetHoursPerDay();
+            return originalSnacksRatio * productionEfficiency * SnacksScenario.GetSecondsPerDay();
         }
 
         public override void OnStart(StartState state)
@@ -58,7 +61,20 @@ namespace Snacks
                 ratio = outputList[index];
 
                 if (ratio.ResourceName == SnacksProperties.SnacksResourceName)
+                {
                     originalSnacksRatio = ratio.Ratio;
+                    break;
+                }
+            }
+            for (int index = 0; index < inputList.Count; index++)
+            {
+                ratio = inputList[index];
+
+                if (ratio.ResourceName == "Ore")
+                {
+                    sourceInputRatio = ratio.Ratio;
+                    break;
+                }
             }
 
             //Now set up the processor
@@ -84,7 +100,10 @@ namespace Snacks
 
         protected override void PreProcessing()
         {
-            int specialistBonus = HasSpecialist(this.ExperienceEffect);
+            int specialistBonus = 0;
+            if (HighLogic.LoadedSceneIsFlight)
+                specialistBonus = HasSpecialist(this.ExperienceEffect);
+
             float crewEfficiencyBonus = 1.0f;
 
             if (specialistBonus > 0)

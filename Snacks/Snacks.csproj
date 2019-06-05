@@ -59,7 +59,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Consumers\BaseResourceConsumer.cs" />
+    <Compile Include="ResourceClasses\ProcessedResource.cs" />
+    <Compile Include="Consumers\BaseResourceProcessor.cs" />
     <Compile Include="LifeSupport\AstronautData.cs" />
     <Compile Include="Experimental\BlackoutTest.cs" />
     <Compile Include="Experimental\CommNetController.cs" />
@@ -77,23 +78,27 @@
     <Compile Include="Converters\SnacksBackgroundConverter.cs" />
     <Compile Include="Experimental\SnacksControlSource.cs" />
     <Compile Include="Converters\SnacksConverter.cs" />
-    <Compile Include="Consumers\SnacksResourceConsumer.cs" />
+    <Compile Include="Consumers\SnacksResourceProcessor.cs" />
     <Compile Include="ResourceClasses\SnacksPartResource.cs" />
     <Compile Include="ResourceClasses\SnacksEVAResource.cs" />
+    <Compile Include="ResourceClasses\Snackshot.cs" />
+    <Compile Include="Simulator\SnackSimThread.cs" />
+    <Compile Include="Simulator\SimConverter.cs" />
+    <Compile Include="Simulator\SimSnacks.cs" />
+    <Compile Include="Simulator\SnackSimThreadPool.cs" />
     <Compile Include="Utilities\BaseSwitcher.cs" />
     <Compile Include="Utilities\SnacksResourceSwitcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="LifeSupport\ShipSupply.cs" />
     <Compile Include="GUI\SnackApp.cs" />
     <Compile Include="GUI\SnackAppView.cs" />
     <Compile Include="Consumers\SnackConsumer.cs" />
     <Compile Include="LifeSupport\SnackController.cs" />
     <Compile Include="Converters\SoilRecycler.cs" />
-    <Compile Include="LifeSupport\SnackSnapshot.cs" />
     <Compile Include="SettingsAndScenario\SnacksProperties.cs" />
     <Compile Include="Utilities\Window.cs" />
     <Compile Include="Utilities\WindowUtils.cs" />
     <Compile Include="Penalties\VesselControlPenalty.cs" />
+    <Compile Include="ResourceClasses\VesselSnackshot.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

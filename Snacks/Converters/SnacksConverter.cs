@@ -75,6 +75,15 @@ namespace Snacks
         #region Fields
         [KSPField]
         public int minimumVesselPercentEC = 5;
+
+        [KSPField]
+        public bool requiresHomeConnection;
+
+        [KSPField]
+        public int minimumCrew = 0;
+
+        [KSPField]
+        public bool removeSkillsWhenActive;
         #endregion
 
         #region Background Processing Fields
@@ -123,6 +132,12 @@ namespace Snacks
         public string progress = string.Empty;
 
         /// <summary>
+        /// Display field to show time remaining on the production cycle.
+        /// </summary>
+        [KSPField(guiActive = true, guiName = "Time Remaining")]
+        public string timeRemainingDisplay = string.Empty;
+
+        /// <summary>
         /// Results of the last production cycle attempt.
         /// </summary>
         [KSPField(guiActive = true, guiName = "Last Attempt", isPersistant = true)]
@@ -142,16 +157,84 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
+        [KSPField(isPersistant = true)]
+        public double inputEfficiency = 1f;
+
+        [KSPField(isPersistant = true)]
+        public double outputEfficiency = 1f;
+
         //Timekeeping for producing resources after a set amount of time.
         public double elapsedTime;
         public double secondsPerCycle = 0f;
-        public List<ResourceRatio> yieldResources = new List<ResourceRatio>();
-        public double inputEfficiency = 1f;
-        public double outputEfficiency = 1f;
+        public List<ResourceRatio> yieldsList = new List<ResourceRatio>();
         protected bool missingResources;
+        protected float crewEfficiencyBonus = 1.0f;
         #endregion
 
         #region Overrides
+        public override string GetInfo()
+        {
+            string moduleWatchlist = "SnacksConverter;SnackProcessor;SoilRecycler";
+            string moduleInfo = base.GetInfo();
+            StringBuilder info = new StringBuilder();
+            ConfigNode[] moduleNodes;
+            ConfigNode node = null;
+            ConfigNode[] yieldNodes = null;
+            ConfigNode yieldNode;
+            string moduleName;
+
+            info.AppendLine(moduleInfo);
+
+            //See if the module has a yield list. If so, get it.
+            moduleNodes = this.part.partInfo.partConfig.GetNodes("MODULE");
+            for (int index = 0; index < moduleNodes.Length; index++)
+            {
+                node = moduleNodes[index];
+
+                if (node.HasValue("name"))
+                    moduleName = node.GetValue("name");
+                else
+                    continue;
+
+                if (moduleWatchlist.Contains(moduleName))
+                {
+                    if (node.HasNode("YIELD_RESOURCE"))
+                        yieldNodes = node.GetNodes("YIELD_RESOURCE");
+                    break;
+                }
+                else
+                {
+                    node = null;
+                }
+            }
+
+            //If we found a yield resource list then add the info.
+            if (yieldNodes != null)
+            {
+                double processTimeHours = 0;
+                if (node.HasValue("hoursPerCycle"))
+                    double.TryParse(node.GetValue("hoursPerCycle"), out processTimeHours);
+
+                info.Append(" - Skill Needed: " + ExperienceEffect + "\r\n");
+                if (processTimeHours > 0)
+                {
+                    info.Append(" - Process Time: ");
+                    info.Append(string.Format("{0:f1} hours\r\n", processTimeHours));
+                }
+                info.Append(" - Yield Resources\r\n");
+                for (int yieldIndex = 0; yieldIndex < yieldNodes.Length; yieldIndex++)
+                {
+                    yieldNode = yieldNodes[yieldIndex];
+                    if (yieldNode.HasValue("ResourceName") && yieldNode.HasValue("Ratio"))
+                    {
+                        info.AppendLine("  - " + yieldNode.GetValue("ResourceName") + ": " + yieldNode.GetValue("Ratio"));
+                    }
+                }
+            }
+
+            return info.ToString();
+        }
+
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
@@ -170,34 +253,30 @@ namespace Snacks
 
         private void OnDestroy()
         {
-            GameEvents.onVesselGoOnRails.Remove(onVesselGoOnRails);
-            GameEvents.onVesselDestroy.Remove(onVesselDestroy);
-            GameEvents.onGameSceneLoadRequested.Add(onGameSceneLoadRequested);
         }
 
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
-            GameEvents.onVesselGoOnRails.Add(onVesselGoOnRails);
-            GameEvents.onVesselDestroy.Add(onVesselDestroy);
-            GameEvents.onGameSceneLoadRequested.Add(onGameSceneLoadRequested);
 
             //Create unique ID if needed
             if (string.IsNullOrEmpty(ID))
                 ID = Guid.NewGuid().ToString();
-            else if (HighLogic.LoadedSceneIsEditor && SnacksScenario.Instance.WasRecentlyCreated(this.part))
+            else if (HighLogic.LoadedSceneIsEditor)
                 ResetSettings();
 
             //Load yield resources if needed
-            loadYieldResources();
-            if (yieldResources.Count == 0)
+            loadYieldsList();
+            if (yieldsList.Count == 0)
             {
                 Fields["progress"].guiActive = false;
                 Fields["lastAttempt"].guiActive = false;
+                Fields["timeRemainingDisplay"].guiActive = false;
             }
 
-            //Update background processing
-            updateBackgroundConverter();
+            //Do a quick preprocessing to update our input/output effincies
+            secondsPerCycle = hoursPerCycle * 3600;
+            PreProcessing();
         }
 
         public override void StartResourceConverter()
@@ -212,20 +291,18 @@ namespace Snacks
             elapsedTime = 0.0f;
 
             PreProcessing();
-            updateBackgroundConverter();
         }
 
         public override void StopResourceConverter()
         {
             base.StopResourceConverter();
             progress = "None";
+            timeRemainingDisplay = "N/A";
 
             if (!string.IsNullOrEmpty(runningEffect))
                 this.part.Effect(stopEffect, 1.0f);
             if (!string.IsNullOrEmpty(runningEffect))
                 this.part.Effect(runningEffect, 0.0f);
-
-            updateBackgroundConverter();
         }
 
         protected override ConversionRecipe PrepareRecipe(double deltatime)
@@ -268,8 +345,11 @@ namespace Snacks
         {
             base.PreProcessing();
 
-            int specialistBonus = HasSpecialist(this.ExperienceEffect);
+            int specialistBonus = 0;
             float crewEfficiencyBonus = 1.0f;
+
+            if (HighLogic.LoadedSceneIsFlight)
+                specialistBonus = HasSpecialist(this.ExperienceEffect);
 
             if (specialistBonus > 0)
                 crewEfficiencyBonus = 1.0f + (SpecialistBonusBase + (1.0f + (float)specialistBonus) * SpecialistEfficiencyFactor);
@@ -312,7 +392,18 @@ namespace Snacks
                 recipe = PrepareRecipe(deltaTime);
                 count = recipe.Inputs.Count;
 
-                //TODO: Handle required resources
+                //Handle required resources
+                if (requiresHomeConnection && !this.part.vessel.connection.IsConnectedHome)
+                {
+                    status = "Requires home connection";
+                    return;
+                }
+
+                if (minimumCrew > 0 && this.part.protoModuleCrew.Count < minimumCrew)
+                {
+                    status = "Needs more crew (" + this.part.protoModuleCrew.Count + "/" + minimumCrew + ")";
+                    return;
+                }
 
                 //Make sure we have room for the outputs
                 count = recipe.Outputs.Count;
@@ -416,7 +507,7 @@ namespace Snacks
                 return;
             if (hoursPerCycle == 0f)
                 return;
-            if (yieldResources.Count == 0)
+            if (yieldsList.Count == 0)
                 return;
             if (!IsActivated)
                 return;
@@ -447,6 +538,7 @@ namespace Snacks
 
             //Calculate elapsed time
             elapsedTime = Planetarium.GetUniversalTime() - cycleStartTime;
+            timeRemainingDisplay = SnacksScenario.FormatTime(secondsPerCycle - elapsedTime, true);
 
             //Calculate progress
             CalculateProgress();
@@ -467,7 +559,7 @@ namespace Snacks
             }
 
             //Update status
-            if (yieldResources.Count > 0)
+            if (yieldsList.Count > 0)
                 status = "Progress: " + progress;
             else if (string.IsNullOrEmpty(status))
                 status = "Running";
@@ -475,7 +567,7 @@ namespace Snacks
         #endregion
 
         #region Yield Resources
-        protected void loadYieldResources()
+        protected void loadYieldsList()
         {
             if (this.part.partInfo.partConfig == null)
                 return;
@@ -508,7 +600,7 @@ namespace Snacks
                 return;
 
             //Ok, start processing the yield resources
-            yieldResources.Clear();
+            yieldsList.Clear();
             ResourceRatio yieldResource;
             string resourceName;
             double amount;
@@ -527,7 +619,7 @@ namespace Snacks
                 yieldResource = new ResourceRatio(resourceName, amount, true);
                 yieldResource.FlowMode = ResourceFlowMode.ALL_VESSEL;
 
-                yieldResources.Add(yieldResource);
+                yieldsList.Add(yieldResource);
             }
         }
         public virtual void PerformAnalysis()
@@ -535,7 +627,7 @@ namespace Snacks
             //If we have no minimum success then just produce the yield resources.
             if (minimumSuccess <= 0.0f)
             {
-                produceYieldResources(1.0);
+                produceyieldsList(1.0);
                 return;
             }
 
@@ -583,7 +675,7 @@ namespace Snacks
         protected virtual void onCriticalSuccess()
         {
             lastAttempt = attemptCriticalSuccess;
-            produceYieldResources(criticalSuccessMultiplier);
+            produceyieldsList(criticalSuccessMultiplier);
 
             //Show user message
             ScreenMessages.PostScreenMessage(ConverterName + ": " + criticalSuccessMessage, kMessageDuration);
@@ -592,7 +684,7 @@ namespace Snacks
         protected virtual void onFailure()
         {
             lastAttempt = attemptFail;
-            produceYieldResources(failureMultiplier);
+            produceyieldsList(failureMultiplier);
 
             //Show user message
             ScreenMessages.PostScreenMessage(ConverterName + ": " + failMessage, kMessageDuration);
@@ -601,15 +693,15 @@ namespace Snacks
         protected virtual void onSuccess()
         {
             lastAttempt = attemptSuccess;
-            produceYieldResources(1.0);
+            produceyieldsList(1.0);
 
             //Show user message
             ScreenMessages.PostScreenMessage(successMessage, kMessageDuration);
         }
 
-        protected virtual void produceYieldResources(double yieldMultiplier)
+        protected virtual void produceyieldsList(double yieldMultiplier)
         {
-            int count = yieldResources.Count;
+            int count = yieldsList.Count;
             ResourceRatio resourceRatio;
             double yieldAmount = 0;
             string resourceName;
@@ -635,7 +727,7 @@ namespace Snacks
             for (int index = 0; index < count; index++)
             {
                 yieldAmount = 0;
-                resourceRatio = yieldResources[index];
+                resourceRatio = yieldsList[index];
 
                 resourceName = resourceRatio.ResourceName;
                 yieldAmount = resourceRatio.Ratio * (1.0 + (highestSkill * SpecialistEfficiencyFactor)) * yieldMultiplier;
@@ -656,68 +748,6 @@ namespace Snacks
         {
             //Create UUID
             ID = Guid.NewGuid().ToString();
-        }
-
-        protected void updateBackgroundConverter()
-        {
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-            if (this.part.vessel == null)
-                return;
-            SnacksBackgroundConverter backgroundConverter = SnacksScenario.Instance.GetBackgroundConverter(this);
-            if (this.part.vessel.isActiveVessel)
-                PreProcessing();
-            if (backgroundConverter != null)
-            {
-                //Update vessel ID as that may have changed
-                backgroundConverter.vesselID = this.part.vessel.id.ToString();
-
-                //Reset the background processing flags since conditions may have changed.
-                backgroundConverter.IsActivated = this.IsActivated;
-                backgroundConverter.isMissingResources = false;
-                backgroundConverter.isContainerFull = false;
-                backgroundConverter.inputEfficiency = inputEfficiency;
-                backgroundConverter.outputEfficiency = outputEfficiency;
-                backgroundConverter.moduleName = this.ClassName;
-
-                SnacksScenario.Instance.UpdateBackgroundConverter(backgroundConverter);
-            }
-
-            //Background converter doesn't exist so create it.
-            else
-            {
-                SnacksScenario.Instance.RegisterBackgroundConverter(this);
-            }
-        }
-
-        protected void onGameSceneLoadRequested(GameScenes scene)
-        {
-            if (this.part.vessel != null)
-                updateBackgroundConverter();
-        }
-
-        protected void onVesselGoOnRails(Vessel vessel)
-        {
-            if (vessel == this.part.vessel)
-                updateBackgroundConverter();
-        }
-
-        protected void onVesselDestroy(Vessel vessel)
-        {
-            if (vessel == this.part.vessel)
-            {
-                SnacksScenario.Instance.UnregisterBackgroundConverter(this);
-            }
-        }
-
-        protected void registerForBackgroundProcessing()
-        {
-            SnacksScenario.Instance.RegisterBackgroundConverter(this);
-        }
-
-        protected void unregisterForBackgroundProcessing()
-        {
-            SnacksScenario.Instance.UnregisterBackgroundConverter(this);
         }
         #endregion
     }

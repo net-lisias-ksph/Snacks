@@ -47,7 +47,7 @@ namespace Snacks
     public class SnacksBackgroundConverter
     {
         public static string NodeName = "SnacksBackgroundConverter";
-        public static string skipReources = "ElectricCharge;";
+        public static string skipReources = ";";
 
         #region Properties
         public string converterID;
@@ -61,14 +61,14 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
-        List<ResourceRatio> inputResources = new List<ResourceRatio>();
-        List<ResourceRatio> outputResources = new List<ResourceRatio>();
-        List<ResourceRatio> requiredResources = new List<ResourceRatio>();
-        List<ResourceRatio> yieldResources = new List<ResourceRatio>();
-        string inputResourceNames;
-        string outputResourceNames;
-        string requiedResourceNames;
-        string yieldResourceNames;
+        List<ResourceRatio> inputList = new List<ResourceRatio>();
+        List<ResourceRatio> outputList = new List<ResourceRatio>();
+        List<ResourceRatio> requiredList = new List<ResourceRatio>();
+        List<ResourceRatio> yieldsList = new List<ResourceRatio>();
+        string inputResourceNames = string.Empty;
+        string outputResourceNames = string.Empty;
+        string requiredResourceNames = string.Empty;
+        string yieldResourceNames = string.Empty;
 
         public string ConverterName = string.Empty;
         public string moduleName = string.Empty;
@@ -79,279 +79,266 @@ namespace Snacks
         public double outputEfficiency = 1.0f;
         bool UseSpecialistBonus = false;
         float SpecialistBonusBase = 0.05f;
-        float SpecialistEfficiencyFactor = 0f;
+        float SpecialistEfficiencyFactor = 0.1f;
         string ExperienceEffect = string.Empty;
         double cycleStartTime = 0;
+        bool isGenerator = false;
 
         ProtoPartSnapshot protoPart;
         ProtoPartModuleSnapshot moduleSnapshot;
         Dictionary<string, List<ProtoPartResourceSnapshot>> protoResources = new Dictionary<string, List<ProtoPartResourceSnapshot>>();
-//        double productionMultiplier = 1.0f;
         #endregion
 
-        #region Load and Save
-        public static void SaveBackgroundConvertersMap(Dictionary<string, SnacksBackgroundConverter> backgroundConverters, ConfigNode node)
+        #region Constructors
+        public static Dictionary<Vessel, List<SnacksBackgroundConverter>> GetBackgroundConverters()
         {
-            ConfigNode converterNode;
-
-            if (backgroundConverters == null)
-                return;
-
-            foreach (SnacksBackgroundConverter converter in backgroundConverters.Values)
-            {
-                converterNode = converter.Save();
-                node.AddNode(converterNode);
-            }
-        }
-
-        public static Dictionary<string, SnacksBackgroundConverter> BuildBackgroundConvertersMap(ConfigNode node)
-        {
-            Dictionary<string, SnacksBackgroundConverter> backgroundConverters = new Dictionary<string, SnacksBackgroundConverter>();
-
-            ConfigNode[] configNodes = node.GetNodes(SnacksBackgroundConverter.NodeName);
+            string moduleWatchlist = "SnacksConverter;SnacksProcessor;SoilRecycler";
+            Dictionary<Vessel, List<SnacksBackgroundConverter>> backgroundConverters = new Dictionary<Vessel, List<SnacksBackgroundConverter>>();
+            List<SnacksBackgroundConverter> converters;
+            ProtoVessel protoVessel;
+            Vessel vessel = null;
+            ProtoPartSnapshot protoPart;
+            ProtoPartModuleSnapshot protoModule;
+            int partCount;
+            int moduleCount;
+            bool isActivated;
             SnacksBackgroundConverter converter;
 
-            for (int index = 0; index < configNodes.Length; index++)
+            int unloadedCount = FlightGlobals.VesselsUnloaded.Count;
+            for (int index = 0; index < unloadedCount; index++)
             {
-                converter = new SnacksBackgroundConverter();
-                converter.Load(configNodes[index]);
+                vessel = FlightGlobals.VesselsUnloaded[index];
+                //Skip vessel types that we're not interested in.
+                if (vessel.vesselType == VesselType.Debris ||
+                    vessel.vesselType == VesselType.Flag ||
+                    vessel.vesselType == VesselType.SpaceObject ||
+                    vessel.vesselType == VesselType.Unknown)
+                    continue;
 
-                backgroundConverters.Add(converter.converterID, converter);
+                protoVessel = vessel.protoVessel;
+                if (protoVessel.GetVesselCrew().Count == 0)
+                    continue;
+
+                partCount = protoVessel.protoPartSnapshots.Count;
+                for (int partIndex = 0; partIndex < partCount; partIndex++)
+                {
+                    protoPart = protoVessel.protoPartSnapshots[partIndex];
+                    moduleCount = protoPart.modules.Count;
+                    for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+                    {
+                        protoModule = protoPart.modules[moduleIndex];
+                        if (moduleWatchlist.Contains(protoModule.moduleName))
+                        {
+                            //Skip if not active
+                            isActivated = false;
+                            if (protoModule.moduleValues.HasValue("IsActivated"))
+                            {
+                                isActivated = false;
+                                bool.TryParse(protoModule.moduleValues.GetValue("IsActivated"), out isActivated);
+                                if (isActivated)
+                                {
+                                    if (!backgroundConverters.ContainsKey(vessel))
+                                        backgroundConverters.Add(vessel, new List<SnacksBackgroundConverter>());
+                                    converters = backgroundConverters[vessel];
+
+                                    //Create a background converter
+                                    converters.Add(new SnacksBackgroundConverter(protoPart, protoModule, moduleIndex));
+                                    backgroundConverters[vessel] = converters;
+                                }
+                            }
+                        }
+
+                        //Technically not a background converter, we can still treat a ModuleGenerator as if it were one.
+                        else if (protoModule.moduleName == "ModuleGenerator")
+                        {
+                            if (protoModule.moduleValues.HasValue("isAlwaysActive"))
+                            {
+                                isActivated = false;
+                                bool.TryParse(protoModule.moduleValues.GetValue("isAlwaysActive"), out isActivated);
+                                if (isActivated)
+                                {
+                                    if (!backgroundConverters.ContainsKey(vessel))
+                                        backgroundConverters.Add(vessel, new List<SnacksBackgroundConverter>());
+                                    converters = backgroundConverters[vessel];
+
+                                    //Create a background converter
+                                    converter = new SnacksBackgroundConverter(protoPart, protoModule, moduleIndex);
+                                    converter.isGenerator = true;
+                                    converters.Insert(0, converter);
+                                    backgroundConverters[vessel] = converters;
+                                }
+                            }
+                        }
+
+                        //Solar panels aren't background converters either, but we can treat them like one.
+                        else if (protoModule.moduleName == "ModuleDeployableSolarPanel" || protoModule.moduleName == "KopernicusSolarPanel")
+                        {
+                            if (!protoPart.partInfo.partConfig.HasNode("MODULE"))
+                                continue;
+                            ConfigNode[] panelNodes = protoPart.partInfo.partConfig.GetNodes("MODULE");
+                            ConfigNode panelNode = null;
+                            string panelModuleName = null;
+                            string deployState = string.Empty;
+                            double chargeRate = 0;
+                            double solarFlux = PhysicsGlobals.SolarLuminosityAtHome;
+
+                            if (moduleIndex < panelNodes.Length)
+                                panelNode = panelNodes[moduleIndex];
+                            else
+                                continue;
+                            if (!panelNode.HasValue("name"))
+                                continue;
+                            panelModuleName = panelNode.GetValue("name");
+                            if (panelModuleName != "ModuleDeployableSolarPanel")
+                                continue;
+
+                            //Make sure the array is extended (non-deployable arrays are always extended)
+                            if (protoModule.moduleValues.HasValue("deployState"))
+                                deployState = protoModule.moduleValues.GetValue("deployState");
+                            if (deployState != "EXTENDED")
+                                continue;
+
+                            //Get the background converters list
+                            if (!backgroundConverters.ContainsKey(vessel))
+                                backgroundConverters.Add(vessel, new List<SnacksBackgroundConverter>());
+                            converters = backgroundConverters[vessel];
+
+                            //Create a background converter
+                            converter = new SnacksBackgroundConverter();
+                            converter.protoPart = protoPart;
+                            converter.moduleSnapshot = protoModule;
+                            converter.isGenerator = true;
+
+                            //Calculate solarFlux                            
+                            if (protoVessel.vesselModules.HasNode("SnacksVesselModule"))
+                            {
+                                ConfigNode vesselNode = protoVessel.vesselModules.GetNode("SnacksVesselModule");
+                                if (vesselNode.HasValue("solarFlux"))
+                                    double.TryParse(vesselNode.GetValue("solarFlux"), out solarFlux);
+                            }
+
+                            //Add EC output
+                            ResourceRatio resourceRatio = new ResourceRatio();
+                            resourceRatio.FlowMode = ResourceFlowMode.ALL_VESSEL;
+                            resourceRatio.ResourceName = panelNode.GetValue("resourceName");
+                            double.TryParse(panelNode.GetValue("chargeRate"), out chargeRate);
+                            resourceRatio.Ratio = chargeRate / 2;
+                            resourceRatio.Ratio *= solarFlux / PhysicsGlobals.SolarLuminosityAtHome;
+                            converter.outputList.Add(resourceRatio);
+
+                            converters.Insert(0, converter);
+                            backgroundConverters[vessel] = converters;
+                        }
+                    }
+                }
+
+                //Give mods a chance to add custom converters that aren't covered by Snacks.
+                SnacksScenario.onBackgroundConvertersCreated.Fire(vessel);
             }
 
             return backgroundConverters;
         }
 
-        public void Load(ConfigNode node)
+        public SnacksBackgroundConverter(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, int moduleIndex)
         {
-            converterID = node.GetValue("converterID");
-            vesselID = node.GetValue("vesselID");
-            ConverterName = node.GetValue("ConverterName");
-            moduleName = node.GetValue("moduleName");
+            ConfigNode[] moduleNodes;
+            ConfigNode node = null;
+            int count;
 
-            double.TryParse(node.GetValue("inputEfficiency"), out inputEfficiency);
-            double.TryParse(node.GetValue("outputEfficiency"), out outputEfficiency);
-            bool.TryParse(node.GetValue("UseSpecialistBonus"), out UseSpecialistBonus);
-            if (node.HasValue("ExperienceEffect"))
-                ExperienceEffect = node.GetValue("ExperienceEffect");
-            float.TryParse(node.GetValue("SpecialistEfficiencyFactor"), out SpecialistEfficiencyFactor);
-            float.TryParse(node.GetValue("SpecialistBonusBase"), out SpecialistBonusBase);
-
-            bool.TryParse(node.GetValue("IsActivated"), out IsActivated);
-            bool.TryParse(node.GetValue("isMissingResources"), out isMissingResources);
-            bool.TryParse(node.GetValue("isContainerFull"), out isContainerFull);
-
-            double.TryParse(node.GetValue("hoursPerCycle"), out hoursPerCycle);
-            float.TryParse(node.GetValue("minimumSuccess"), out minimumSuccess);
-            float.TryParse(node.GetValue("criticalSuccess"), out criticalSuccess);
-            float.TryParse(node.GetValue("criticalFail"), out criticalFail);
-            double.TryParse(node.GetValue("criticalSuccessMultiplier"), out criticalSuccessMultiplier);
-            double.TryParse(node.GetValue("failureMultiplier"), out failureMultiplier);
-            double.TryParse(node.GetValue("cycleStartTime"), out cycleStartTime);
-
-            inputResources = new List<ResourceRatio>();
-            loadResourceNodes(node, "INPUT_RESOURCE", inputResources);
-
-            outputResources = new List<ResourceRatio>();
-            loadResourceNodes(node, "OUTPUT_RESOURCE", outputResources);
-
-            requiredResources = new List<ResourceRatio>();
-            loadResourceNodes(node, "REQUIRED_RESOURCE", requiredResources);
-
-            yieldResources = new List<ResourceRatio>();
-            loadResourceNodes(node, "YIELD_RESOURCE", yieldResources);
-
-            if (node.HasValue("inputResourceNames"))
-                inputResourceNames = node.GetValue("inputResourceNames");
-            if (node.HasValue("outputResourceNames"))
-                outputResourceNames = node.GetValue("outputResourceNames");
-            if (node.HasValue("requiedResourceNames"))
-                requiedResourceNames = node.GetValue("requiedResourceNames");
-            if (node.HasValue("yieldResourceNames"))
-                yieldResourceNames = node.GetValue("yieldResourceNames");
-        }
-
-        protected void loadResourceNodes(ConfigNode node, string nodeName, List<ResourceRatio> resources)
-        {
-            ConfigNode[] resourceNodes;
-            ConfigNode resourceNode;
-            ResourceRatio resourceRatio;
-
-            if (node.HasNode(nodeName))
-            {
-                resourceNodes = node.GetNodes(nodeName);
-
-                for (int index = 0; index < resourceNodes.Length; index++)
-                {
-                    resourceNode = resourceNodes[index];
-
-                    resourceRatio = new ResourceRatio();
-                    resourceRatio.Load(resourceNode);
-
-                    resources.Add(resourceRatio);
-                }
-            }
-        }
-
-        public ConfigNode Save()
-        {
-            ConfigNode node = new ConfigNode(NodeName);
-
-            node.AddValue("converterID", converterID);
-            node.AddValue("vesselID", vesselID);
-            node.AddValue("ConverterName", ConverterName);
-            node.AddValue("moduleName", moduleName);
-            node.AddValue("hoursPerCycle", hoursPerCycle);
-            node.AddValue("cycleStartTime", cycleStartTime);
-            node.AddValue("minimumSuccess", minimumSuccess);
-            node.AddValue("criticalSuccess", criticalSuccess);
-            node.AddValue("criticalFail", criticalFail);
-            node.AddValue("criticalSuccessMultiplier", criticalSuccessMultiplier);
-            node.AddValue("failureMultiplier", failureMultiplier);
-            node.AddValue("IsActivated", IsActivated);
-            node.AddValue("isMissingResources", isMissingResources);
-            node.AddValue("isContainerFull", isContainerFull);
-
-            node.AddValue("inputEfficiency", inputEfficiency);
-            node.AddValue("outputEfficiency", outputEfficiency);
-            node.AddValue("UseSpecialistBonus", UseSpecialistBonus);
-            if (!string.IsNullOrEmpty(ExperienceEffect))
-                node.AddValue("ExperienceEffect", ExperienceEffect);
-            node.AddValue("SpecialistEfficiencyFactor", SpecialistEfficiencyFactor);
-            node.AddValue("SpecialistBonusBase", SpecialistBonusBase);
-
-            if (!string.IsNullOrEmpty(inputResourceNames))
-                node.AddValue("inputResourceNames", inputResourceNames);
-            if (!string.IsNullOrEmpty(outputResourceNames))
-                node.AddValue("outputResourceNames", outputResourceNames);
-            if (!string.IsNullOrEmpty(requiedResourceNames))
-                node.AddValue("requiedResourceNames", requiedResourceNames);
-            if (!string.IsNullOrEmpty(yieldResourceNames))
-                node.AddValue("yieldResourceNames", yieldResourceNames);
-
-            ConfigNode resourceNode;
-            foreach (ResourceRatio resourceRatio in inputResources)
-            {
-                resourceNode = new ConfigNode("INPUT_RESOURCE");
-                resourceRatio.Save(resourceNode);
-                node.AddNode(resourceNode);
-            }
-            foreach (ResourceRatio resourceRatio in outputResources)
-            {
-                resourceNode = new ConfigNode("OUTPUT_RESOURCE");
-                resourceRatio.Save(resourceNode);
-                node.AddNode(resourceNode);
-            }
-            foreach (ResourceRatio resourceRatio in requiredResources)
-            {
-                resourceNode = new ConfigNode("REQUIRED_RESOURCE");
-                resourceRatio.Save(resourceNode);
-                node.AddNode(resourceNode);
-            }
-            foreach (ResourceRatio resourceRatio in yieldResources)
-            {
-                resourceNode = new ConfigNode("YIELD_RESOURCE");
-                resourceRatio.Save(resourceNode);
-                node.AddNode(resourceNode);
-            }
-
-            return node;
-        }
-
-        public void GetConverterData(SnacksConverter converter)
-        {
-            this.converterID = converter.ID;
-            this.ConverterName = converter.ConverterName;
-            this.vesselID = converter.part.vessel.id.ToString();
-            this.hoursPerCycle = converter.hoursPerCycle;
-            this.minimumSuccess = converter.minimumSuccess;
-            this.criticalSuccess = converter.criticalSuccess;
-            this.criticalFail = converter.criticalFail;
-            this.criticalSuccessMultiplier = converter.criticalSuccessMultiplier;
-            this.failureMultiplier = converter.failureMultiplier;
-
-            this.UseSpecialistBonus = converter.UseSpecialistBonus;
-            if (converter.UseSpecialistBonus)
-            {
-                this.ExperienceEffect = converter.ExperienceEffect;
-                this.SpecialistEfficiencyFactor = converter.SpecialistEfficiencyFactor;
-                this.SpecialistBonusBase = converter.SpecialistBonusBase;
-            }
+            //Get the config node. Module index must match.
+            moduleNodes = protoPart.partInfo.partConfig.GetNodes("MODULE");
+            if (moduleIndex <= moduleNodes.Length - 1)
+                node = moduleNodes[moduleIndex];
             else
-            {
-                this.SpecialistBonusBase = 0f;
-                this.SpecialistEfficiencyFactor = 0f;
-                this.ExperienceEffect = string.Empty;
-            }
+                return;
 
-            ResourceRatio ratio;
-            inputResourceNames = "";
-            inputResources.Clear();
-            foreach (ResourceRatio resourceRatio in converter.inputList)
+            //We've got a config node, but is it a converter? if so, get its resource lists.
+            if (node.HasValue("ConverterName"))
             {
-                if (skipReources.Contains(resourceRatio.ResourceName))
-                    continue;
-                ratio = new ResourceRatio();
-                ratio.ResourceName = resourceRatio.ResourceName;
-                ratio.Ratio = resourceRatio.Ratio;
-                ratio.FlowMode = resourceRatio.FlowMode;
-                ratio.DumpExcess = resourceRatio.DumpExcess;
+                this.moduleSnapshot = protoModule;
+                this.protoPart = protoPart;
 
-                this.inputResources.Add(ratio);
-                inputResourceNames += ratio.ResourceName + ";";
-            }
-            outputResourceNames = "";
-            outputResources.Clear();
-            foreach (ResourceRatio resourceRatio in converter.outputList)
-            {
-                if (skipReources.Contains(resourceRatio.ResourceName))
-                    continue;
-                ratio = new ResourceRatio();
-                ratio.ResourceName = resourceRatio.ResourceName;
-                ratio.Ratio = resourceRatio.Ratio;
-                ratio.FlowMode = resourceRatio.FlowMode;
-                ratio.DumpExcess = resourceRatio.DumpExcess;
+                bool.TryParse(protoModule.moduleValues.GetValue("IsActivated"), out IsActivated);
 
-                this.outputResources.Add(ratio);
-                outputResourceNames += ratio.ResourceName + ";";
-            }
-            requiedResourceNames = "";
-            requiredResources.Clear();
-            foreach (ResourceRatio resourceRatio in converter.reqList)
-            {
-                if (skipReources.Contains(resourceRatio.ResourceName))
-                    continue;
-                ratio = new ResourceRatio();
-                ratio.ResourceName = resourceRatio.ResourceName;
-                ratio.Ratio = resourceRatio.Ratio;
-                ratio.FlowMode = resourceRatio.FlowMode;
-                ratio.DumpExcess = resourceRatio.DumpExcess;
+                //Get input resources
+                if (node.HasNode("INPUT_RESOURCE"))
+                    getConverterResources("INPUT_RESOURCE", inputList, node);
+                count = inputList.Count;
+                for (int index = 0; index < count; index++)
+                    inputResourceNames += inputList[index].ResourceName;
 
-                this.requiredResources.Add(ratio);
-                requiedResourceNames += ratio.ResourceName + ";";
-            }
-            yieldResourceNames = "";
-            yieldResources.Clear();
-            foreach (ResourceRatio resourceRatio in converter.yieldResources)
-            {
-                if (skipReources.Contains(resourceRatio.ResourceName))
-                    continue;
-                ratio = new ResourceRatio();
-                ratio.ResourceName = resourceRatio.ResourceName;
-                ratio.Ratio = resourceRatio.Ratio;
-                ratio.FlowMode = resourceRatio.FlowMode;
-                ratio.DumpExcess = resourceRatio.DumpExcess;
+                //Get output resources
+                if (node.HasNode("OUTPUT_RESOURCE"))
+                    getConverterResources("OUTPUT_RESOURCE", outputList, node);
+                count = outputList.Count;
+                for (int index = 0; index < count; index++)
+                    outputResourceNames += outputList[index].ResourceName;
 
-                this.yieldResources.Add(ratio);
-                yieldResourceNames += ratio.ResourceName + ";";
+                //Get required resources
+                if (node.HasNode("REQUIRED_RESOURCE"))
+                    getConverterResources("YIELD_RESOURCE", requiredList, node);
+                count = requiredList.Count;
+                for (int index = 0; index < count; index++)
+                    requiredResourceNames += requiredList[index].ResourceName;
+
+                //Get yield resources
+                if (node.HasNode("YIELD_RESOURCE"))
+                    getConverterResources("YIELD_RESOURCE", yieldsList, node);
+                count = yieldsList.Count;
+                for (int index = 0; index < count; index++)
+                    yieldResourceNames += yieldsList[index].ResourceName;
+
+                if (node.HasValue("hoursPerCycle"))
+                    double.TryParse(node.GetValue("hoursPerCycle"), out hoursPerCycle);
+
+                if (node.HasValue("minimumSuccess"))
+                    float.TryParse(node.GetValue("minimumSuccess"), out minimumSuccess);
+
+                if (node.HasValue("criticalSuccess"))
+                    float.TryParse(node.GetValue("criticalSuccess"), out criticalSuccess);
+
+                if (node.HasValue("criticalFail"))
+                    float.TryParse(node.GetValue("criticalFail"), out criticalFail);
+
+                if (node.HasValue("criticalSuccessMultiplier"))
+                    double.TryParse(node.GetValue("criticalSuccessMultiplier"), out criticalSuccessMultiplier);
+
+                if (node.HasValue("failureMultiplier"))
+                    double.TryParse(node.GetValue("failureMultiplier"), out failureMultiplier);
+
+                if (node.HasValue("UseSpecialistBonus"))
+                    bool.TryParse(node.GetValue("UseSpecialistBonus"), out UseSpecialistBonus);
+
+                if (node.HasValue("SpecialistBonusBase"))
+                    float.TryParse(node.GetValue("SpecialistBonusBase"), out SpecialistBonusBase);
+
+                if (node.HasValue("SpecialistEfficiencyFactor"))
+                    float.TryParse(node.GetValue("SpecialistEfficiencyFactor"), out SpecialistEfficiencyFactor);
+
+                if (node.HasValue("ExperienceEffect"))
+                    ExperienceEffect = node.GetValue("ExperienceEffect");
+
+                if (protoModule.moduleValues.HasValue("cycleStartTime"))
+                    double.TryParse(protoModule.moduleValues.GetValue("cycleStartTime"), out cycleStartTime);
+
+                if (protoModule.moduleValues.HasValue("inputEfficiency"))
+                    double.TryParse(protoModule.moduleValues.GetValue("inputEfficiency"), out inputEfficiency);
+
+                if (protoModule.moduleValues.HasValue("outputEfficiency"))
+                    double.TryParse(protoModule.moduleValues.GetValue("outputEfficiency"), out outputEfficiency);
             }
+        }
+
+        public SnacksBackgroundConverter()
+        {
+
         }
         #endregion
 
         #region Converter Operations
         public void CheckRequiredResources(ProtoVessel vessel, double elapsedTime)
         {
-            int count = requiredResources.Count;
+            int count = requiredList.Count;
             if (count == 0)
                 return;
 
@@ -359,7 +346,7 @@ namespace Snacks
             double amount = 0;
             for (int index = 0; index < count; index++)
             {
-                resourceRatio = requiredResources[index];
+                resourceRatio = requiredList[index];
                 amount = getAmount(resourceRatio.ResourceName, resourceRatio.FlowMode);
                 if (amount < resourceRatio.Ratio)
                 {
@@ -374,7 +361,7 @@ namespace Snacks
 
         public void ConsumeInputResources(ProtoVessel vessel, double elapsedTime)
         {
-            int count = inputResources.Count;
+            int count = inputList.Count;
             if (count == 0)
                 return;
             if (isMissingResources)
@@ -388,7 +375,7 @@ namespace Snacks
             double demand = 0;
             for (int index = 0; index < count; index++)
             {
-                resourceRatio = inputResources[index];
+                resourceRatio = inputList[index];
                 demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
                 amount = getAmount(resourceRatio.ResourceName, resourceRatio.FlowMode);
                 if (amount < demand)
@@ -405,7 +392,7 @@ namespace Snacks
             //Now consume the resources
             for (int index = 0; index < count; index++)
             {
-                resourceRatio = inputResources[index];
+                resourceRatio = inputList[index];
                 demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
                 requestAmount(resourceRatio.ResourceName, demand, resourceRatio.FlowMode);
             }
@@ -413,7 +400,7 @@ namespace Snacks
 
         public void ProduceOutputResources(ProtoVessel vessel, double elapsedTime)
         {
-            int count = outputResources.Count;
+            int count = outputList.Count;
             if (count == 0)
                 return;
             if (isMissingResources)
@@ -425,15 +412,15 @@ namespace Snacks
             double supply = 0;
             for (int index = 0; index < count; index++)
             {
-                resourceRatio = outputResources[index];
+                resourceRatio = outputList[index];
                 supply = resourceRatio.Ratio * outputEfficiency * elapsedTime;
                 supplyAmount(resourceRatio.ResourceName, supply, resourceRatio.FlowMode, resourceRatio.DumpExcess);
             }
         }
 
-        public void ProduceYieldResources(ProtoVessel vessel)
+        public void ProduceyieldsList(ProtoVessel vessel)
         {
-            int count = yieldResources.Count;
+            int count = yieldsList.Count;
             if (count == 0)
                 return;
             if (isMissingResources)
@@ -465,7 +452,7 @@ namespace Snacks
                 {
                     if (minimumSuccess <= 0)
                     {
-                        supplyYieldResources(1.0);
+                        supplyyieldsList(1.0);
                     }
 
                     else
@@ -490,15 +477,15 @@ namespace Snacks
                         }
                         else if (roll >= criticalSuccess)
                         {
-                            supplyYieldResources(criticalSuccessMultiplier);
+                            supplyyieldsList(criticalSuccessMultiplier);
                         }
                         else if (roll >= minimumSuccess)
                         {
-                            supplyYieldResources(1.0);
+                            supplyyieldsList(1.0);
                         }
                         else
                         {
-                            supplyYieldResources(failureMultiplier);
+                            supplyyieldsList(failureMultiplier);
                         }
                     }
                 }
@@ -509,10 +496,8 @@ namespace Snacks
         {
             //Find out proto part and module and resources
             int count = vessel.protoPartSnapshots.Count;
-            int moduleCount;
             int resourceCount;
             ProtoPartSnapshot pps;
-            ProtoPartModuleSnapshot protoPartModule;
             ProtoPartResourceSnapshot protoPartResource;
             List<ProtoPartResourceSnapshot> resourceList;
 
@@ -524,38 +509,7 @@ namespace Snacks
                 //Get the proto part snapshot
                 pps = vessel.protoPartSnapshots[index];
 
-                //Now search through the modules for the converter module
-                moduleCount = pps.modules.Count;
-                for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
-                {
-                    protoPartModule = pps.modules[moduleIndex];
-                    if (protoPartModule.moduleName == moduleName)
-                    {
-                        //Ok, we found an omni converter, now check its ID.
-                        if (protoPartModule.moduleValues.HasValue("ID"))
-                        {
-                            if (protoPartModule.moduleValues.GetValue("ID") == this.converterID)
-                            {
-                                //Cache the part and module
-                                protoPart = pps;
-                                moduleSnapshot = protoPartModule;
-
-                                //Get activation state
-                                if (protoPartModule.moduleValues.HasValue("IsActivated"))
-                                    bool.TryParse(protoPartModule.moduleValues.GetValue("IsActivated"), out IsActivated);
-
-                                //Get cycleStartTime
-                                if (protoPartModule.moduleValues.HasValue("cycleStartTime"))
-                                    double.TryParse(protoPartModule.moduleValues.GetValue("cycleStartTime"), out cycleStartTime);
-
-                                //Done
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                //Next, sort through all the resources and add them to our buckets.
+                //Sort through all the resources and add them to our buckets.
                 resourceCount = pps.resources.Count;
                 for (int resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
                 {
@@ -602,9 +556,9 @@ namespace Snacks
                     }
 
                     //Required
-                    if (!string.IsNullOrEmpty(requiedResourceNames) && !skipReources.Contains(protoPartResource.resourceName))
+                    if (!string.IsNullOrEmpty(requiredResourceNames) && !skipReources.Contains(protoPartResource.resourceName))
                     {
-                        if (requiedResourceNames.Contains(protoPartResource.resourceName))
+                        if (requiredResourceNames.Contains(protoPartResource.resourceName))
                         {
                             if (protoResources.ContainsKey(protoPartResource.resourceName))
                             {
@@ -646,12 +600,65 @@ namespace Snacks
 
         public void PostProcess(ProtoVessel vessel)
         {
+            if (isGenerator)
+                return;
+
             //Update lastUpdateTime
             moduleSnapshot.moduleValues.SetValue("lastUpdateTime", Planetarium.GetUniversalTime());
+            moduleSnapshot.moduleValues.SetValue("cycleStartTime", cycleStartTime);
+            moduleSnapshot.moduleValues.SetValue("IsActivated", IsActivated);
         }
         #endregion
 
         #region Helpers
+        protected static void getConverterResources(string nodeName, List<ResourceRatio> resourceList, ConfigNode node)
+        {
+            ConfigNode[] resourceNodes;
+            ConfigNode resourceNode;
+            string resourceName;
+            ResourceRatio ratio;
+
+            resourceNodes = node.GetNodes(nodeName);
+            for (int resourceIndex = 0; resourceIndex < resourceNodes.Length; resourceIndex++)
+            {
+                //Resource name
+                resourceNode = resourceNodes[resourceIndex];
+                if (resourceNode.HasValue("ResourceName"))
+                    resourceName = resourceNode.GetValue("ResourceName");
+                else if (resourceNode.HasValue("name"))
+                    resourceName = resourceNode.GetValue("name");
+                else
+                    resourceName = "";
+
+                //Ratio
+                ratio = new ResourceRatio();
+                ratio.ResourceName = resourceName;
+                if (resourceNode.HasValue("Ratio"))
+                    double.TryParse(resourceNode.GetValue("Ratio"), out ratio.Ratio);
+                if (resourceNode.HasValue("rate"))
+                    double.TryParse(resourceNode.GetValue("rate"), out ratio.Ratio);
+
+                //Flow mode
+                if (resourceNode.HasValue("FlowMode"))
+                {
+                    switch (resourceNode.GetValue("FlowMode"))
+                    {
+                        case "NO_FLOW":
+                        case "NULL":
+                            ratio.FlowMode = ResourceFlowMode.NO_FLOW;
+                            break;
+
+                        default:
+                            ratio.FlowMode = ResourceFlowMode.ALL_VESSEL;
+                            break;
+                    }
+                }
+
+                //Add to the list
+                resourceList.Add(ratio);
+            }
+        }
+
         protected void emailPlayer(string resourceName, SnacksBackroundEmailTypes emailType)
         {
             StringBuilder resultsMessage = new StringBuilder();
@@ -700,15 +707,15 @@ namespace Snacks
             MessageSystem.Instance.AddMessage(msg);
         }
 
-        protected void supplyYieldResources(double yieldMultiplier)
+        protected void supplyyieldsList(double yieldMultiplier)
         {
-            int count = yieldResources.Count;
+            int count = yieldsList.Count;
             ResourceRatio resourceRatio;
             double supply = 0;
 
             for (int index = 0; index < count; index++)
             {
-                resourceRatio = yieldResources[index];
+                resourceRatio = yieldsList[index];
                 supply = resourceRatio.Ratio * outputEfficiency * yieldMultiplier;
                 supplyAmount(resourceRatio.ResourceName, supply, resourceRatio.FlowMode, resourceRatio.DumpExcess);
             }

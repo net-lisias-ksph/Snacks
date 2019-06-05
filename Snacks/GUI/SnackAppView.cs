@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using UnityEngine;
-using KSP.IO;
-using KSP.UI.Screens;
+using KSP.UI;
 
 /**
 The MIT License (MIT)
@@ -33,11 +33,26 @@ namespace Snacks
 {
     public class SnackAppView : Window<SnackAppView>
     {
-        private Vector2 scrollPos = new Vector2();
         public string exemptKerbals = "Ted";
 
+        private Vector2 scrollPos = new Vector2();
+        private Vector2 scrollPosButtons = new Vector2();
+        private int selectedBody = 0;
+        private GUILayoutOption[] flightWindowLeftPaneOptions = new GUILayoutOption[] { GUILayout.Width(200) };
+        private GUILayoutOption[] flightWindowRightPaneOptions = new GUILayoutOption[] { GUILayout.Width(300) };
+
+        private int partCount = 0;
+        private bool simulationComplete = false;
+        private string simulationResults = string.Empty;
+        private int previousCrewCount = 0;
+        private int currentCrewCount = -1;
+        private List<Snackshot> snackshots = null;
+        private SnackSimThread snackThread = null;
+        private bool convertersAssumedActive = false;
+        int crewCapacity = 0;
+
         public SnackAppView() :
-        base("Snack Supply", 300, 300)
+        base("Snack Supply", 500, 500)
         {
             Resizable = false;
         }
@@ -48,78 +63,44 @@ namespace Snacks
 
             if (newValue)
             {
+                if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedScene == GameScenes.SPACECENTER)
+                {
+                    SnacksScenario.Instance.UpdateSnapshots();
+                    SnackController.onSnackTime.Add(onSnackTime);
+                }
+                else if (HighLogic.LoadedSceneIsEditor)
+                {
+                    snackshots = new List<Snackshot>();
+
+                    snackThread = new SnackSimThread(new Mutex(), new List<SimSnacks>());
+                    snackThread.OnSimulationComplete = OnSimulationComplete;
+                    snackThread.Start();
+                }
+
                 exemptKerbals = SnacksScenario.Instance.exemptKerbals;
                 SnacksScenario.Instance.SetExemptCrew(exemptKerbals);
             }
 
             else
             {
+                if (snackThread != null)
+                    snackThread.Stop();
+
+                if (SnacksScenario.Instance == null)
+                    return;
                 SnacksScenario.Instance.exemptKerbals = exemptKerbals;
-
+                if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedScene == GameScenes.SPACECENTER)
+                {
+                    SnackController.onSnackTime.Remove(onSnackTime);
+                    if (SnacksScenario.Instance != null && SnacksScenario.Instance.threadPool != null)
+                        SnacksScenario.Instance.threadPool.StopAllJobs();
+                }
             }
         }
 
-        protected double DaysPerYear
+        private void onSnackTime()
         {
-            get
-            {
-                if (GameSettings.KERBIN_TIME)
-                    return 426.08f;
-                else
-                    return 365f;
-            }
-        }
-
-        protected double DaysPerMonth
-        {
-            get
-            {
-                if (GameSettings.KERBIN_TIME)
-                    return 6.43f;
-                else
-                    return 30.41666666666667f;
-            }
-        }
-
-        double HoursPerDay
-        {
-            get
-            {
-                if (GameSettings.KERBIN_TIME)
-                    return 6f;
-                else
-                    return 24f;
-            }
-        }
-
-        protected string timeFormat(int days)
-        {
-            StringBuilder timeBuilder = new StringBuilder();
-            double timeDays = days;
-            double years;
-
-            years = Math.Floor(timeDays / DaysPerYear);
-            if (years >= 1.0)
-            {
-                timeDays -= years * DaysPerYear;
-                if (years > 1.0)
-                    timeBuilder.AppendFormat("{0:f0} years", years);
-                else
-                    timeBuilder.Append("1 year");
-                timeBuilder.Append(", ");
-            }
-            else
-            {
-                years = 0;
-            }
-
-            if (timeDays >= 1.0f)
-            {
-                int intDays = Convert.ToInt32(timeDays);
-                timeBuilder.Append(intDays.ToString() + " days");
-            }
-
-            return timeBuilder.ToString();
+            SnacksScenario.Instance.UpdateSnapshots();
         }
 
         protected override void DrawWindowContents(int windowId)
@@ -134,44 +115,189 @@ namespace Snacks
 
         public void drawEditorWindow()
         {
-            ShipSupply supply = SnackSnapshot.Instance().TakeEditorSnapshot();
-
-            scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height(300), GUILayout.Width(300));
-
-            if (!GameSettings.KERBIN_TIME)
-                GUILayout.Label("<color=lightblue>Time format: 24hr/day, 365 day/year</color>");
-
-            if (SnacksProperties.EnableRandomSnacking || SnacksProperties.RecyclersEnabled)
-                GUILayout.Label("<color=yellow>The following are estimates</color>");
-
-            GUILayout.Label("<color=white>Snacks: " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
-            //GUILayout.Label("<color=white>Days (Cur Crew): " + supply.DayEstimate + "</color>");
-            //GUILayout.Label("<color=white>Days (Max Crew): " + supply.MaxDayEstimate + "</color>");
-
-            if (supply.DayEstimate > 0)
+            //Rerun sim button
+            if (GUILayout.Button("Rerun Simulator"))
             {
-                GUILayout.Label("<color=white>Current Crew: " + supply.CrewCount + "</color>");
-                GUILayout.Label("<color=white>Duration: " + timeFormat(supply.DayEstimate) + "</color>");
-            }
-            else
-            {
-                GUILayout.Label("<color=white>Current Crew: " + supply.CrewCount + "</color>");
-                GUILayout.Label("<color=white>Duration: Indefinite</color>");
+                //Reset crew count so that we'll trigger a rebuild of the simulator.
+                currentCrewCount = -1;
             }
 
-            if (supply.MaxDayEstimate > 0)
-            {
-                GUILayout.Label("<color=white>Max Crew: " + supply.MaxCrewCount + "</color>");
-                GUILayout.Label("<color=white>Duration: " + timeFormat(supply.MaxDayEstimate) + "</color>");
-            }
-            else
-            {
-                GUILayout.Label("<color=white>Max Crew: " + supply.MaxCrewCount + "</color>");
-                GUILayout.Label("<color=white>Duration: Indefinite</color>");
-            }
+            scrollPos = GUILayout.BeginScrollView(scrollPos);//, GUILayout.Height(300), GUILayout.Width(500));
 
+            //Setup simulator
+            setupSimulatorIfNeeded();
+
+            //Update status
+            snackThread.mutex.WaitOne();
+            if (simulationComplete)
+                formatSimulationResults();
+            snackThread.mutex.ReleaseMutex();
+            GUILayout.Label(simulationResults);
 
             GUILayout.EndScrollView();
+        }
+
+        private void setupSimulatorIfNeeded()
+        {
+            //If the vessel parts have changed or crew count has changed then run a new simulation.
+            ShipConstruct ship = EditorLogic.fetch.ship;
+            VesselCrewManifest manifest = CrewAssignmentDialog.Instance.GetManifest();
+            int consumerCount = SnacksScenario.Instance.resourceProcessors.Count;
+            List<BaseResourceProcessor> resourceProcessors = SnacksScenario.Instance.resourceProcessors;
+            List<ProcessedResource> consumerResources;
+            int resourceCount;
+            int resourceIndex;
+            string resourceName;
+            Snackshot snackshot;
+
+            if (manifest != null)
+                currentCrewCount = manifest.CrewCount;
+
+            //Get crew capacity
+            crewCapacity = 0;
+            int partCrewCapacity = 0;
+            for (int index = 0; index < ship.parts.Count; index++)
+            {
+                if (ship.parts[index].partInfo.partConfig.HasValue("CrewCapacity"))
+                {
+                    int.TryParse(ship.parts[index].partInfo.partConfig.GetValue("CrewCapacity"), out partCrewCapacity);
+                    crewCapacity += partCrewCapacity;
+                }
+            }
+
+            if (ship.parts.Count != partCount || currentCrewCount != previousCrewCount)
+            {
+                previousCrewCount = currentCrewCount;
+                partCount = ship.parts.Count;
+
+                //No parts? Nothing to do.
+                if (partCount == 0)
+                {
+                    snackshots.Clear();
+                    simulationResults = "<color=yellow><b>Vessel has no crewed parts to simulate.</b></color>";
+                    simulationComplete = false;
+                }
+                else if (currentCrewCount == 0)
+                {
+                    snackshots.Clear();
+                    simulationResults = "<color=yellow><b>Vessel needs crew to run simulation.</b></color>";
+                    simulationComplete = false;
+                }
+
+                //Clear existing simulation if any
+                snackThread.ClearJobs();
+
+                SimSnacks simSnacks = SimSnacks.CreateSimulator(ship);
+                if (simSnacks != null)
+                {
+                    simulationComplete = false;
+                    simulationResults = "<color=white><b>Simulation in progress, please wait...</b></color>";
+                    snackshots.Clear();
+
+                    //Get consumer resource lists
+                    for (int consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++)
+                    {
+                        resourceProcessors[consumerIndex].AddConsumedAndProducedResources(currentCrewCount, simSnacks.secondsPerCycle, simSnacks.consumedResources, simSnacks.producedResources);
+
+                        //First check input list for resources to add to the snapshots window
+                        consumerResources = resourceProcessors[consumerIndex].inputList;
+                        resourceCount = consumerResources.Count;
+                        for (resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
+                        {
+                            resourceName = consumerResources[resourceIndex].resourceName;
+
+                            if (consumerResources[resourceIndex].showInSnapshot && simSnacks.resources.ContainsKey(resourceName))
+                            {
+                                snackshot = new Snackshot();
+                                snackshot.showTimeRemaining = true;
+                                snackshot.resourceName = consumerResources[resourceIndex].resourceName;
+                                snackshot.amount = simSnacks.resources[resourceName].amount;
+                                snackshot.maxAmount = simSnacks.resources[resourceName].maxAmount;
+
+                                //Add to snackshots
+                                snackshots.Add(snackshot);
+                            }
+                        }
+
+                        //Next check outputs
+                        consumerResources = resourceProcessors[consumerIndex].outputList;
+                        resourceCount = consumerResources.Count;
+                        for (resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
+                        {
+                            resourceName = consumerResources[resourceIndex].resourceName;
+
+                            if (consumerResources[resourceIndex].showInSnapshot && simSnacks.resources.ContainsKey(resourceName))
+                            {
+                                snackshot = new Snackshot();
+                                snackshot.showTimeRemaining = true;
+                                snackshot.resourceName = consumerResources[resourceIndex].resourceName;
+                                snackshot.amount = simSnacks.resources[resourceName].amount;
+                                snackshot.maxAmount = simSnacks.resources[resourceName].maxAmount;
+
+                                //Add to snackshots
+                                snackshots.Add(snackshot);
+                            }
+                        }
+                    }
+
+                    //Give mods a chance to add custom converters not already covered by Snacks.
+                    SimulatorContext context = new SimulatorContext();
+                    context.shipConstruct = ship;
+                    context.simulatedVesselType = SimulatedVesselTypes.simEditor;
+                    SnacksScenario.onSimulatorCreated.Fire(simSnacks, context);
+
+                    //Now start the simulation
+                    snackThread.AddJob(simSnacks);
+                }
+                else
+                {
+                    simulationResults = "<color=yellow><b>Vessel has no crewed parts to simulate.</b></color>";
+                }
+            }
+        }
+
+        private void formatSimulationResults()
+        {
+            StringBuilder simResults = new StringBuilder();
+            int count = snackshots.Count;
+            Snackshot snackshot;
+
+            //current/max crew
+            simResults.AppendLine("<color=white>Crew: " + currentCrewCount + "/" + crewCapacity + "</color>");
+
+            //Snackshot list
+            for (int index = 0; index < count; index++)
+            {
+                snackshot = snackshots[index];
+                simResults.AppendLine(snackshot.GetStatusDisplay());
+            }
+
+            //Converter assumption
+            if (convertersAssumedActive)
+                simResults.AppendLine("<color=orange>Assumes converters are active; be sure to turn them on.</color>");
+
+            simulationResults = simResults.ToString();
+        }
+
+        private void OnSimulationComplete(SimSnacks simSnacks)
+        {
+            simulationComplete = true;
+
+            //Snackshot list
+            int count = snackshots.Count;
+            Snackshot snackshot;
+            for (int index = 0; index < count; index++)
+            {
+                snackshot = snackshots[index];
+
+                if (simSnacks.consumedResourceDurations.ContainsKey(snackshot.resourceName))
+                {
+                    snackshot.isSimulatorRunning = false;
+                    snackshot.estimatedTimeRemaining = simSnacks.consumedResourceDurations[snackshot.resourceName];
+                }
+            }
+
+            convertersAssumedActive = simSnacks.convertersAssumedActive;
         }
 
         public void drawSpaceCenterWindow()
@@ -185,7 +311,11 @@ namespace Snacks
             if (SnacksProperties.DebugLoggingEnabled)
             {
                 if (GUILayout.Button("Snack Time!"))
+                {
+                    SnacksScenario.Instance.RunSnackCyleImmediately();
                     SnackController.Instance.EatSnacks();
+                    SnacksScenario.Instance.UpdateSnapshots();
+                }
             }
 
             drawFlightWindow();
@@ -193,59 +323,100 @@ namespace Snacks
 
         public void drawFlightWindow()
         {
-            Dictionary<int, List<ShipSupply>> snapshot = SnackSnapshot.Instance().TakeSnapshot();
-            var keys = snapshot.Keys.ToList();
-            List<ShipSupply> supplies;
+            Dictionary<Vessel, VesselSnackshot> snapshotMap = SnacksScenario.Instance.snapshotMap;
+            VesselSnackshot vesselSnackshot;
+            List<Vessel> keys = snapshotMap.Keys.ToList();
+            int count = keys.Count;
+            List<CelestialBody> bodies = FlightGlobals.Bodies;
+            Dictionary<string, double> resourceDurations = null;
+            int snackShotCount = 0;
+            Snackshot snackshot;
+            bool convertersAssumedActive;
 
-            scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height(300), GUILayout.Width(300));
-            keys.Sort();
-            foreach (int planet in keys)
+            //Update resource durations
+            SnacksScenario.Instance.threadPool.LockResourceDurations();
+            for (int index = 0; index < keys.Count; index++)
             {
-                if (!snapshot.TryGetValue(planet, out supplies))
+                resourceDurations = SnacksScenario.Instance.threadPool.GetVesselResourceDurations(keys[index]);
+                if (resourceDurations != null)
                 {
-                    GUILayout.Label("Can't seem to get supplies");
-                    GUILayout.EndScrollView();
-                }
+                    convertersAssumedActive = SnacksScenario.Instance.threadPool.ConvertersAssumedActive(keys[index]);
 
-                if (!GameSettings.KERBIN_TIME)
-                    GUILayout.Label("<color=lightblue>Time format: 24hr/day, 365 day/year</color>");
+                    SnacksScenario.Instance.threadPool.RemoveVesselResourceDurations(keys[index]);
 
-                if (SnacksProperties.EnableRandomSnacking)
-                {
-                    GUILayout.Label("<color=yellow>The following are estimates</color>");
-                }
-
-                GUILayout.Label("<color=lightblue><b>" + supplies.First().BodyName + ":</b></color>");
-                foreach (ShipSupply supply in supplies)
-                {
-                    if (supply.DayEstimate < 0)
+                    vesselSnackshot = snapshotMap[keys[index]];
+                    vesselSnackshot.convertersAssumedActive = convertersAssumedActive;
+                    snackShotCount = vesselSnackshot.snackshots.Count;
+                    for (int snackShotIndex = 0; snackShotIndex < snackShotCount; snackShotIndex++)
                     {
-                        GUILayout.Label("<color=white><b>" + supply.VesselName + "</b></color>");
-                        GUILayout.Label("<color=white> Crew: " + supply.CrewCount + ", Snacks: " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
-                        GUILayout.Label("<color=white> Duration: Indefinite</color>");
-                    }
-                    else if (supply.Percent > 50)
-                    {
-                        GUILayout.Label("<color=white><b>" + supply.VesselName + "</b></color>");
-                        GUILayout.Label("<color=white> Crew: " + supply.CrewCount + ", Snacks: " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
-                        GUILayout.Label("<color=white> Duration: " + timeFormat(supply.DayEstimate) + "</color>");
-                    }
-                    else if (supply.Percent > 25)
-                    {
-                        GUILayout.Label("<color=yellow><b>" + supply.VesselName + "</b></color>");
-                        GUILayout.Label("<color=yellow> Crew: " + supply.CrewCount + ", Snacks: " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
-                        GUILayout.Label("<color=yellow> Duration: " + timeFormat(supply.DayEstimate) + "</color>");
-                    }
-                    else
-                    {
-                        GUILayout.Label("<color=red><b>" + supply.VesselName + "</b></color>");
-                        GUILayout.Label("<color=red> Crew: " + supply.CrewCount + ", Snacks: " + supply.SnackAmount + "/" + supply.SnackMaxAmount + "</color>");
-                        GUILayout.Label("<color=red> Duration: " + timeFormat(supply.DayEstimate) + "</color>");
+                        snackshot = vesselSnackshot.snackshots[snackShotIndex];
+                        if (resourceDurations.ContainsKey(snackshot.resourceName))
+                        {
+                            snackshot.estimatedTimeRemaining = resourceDurations[snackshot.resourceName];
+                            snackshot.isSimulatorRunning = false;
+                        }
                     }
                 }
             }
+            SnacksScenario.Instance.threadPool.UnlockResourceDurations();
+
+            //Draw left pane
+            GUILayout.BeginHorizontal();
+
+            GUILayout.BeginVertical();
+            scrollPosButtons = GUILayout.BeginScrollView(scrollPosButtons, flightWindowLeftPaneOptions);
+            selectedBody = FlightGlobals.currentMainBody.flightGlobalsIndex;
+            if (SnacksScenario.Instance.bodyVesselCountMap.Keys.Count > 0)
+            {
+                int bodyCount = bodies.Count;
+                for (int bodyIndex = 0; bodyIndex < bodyCount; bodyIndex++)
+                {
+                    //Skip body if it has new crewed vessels
+                    if (!SnacksScenario.Instance.bodyVesselCountMap.ContainsKey(bodyIndex) || SnacksScenario.Instance.bodyVesselCountMap[bodyIndex] == 0)
+                        continue;
+
+                    //Record the selected body index
+                    if (GUILayout.Button(bodies[bodyIndex].bodyName))
+                    {
+                        selectedBody = bodyIndex;
+                    }
+                }
+            }
+            else
+            {
+                GUILayout.Label("<color=white>No crewed vessels found on or around any world or in solar orbit.</color>");
+            }
 
             GUILayout.EndScrollView();
+            GUILayout.EndVertical();
+
+            //Draw right pane
+            GUILayout.BeginVertical();
+            scrollPos = GUILayout.BeginScrollView(scrollPos, flightWindowRightPaneOptions);
+            GUILayout.Label("<color=lightBlue><b>" + bodies[selectedBody].bodyName + "</b></color>");
+            count = keys.Count;
+            string statusDisplay;
+            for (int index = 0; index < count; index++)
+            {
+                vesselSnackshot = snapshotMap[keys[index]];
+
+                //Skip if vessel's planetary body doesn't match the filter.
+                if (vesselSnackshot.bodyID != selectedBody)
+                    continue;
+
+                //Get status
+                statusDisplay = vesselSnackshot.GetStatusDisplay();
+                if (vesselSnackshot.convertersAssumedActive)
+                    statusDisplay = statusDisplay + "<color=orange>Assumes converters are active; be sure to turn them on.</color>";
+
+                //Print status
+                GUILayout.Label(statusDisplay);
+            }
+
+            GUILayout.EndScrollView();
+            GUILayout.EndVertical();
+
+            GUILayout.EndHorizontal();
         }
     }
 }

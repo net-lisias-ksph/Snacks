@@ -39,22 +39,9 @@ namespace Snacks
         public Vessel vessel;
     }
 
-    public interface ISnacksPenalty
-    {
-        bool IsEnabled();
-        bool AlwaysApply();
-        void ApplyPenalty(int hungryKerbals, Vessel vessel);
-        void RemovePenalty(Vessel vessel);
-        void GameSettingsApplied();
-    }
-
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
     public class SnackController : MonoBehaviour
     {
-        #region Constants
-        public double secondsPerCycle = 3600.0;
-        #endregion
-
         public static SnackController Instance;
         public static EventVoid onSnackTime = new EventVoid("OnSnackTime");
         public static EventVoid onBeforeSnackTime = new EventVoid("OnBeforeSnackTime");
@@ -140,10 +127,6 @@ namespace Snacks
                 Vessel[] unloadedVessels = FlightGlobals.VesselsUnloaded.ToArray();
                 for (int index = 0; index < unloadedVessels.Length; index++)
                     SnacksScenario.Instance.RegisterCrew(unloadedVessels[index]);
-
-                //Take a snapshot
-                if (HighLogic.LoadedScene == GameScenes.TRACKSTATION)
-                    SnackSnapshot.Instance().TakeSnapshot();
             }
             catch (Exception ex)
             {
@@ -178,9 +161,6 @@ namespace Snacks
 
                     //Eat snacks!
                     EatSnacks();
-
-                    //Update the snapshot
-                    SnackSnapshot.Instance().RebuildSnapshot();
 
                     //Fire snack tick event
                     onSnackTick.Fire();
@@ -223,36 +203,18 @@ namespace Snacks
 
         private void OnVesselWasModified(Vessel data)
         {
-            //Debug.Log("OnVesselWasModified");
-            try
-            {
-                SnackSnapshot.Instance().RebuildSnapshot();
-            }
-            catch { }
-
         }
 
         private void OnVesselChange(Vessel data)
         {
-            //Debug.Log("OnVesselChange");
-            try
-            {
-                SnackSnapshot.Instance().RebuildSnapshot();
-            }
-            catch { }
-
         }
 
         private void OnRename(GameEvents.HostedFromToAction<Vessel, string> data)
         {
-            //Debug.Log("OnRename");
-            SnackSnapshot.Instance().RebuildSnapshot();
         }
 
         private void onLoad(ConfigNode node)
         {
-            //Debug.Log("onLoad");
-            SnackSnapshot.Instance().RebuildSnapshot();
         }
 
         void OnDestroy()
@@ -334,12 +296,7 @@ namespace Snacks
 
         public void GameSettingsApplied()
         {
-//            snackFrequency = 5;
-            //Seconds per day = 6 * 60 * 60 = 21600
-            if (GameSettings.KERBIN_TIME)
-                snackFrequency = (6 * 3600) / SnacksProperties.MealsPerDay;
-            else
-                snackFrequency = (24 * 3600) / SnacksProperties.MealsPerDay;
+            snackFrequency = (int)SnacksScenario.GetSecondsPerDay() / SnacksProperties.MealsPerDay;
 
             //Make sure that the penalties know about the update
             foreach (ISnacksPenalty handler in penaltyHandlers)
