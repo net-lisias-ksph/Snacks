@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ using KSP.IO;
 namespace Snacks
 {
     /// <summary>
-    /// Interface for creating and running penalties when a consumer resource runs out or has too much aboard the vessel or kerbal.
+    /// Interface for creating and running penalties when a processor resource runs out or has too much aboard the vessel or kerbal.
     /// </summary>
     public interface ISnacksPenalty
     {
@@ -91,6 +91,11 @@ namespace Snacks
         /// Tells listeners that background converters were created. Gives mods a chance to add custom converters not covered by Snacks.
         /// </summary>
         public static EventData<Vessel> onBackgroundConvertersCreated = new EventData<Vessel>("onBackgroundConvertersCreated");
+
+        /// <summary>
+        /// Signifies that snacking has occurred.
+        /// </summary>
+        public static EventVoid onSnackTime = new EventVoid("onSnackTime");
         #endregion
 
         #region Housekeeping
@@ -129,62 +134,26 @@ namespace Snacks
             if (threadPool == null)
                 threadPool = new SnackSimThreadPool();
 
+            //Clear the snapshot map
+            snapshotMap.Clear();
+            bodyVesselCountMap.Clear();
+
             StartCoroutine(updateSnapshots());
         }
 
         protected IEnumerator<YieldInstruction> updateSnapshots()
         {
-            //Clear the snapshot map
-            snapshotMap.Clear();
-            bodyVesselCountMap.Clear();
-
             int count = FlightGlobals.Vessels.Count;
-            int consumerCount = 0;
-            int consumerIndex = 0;
-            int resourceCount = 0;
-            int resourceIndex = 0;
-            List<ProcessedResource> consumerResources;
             Vessel vessel;
-            Snackshot snackshot;
-            string resourceName;
 
             for (int index = 0; index < count; index++)
             {
                 vessel = FlightGlobals.Vessels[index];
 
-                //Skip vessel types that we're not interested in.
-                if (vessel.vesselType == VesselType.Debris ||
-                    vessel.vesselType == VesselType.Flag ||
-                    vessel.vesselType == VesselType.SpaceObject ||
-                    vessel.vesselType == VesselType.Unknown)
+                //Create the vessel snackshot
+                VesselSnackshot vesselSnackshot = createVesselSnackshot(vessel);
+                if (vesselSnackshot == null)
                     continue;
-
-                //Get crew capacity & crew count. Skip vessels that have no crew capacity or crew count.
-                int crewCapacity = GetCrewCapacity(vessel);
-                if (crewCapacity <= 0)
-                    continue;
-                int crewCount = 0;
-                if (vessel.loaded)
-                    crewCount = vessel.GetCrewCount();
-                else
-                    crewCount = vessel.protoVessel.GetVesselCrew().Count;
-                if (crewCount <= 0)
-                    continue;
-                yield return new WaitForFixedUpdate();
-
-                //Now create the vessel snackshot
-                VesselSnackshot vesselSnackshot = new VesselSnackshot();
-                vesselSnackshot.vessel = vessel;
-                vesselSnackshot.bodyID = vessel.mainBody.flightGlobalsIndex;
-                vesselSnackshot.vesselName = vessel.vesselName;
-                vesselSnackshot.crewCount = crewCount;
-                vesselSnackshot.maxCrewCount = crewCapacity;
-                snapshotMap.Add(vessel, vesselSnackshot);
-
-                //Next, update body vessel count map
-                if (!bodyVesselCountMap.ContainsKey(vessel.mainBody.flightGlobalsIndex))
-                    bodyVesselCountMap.Add(vessel.mainBody.flightGlobalsIndex, 0);
-                bodyVesselCountMap[vessel.mainBody.flightGlobalsIndex] += 1;
 
                 //Get simulator data: complete resource list and all the converters
                 SimSnacks simSnacks = SimSnacks.CreateSimulator(vessel);
@@ -197,58 +166,113 @@ namespace Snacks
                 onSimulatorCreated.Fire(simSnacks, context);
                 yield return new WaitForFixedUpdate();
 
-                //Create initial snackshots
-                consumerCount = resourceProcessors.Count;
-                for (consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++)
-                {
-                    //Get resources consumed and produced
-                    resourceProcessors[consumerIndex].AddConsumedAndProducedResources(vessel, simSnacks.secondsPerCycle, simSnacks.consumedResources, simSnacks.producedResources);
-
-                    //First check input list for resources to add to the snapshots window
-                    consumerResources = resourceProcessors[consumerIndex].inputList;
-                    resourceCount = consumerResources.Count;
-                    for (resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
-                    {
-                        resourceName = consumerResources[resourceIndex].resourceName;
-
-                        if (consumerResources[resourceIndex].showInSnapshot && simSnacks.resources.ContainsKey(resourceName))
-                        {
-                            snackshot = new Snackshot();
-                            snackshot.showTimeRemaining = true;
-                            snackshot.resourceName = consumerResources[resourceIndex].resourceName;
-                            snackshot.amount = simSnacks.resources[resourceName].amount;
-                            snackshot.maxAmount = simSnacks.resources[resourceName].maxAmount;
-
-                            //Add to snackshots
-                            vesselSnackshot.snackshots.Add(snackshot);
-                        }
-                    }
-
-                    //Next check outputs
-                    consumerResources = resourceProcessors[consumerIndex].outputList;
-                    resourceCount = consumerResources.Count;
-                    for (resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
-                    {
-                        resourceName = consumerResources[resourceIndex].resourceName;
-
-                        if (consumerResources[resourceIndex].showInSnapshot && simSnacks.resources.ContainsKey(resourceName))
-                        {
-                            snackshot = new Snackshot();
-                            snackshot.showTimeRemaining = true;
-                            snackshot.resourceName = consumerResources[resourceIndex].resourceName;
-                            snackshot.amount = simSnacks.resources[resourceName].amount;
-                            snackshot.maxAmount = simSnacks.resources[resourceName].maxAmount;
-
-                            //Add to snackshots
-                            vesselSnackshot.snackshots.Add(snackshot);
-                        }
-                    }
-                }
+                //Create resource snackshots
+                createResourceSnackshots(vessel, vesselSnackshot, simSnacks);
+                yield return new WaitForFixedUpdate();
 
                 //Finally, add the simulator to the jobs list
                 threadPool.AddSimulatorJob(simSnacks);
             }
             yield return new WaitForFixedUpdate();
+        }
+
+        protected void createResourceSnackshots(Vessel vessel, VesselSnackshot vesselSnackshot, SimSnacks simSnacks)
+        {
+            int processorCount = 0;
+            int processorIndex = 0;
+            int resourceCount = 0;
+            int resourceIndex = 0;
+            List<ProcessedResource> processedResources;
+            Snackshot snackshot;
+            string resourceName;
+
+            processorCount = resourceProcessors.Count;
+            for (processorIndex = 0; processorIndex < processorCount; processorIndex++)
+            {
+                //Get resources consumed and produced
+                resourceProcessors[processorIndex].AddConsumedAndProducedResources(vessel, simSnacks.secondsPerCycle, simSnacks.consumedResources, simSnacks.producedResources);
+
+                //First check input list for resources to add to the snapshots window
+                processedResources = resourceProcessors[processorIndex].inputList;
+                resourceCount = processedResources.Count;
+                for (resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
+                {
+                    resourceName = processedResources[resourceIndex].resourceName;
+
+                    if (processedResources[resourceIndex].showInSnapshot && simSnacks.resources.ContainsKey(resourceName))
+                    {
+                        snackshot = new Snackshot();
+                        snackshot.showTimeRemaining = true;
+                        snackshot.resourceName = processedResources[resourceIndex].resourceName;
+                        snackshot.amount = simSnacks.resources[resourceName].amount;
+                        snackshot.maxAmount = simSnacks.resources[resourceName].maxAmount;
+
+                        //Add to snackshots
+                        vesselSnackshot.snackshots.Add(snackshot);
+                    }
+                }
+
+                //Next check outputs
+                processedResources = resourceProcessors[processorIndex].outputList;
+                resourceCount = processedResources.Count;
+                for (resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
+                {
+                    resourceName = processedResources[resourceIndex].resourceName;
+
+                    if (processedResources[resourceIndex].showInSnapshot && simSnacks.resources.ContainsKey(resourceName))
+                    {
+                        snackshot = new Snackshot();
+                        snackshot.showTimeRemaining = true;
+                        snackshot.resourceName = processedResources[resourceIndex].resourceName;
+                        snackshot.amount = simSnacks.resources[resourceName].amount;
+                        snackshot.maxAmount = simSnacks.resources[resourceName].maxAmount;
+
+                        //Add to snackshots
+                        vesselSnackshot.snackshots.Add(snackshot);
+                    }
+                }
+            }
+        }
+
+        protected VesselSnackshot createVesselSnackshot(Vessel vessel)
+        {
+            VesselSnackshot vesselSnackshot = null;
+
+            //Skip vessel types that we're not interested in.
+            if (vessel.vesselType == VesselType.Debris ||
+                vessel.vesselType == VesselType.Flag ||
+                vessel.vesselType == VesselType.SpaceObject ||
+                vessel.vesselType == VesselType.Unknown)
+                return null;
+            if (snapshotMap.ContainsKey(vessel))
+                return null;
+
+            //Get crew capacity & crew count. Skip vessels that have no crew capacity or crew count.
+            int crewCapacity = GetCrewCapacity(vessel);
+            if (crewCapacity <= 0)
+                return null;
+            int crewCount = 0;
+            if (vessel.loaded)
+                crewCount = vessel.GetCrewCount();
+            else
+                crewCount = vessel.protoVessel.GetVesselCrew().Count;
+            if (crewCount <= 0)
+                return null;
+
+            vesselSnackshot = new VesselSnackshot();
+            vesselSnackshot.vessel = vessel;
+            vesselSnackshot.bodyID = vessel.mainBody.flightGlobalsIndex;
+            vesselSnackshot.vesselName = vessel.vesselName;
+            vesselSnackshot.crewCount = crewCount;
+            vesselSnackshot.maxCrewCount = crewCapacity;
+            snapshotMap.Add(vessel, vesselSnackshot);
+
+            //Next, update body vessel count map
+            if (!bodyVesselCountMap.ContainsKey(vessel.mainBody.flightGlobalsIndex))
+                bodyVesselCountMap.Add(vessel.mainBody.flightGlobalsIndex, 0);
+            bodyVesselCountMap[vessel.mainBody.flightGlobalsIndex] += 1;
+
+            return vesselSnackshot;
         }
 
         public int GetCrewCapacity(Vessel vessel)
@@ -276,19 +300,19 @@ namespace Snacks
                 return;
             }
 
-            //To avoid hammering the game with updates, we only run background converters, consumers, and events once per game hour.
+            //To avoid hammering the game with updates, we only run background converters, processors, and events once per game hour.
             elapsedTime = Planetarium.GetUniversalTime() - cycleStartTime;
             if (elapsedTime < secondsPerCycle)
                 return;
             cycleStartTime = Planetarium.GetUniversalTime();
 
-            RunSnackCyleImmediately();
+            RunSnackCyleImmediately(elapsedTime);
         }
 
-        public void RunSnackCyleImmediately()
+        public void RunSnackCyleImmediately(double secondsElapsed)
         {
-            //Go through all the vessels. For loaded vessels, run the consumers and events.
-            //For unloaded vessels, run the background converters, consumers, and events.
+            //Go through all the vessels. For loaded vessels, run the processors and events.
+            //For unloaded vessels, run the background converters, processors, and events.
             Vessel vessel;
             int count = FlightGlobals.Vessels.Count;
             for (int vesselIndex = 0; vesselIndex < count; vesselIndex++)
@@ -303,7 +327,7 @@ namespace Snacks
                     continue;
 
                 //Start snack cycle
-                StartCoroutine(runSnackCycle(vessel, elapsedTime));
+                StartCoroutine(runSnackCycle(vessel, secondsElapsed));
             }
         }
         #endregion
@@ -607,8 +631,8 @@ namespace Snacks
             //Create eva resource list.
             snacksEVAResources = SnacksEVAResource.LoadEVAResources();
 
-            //Create resource consumers list
-            resourceProcessors = BaseResourceProcessor.LoadConsumers();
+            //Create resource processors list
+            resourceProcessors = BaseResourceProcessor.LoadProcessors();
 
             //Create housekeeping lists and such
             sciencePenalties = new DictionaryValueList<string, int>();
@@ -667,9 +691,9 @@ namespace Snacks
                 double.TryParse(node.GetValue("cycleStartTime"), out cycleStartTime);
 
             //Processors
-            if (node.HasNode(BaseResourceProcessor.ConfigNodeName))
+            if (node.HasNode(BaseResourceProcessor.ProcessorNode))
             {
-                ConfigNode[] consumerNodes = node.GetNodes(BaseResourceProcessor.ConfigNodeName);
+                ConfigNode[] consumerNodes = node.GetNodes(BaseResourceProcessor.ProcessorNode);
                 ConfigNode processorNode;
                 BaseResourceProcessor processor;
                 Dictionary<string, ConfigNode> persistenceMap = new Dictionary<string, ConfigNode>();
@@ -679,8 +703,8 @@ namespace Snacks
                 for (index = 0; index < consumerNodes.Length; index++)
                 {
                     processorNode = consumerNodes[index];
-                    if (processorNode.HasValue("processName"))
-                        persistenceMap.Add(processorNode.GetValue("processName"), processorNode);
+                    if (processorNode.HasValue(BaseResourceProcessor.ProcessorNodeName))
+                        persistenceMap.Add(processorNode.GetValue(BaseResourceProcessor.ProcessorNodeName), processorNode);
                 }
 
                 //Load persistence data
@@ -690,9 +714,9 @@ namespace Snacks
                     processor = resourceProcessors[index];
 
                     //Find the persistence node
-                    if (persistenceMap.ContainsKey(processor.processName))
+                    if (persistenceMap.ContainsKey(processor.name))
                     {
-                        processor.OnLoad(persistenceMap[processor.processName]);
+                        processor.OnLoad(persistenceMap[processor.name]);
                     }
                 }
             }
@@ -753,13 +777,13 @@ namespace Snacks
         {
             AstronautData astronautData = GetAstronautData(astronaut);
 
-            //Give consumers a chance to update their data if needed.
+            //Give processors a chance to update their data if needed.
             int count = resourceProcessors.Count;
-            BaseResourceProcessor consumer;
+            BaseResourceProcessor processor;
             for (int index = 0; index < count; index++)
             {
-                consumer = resourceProcessors[index];
-                consumer.onKerbalLevelUp(astronaut);
+                processor = resourceProcessors[index];
+                processor.onKerbalLevelUp(astronaut);
             }
         }
 
@@ -775,13 +799,13 @@ namespace Snacks
             {
                 AstronautData astronautData = GetAstronautData(astronaut);
 
-                //Give consumers a chance to add their data
+                //Give processors a chance to add their data
                 int count = resourceProcessors.Count;
-                BaseResourceProcessor consumer;
+                BaseResourceProcessor processor;
                 for (int index = 0; index < count; index++)
                 {
-                    consumer = resourceProcessors[index];
-                    consumer.onKerbalAdded(astronaut);
+                    processor = resourceProcessors[index];
+                    processor.onKerbalAdded(astronaut);
                 }
             }
         }
@@ -792,13 +816,13 @@ namespace Snacks
             {
                 crewData.Remove(astronaut.name);
 
-                //Give consumers a chance to remove their data if needed.
+                //Give processors a chance to remove their data if needed.
                 int count = resourceProcessors.Count;
-                BaseResourceProcessor consumer;
+                BaseResourceProcessor processor;
                 for (int index = 0; index < count; index++)
                 {
-                    consumer = resourceProcessors[index];
-                    consumer.onKerbalRemoved(astronaut);
+                    processor = resourceProcessors[index];
+                    processor.onKerbalRemoved(astronaut);
                 }
             }
         }
@@ -814,13 +838,13 @@ namespace Snacks
                 astronautData.name = newName;
                 crewData.Add(newName, astronautData);
 
-                //Give consumers a chance to update their data if needed.
+                //Give processors a chance to update their data if needed.
                 int count = resourceProcessors.Count;
-                BaseResourceProcessor consumer;
+                BaseResourceProcessor processor;
                 for (int index = 0; index < count; index++)
                 {
-                    consumer = resourceProcessors[index];
-                    consumer.onKerbalNameChanged(astronaut, previousName, newName);
+                    processor = resourceProcessors[index];
+                    processor.onKerbalNameChanged(astronaut, previousName, newName);
                 }
             }
         }
@@ -848,14 +872,14 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                     snacksEVAResources[index].onCrewBoardedVessel(evaKerbal, boardedPart);
 
-                //Give consumers a chance to update their data if needed.
+                //Give processors a chance to update their data if needed.
                 ProtoCrewMember astronaut = evaKerbal.vessel.GetVesselCrew()[0];
                 count = resourceProcessors.Count;
-                BaseResourceProcessor consumer;
+                BaseResourceProcessor processor;
                 for (int index = 0; index < count; index++)
                 {
-                    consumer = resourceProcessors[index];
-                    consumer.onKerbalBoardedVessel(astronaut, boardedPart);
+                    processor = resourceProcessors[index];
+                    processor.onKerbalBoardedVessel(astronaut, boardedPart);
                 }
 
             }
@@ -885,14 +909,14 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                     snacksEVAResources[index].onCrewEVA(evaKerbal, partExited);
 
-                //Give consumers a chance to update their data if needed.
+                //Give processors a chance to update their data if needed.
                 ProtoCrewMember astronaut = evaKerbal.vessel.GetVesselCrew()[0];
                 count = resourceProcessors.Count;
-                BaseResourceProcessor consumer;
+                BaseResourceProcessor processor;
                 for (int index = 0; index < count; index++)
                 {
-                    consumer = resourceProcessors[index];
-                    consumer.onKerbalEVA(astronaut, partExited);
+                    processor = resourceProcessors[index];
+                    processor.onKerbalEVA(astronaut, partExited);
                 }
             }
             catch (Exception ex)
@@ -923,6 +947,14 @@ namespace Snacks
 
         private void onVesselRecovered(ProtoVessel protoVessel, bool someBool)
         {
+            //Give processors a chance to remove their data if needed.
+            int count = resourceProcessors.Count;
+            BaseResourceProcessor processor;
+            for (int index = 0; index < count; index++)
+            {
+                processor = resourceProcessors[index];
+                processor.onVesselRecovered(protoVessel);
+            }
         }
 
         private void onLevelLoaded(GameScenes scene)
@@ -1013,7 +1045,7 @@ namespace Snacks
         }
         #endregion
 
-        #region API
+        #region Static API
         public static string FormatTime(double secondsToFormat, bool showCompact = false)
         {
             StringBuilder timeBuilder = new StringBuilder();
@@ -1097,7 +1129,10 @@ namespace Snacks
                     timeBuilder.Append(string.Format(" {0:n2} Seconds", seconds));
             }
 
-            return timeBuilder.ToString();
+            string timeDisplay = timeBuilder.ToString();
+            char[] trimChars = { ',' };
+            timeDisplay = timeDisplay.TrimEnd(trimChars);
+            return timeDisplay;
         }
 
         public static double GetSecondsPerDay()
@@ -1219,6 +1254,52 @@ namespace Snacks
         }
         #endregion
 
+        #region Processors API
+        /// <summary>
+        /// Creates a new outcome based on the config node data passed in.
+        /// </summary>
+        /// <returns>The outcome corresponding to the desired config.</returns>
+        /// <param name="node">The ConfigNode containing data to parse.</param>
+        public BaseOutcome CreateOutcome(ConfigNode node)
+        {
+            //Get the name of the outcome
+            string outcomeName = string.Empty;
+            if (node.HasValue("name"))
+                outcomeName = node.GetValue("name");
+            if (string.IsNullOrEmpty(outcomeName))
+                return null;
+
+            //Now create the appropriate outcome
+            switch (outcomeName)
+            {
+                case "DeathPenalty":
+                    return new DeathPenalty(node);
+
+                case "FaintPenalty":
+                    return new FaintPenalty(node);
+
+                case "FundingPenalty":
+                    return new FundingPenalty(node);
+
+                case "RepPenalty":
+                    return new RepPenalty(node);
+
+                case "SciencePenalty":
+                    return new SciencePenalty(node);
+
+                case "ResourceProduced":
+                    break;
+
+                case "ResourceConsumed":
+                    break;
+
+                default:
+                    break;
+            }
+            return null;
+        }
+        #endregion
+
         #region Helpers
         private IEnumerator<YieldInstruction> runSnackCycle(Vessel vessel, double elapsedTime)
         {
@@ -1292,6 +1373,9 @@ namespace Snacks
 
                 //Process events
             }
+
+            //Fire snack time event
+            onSnackTime.Fire();
 
             yield return new WaitForFixedUpdate();
         }

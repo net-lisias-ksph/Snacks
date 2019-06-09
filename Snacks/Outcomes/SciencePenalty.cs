@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,48 +31,80 @@ using KSP.IO;
 
 namespace Snacks
 {
-    public class SciencePenalty : ISnacksPenalty
+    public class SciencePenalty : BaseOutcome
     {
-        public void GameSettingsApplied()
+        #region Constructors
+        public SciencePenalty(ConfigNode node) : base (node)
         {
         }
 
-        public bool IsEnabled()
+        public SciencePenalty(bool canBeRandom) : base(canBeRandom)
+        {
+
+        }
+        #endregion
+
+
+        #region Overrides
+        public override bool IsEnabled()
         {
             return SnacksProperties.LoseScienceWhenHungry;
         }
 
-        public bool AlwaysApply()
-        {
-            return !SnacksProperties.RandomPenaltiesEnabled;
-        }
-
-        public void RemovePenalty(Vessel vessel)
-        {
-        }
-
-        public void ApplyPenalty(int hungryKerbals, Vessel vessel)
+        public override void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
         {
             if ((HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX) && SnacksProperties.LoseScienceWhenHungry)
             {
                 //If the vessel is loaded, apply the penalties.
                 if (vessel.loaded)
                 {
-                    applySciencePenalties(vessel);
+                    int count = vessel.vesselModules.Count;
+                    SnacksVesselModule snacksVesselModule;
+                    int sciencePenalties = 0;
+                    for (int index = 0; index < count; index++)
+                    {
+                        if (vessel.vesselModules[index] is SnacksVesselModule)
+                        {
+                            snacksVesselModule = (SnacksVesselModule)vessel.vesselModules[index];
+                            sciencePenalties = result.affectedKerbalCount + snacksVesselModule.sciencePenalties;
+                            break;
+                        }
+                    }
+
+                    //Apply Science penalties
+                    for (int index = 0; index < sciencePenalties; index++)
+                        applySciencePenalties(vessel);
                 }
 
                 //Not loaded, keep track of how many penalties we acquire
                 else
                 {
                     ScreenMessages.PostScreenMessage("Kerbals have ruined some science aboard the " + vessel.vesselName + "! Check the vessel for details.", 5f, ScreenMessageStyle.UPPER_LEFT);
-                    if (SnacksScenario.Instance.sciencePenalties.Contains(vessel.id.ToString()) == false)
-                        SnacksScenario.Instance.sciencePenalties.Add(vessel.id.ToString(), 1);
-                    else
-                        SnacksScenario.Instance.sciencePenalties[vessel.id.ToString()] += 1;
+
+                    ConfigNode node = vessel.protoVessel.vesselModules;
+                    if (node.HasNode(SnacksVesselModule.SnacksVesselModuleNode))
+                    {
+                        node = node.GetNode(SnacksVesselModule.SnacksVesselModuleNode);
+
+                        int sciencePenalties = 0;
+                        if (node.HasValue(SnacksVesselModule.ValueSciencePenalties))
+                        {
+                            int.TryParse(node.GetValue(SnacksVesselModule.ValueSciencePenalties), out sciencePenalties);
+                            sciencePenalties += result.affectedKerbalCount;
+                            node.SetValue(SnacksVesselModule.ValueSciencePenalties, sciencePenalties);
+                        }
+                        else
+                        {
+                            sciencePenalties = result.crewCount - result.affectedKerbalCount;
+                            node.AddValue(SnacksVesselModule.ValueSciencePenalties, sciencePenalties);
+                        }
+                    }
                 }
             }
         }
+        #endregion
 
+        #region Helpers
         public static void CheckSciencePenalties(Vessel vessel)
         {
             //Apply science loss
@@ -80,16 +112,23 @@ namespace Snacks
             {
                 if (vessel.loaded)
                 {
-                    //Apply all the penalties we acquired
-                    if (SnacksScenario.Instance.sciencePenalties.Contains(vessel.id.ToString()))
+                    int count = vessel.vesselModules.Count;
+                    SnacksVesselModule snacksVesselModule;
+                    int sciencePenalties = 0;
+                    for (int index = 0; index < count; index++)
                     {
-                        int amount = SnacksScenario.Instance.sciencePenalties[vessel.id.ToString()];
-
-                        for (int index = 0; index < amount; index++)
-                            applySciencePenalties(vessel);
-
-                        SnacksScenario.Instance.sciencePenalties.Remove(vessel.id.ToString());
+                        if (vessel.vesselModules[index] is SnacksVesselModule)
+                        {
+                            snacksVesselModule = (SnacksVesselModule)vessel.vesselModules[index];
+                            sciencePenalties = snacksVesselModule.sciencePenalties;
+                            snacksVesselModule.sciencePenalties = 0;
+                            break;
+                        }
                     }
+
+                    //Apply all the penalties we acquired
+                    for (int index = 0; index < sciencePenalties; index++)
+                        applySciencePenalties(vessel);
                 }
             }
         }
@@ -155,5 +194,6 @@ namespace Snacks
                 }
             }
         }
+        #endregion
     }
 }

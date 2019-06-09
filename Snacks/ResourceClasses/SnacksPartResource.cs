@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -151,7 +151,7 @@ namespace Snacks
             //Determine how many units to add. If the part has any module on the capacity list, then we use the capacity modifier.
             unitsToAdd = amount;
             maxUnitsToAdd = maxAmount;
-            if (!isPerKerbal)
+            if (isPerKerbal)
             {
                 unitsToAdd *= part.CrewCapacity;
                 maxUnitsToAdd *= part.CrewCapacity;

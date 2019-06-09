@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,10 +63,10 @@ namespace Snacks
         public bool showInSnapshot = true;
 
         /// <summary>
-        /// By default penalties aren’t applied until a resource is depeleted or completely full. But if the amount / maxAmount reaches the threshold, then the penalties will be applied.
-        /// Default: 0
+        /// Flag to indicate whether or not a failure result applies the processor's outcomes.
+        /// Default: true
         /// </summary>
-        public float penaltyThreshold = 0f;
+        public bool failureResultAppliesOutcomes = true;
 
         /// <summary>
         /// The amount of resource to consume or produce. If appliedPerCrew is true, then the amount consumed/produced is multiplied by the number of crew aboard the vessel.
@@ -74,6 +74,12 @@ namespace Snacks
         /// Default: 0
         /// </summary>
         public double amount = 0;
+
+        /// <summary>
+        /// Flag to indicate that astronaut data should be cleared when a vessel is recovered.
+        /// Default: true
+        /// </summary>
+        public bool clearDataDuringRecovery = true;
         #endregion
 
         #region Housekeeping
@@ -82,14 +88,14 @@ namespace Snacks
 
         }
 
-        public ProcessedResource(string resourceName, string dependencyResourceName, double amount, bool isRosterResource = false, bool showInSnapshot = true, float penaltyThreshold = 0f)
+        public ProcessedResource(string resourceName, string dependencyResourceName, double amount, bool isRosterResource = false, bool showInSnapshot = true, bool failureResultAppliesOutcomes = true)
         {
             this.resourceName = resourceName;
             this.dependencyResourceName = dependencyResourceName;
             this.amount = amount;
             this.isRosterResource = isRosterResource;
+            this.failureResultAppliesOutcomes = failureResultAppliesOutcomes;
             this.showInSnapshot = showInSnapshot;
-            this.penaltyThreshold = penaltyThreshold;
         }
 
         /// <summary>
@@ -104,12 +110,24 @@ namespace Snacks
                 dependencyResourceName = node.GetValue("dependencyResourceName");
             if (node.HasValue("amount"))
                 double.TryParse(node.GetValue("amount"), out amount);
-            if (node.HasValue("isRosterResource"))
-                bool.TryParse(node.GetValue("isRosterResource"), out isRosterResource);
             if (node.HasValue("showInSnapshot"))
                 bool.TryParse(node.GetValue("showInSnapshot"), out showInSnapshot);
-            if (node.HasValue("penaltyThreshold"))
-                float.TryParse(node.GetValue("penaltyThreshold"), out penaltyThreshold);
+            if (node.HasValue("failureResultAppliesOutcomes"))
+                bool.TryParse(node.GetValue("failureResultAppliesOutcomes"), out failureResultAppliesOutcomes);
+
+            if (node.HasValue("isRosterResource"))
+            {
+                bool.TryParse(node.GetValue("isRosterResource"), out isRosterResource);
+            }
+            else
+            {
+                //See if we can figure it out.
+                PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
+                if (definitions.Contains(resourceName))
+                    isRosterResource = false;
+                else
+                    isRosterResource = true;
+            }
         }
 
         /// <summary>
@@ -124,7 +142,7 @@ namespace Snacks
             node.AddValue("amount", amount);
             node.AddValue("isRosterResource", isRosterResource);
             node.AddValue("showInSnapshot", showInSnapshot);
-            node.AddValue("penaltyThreshold", penaltyThreshold);
+            node.AddValue("failureResultAppliesOutcomes", failureResultAppliesOutcomes);
 
             return node;
         }
@@ -138,13 +156,15 @@ namespace Snacks
         /// <param name="crewCount">Current crew count</param>
         /// <param name="crewCapacity">Current crew capacity</param>
         /// <returns>A SnacksConsumerResult containing the resuls of the consumption.</returns>
-        public SnacksConsumerResult ConsumeResource(Vessel vessel, double elapsedTime, int crewCount, int crewCapacity)
+        public SnacksProcessorResult ConsumeResource(Vessel vessel, double elapsedTime, int crewCount, int crewCapacity)
         {
             List<ProtoPartResourceSnapshot> protoPartResources = new List<ProtoPartResourceSnapshot>();
 
-            SnacksConsumerResult result = new SnacksConsumerResult();
+            SnacksProcessorResult result = new SnacksProcessorResult();
             result.resourceName = resourceName;
             result.resultType = SnacksResultType.resultConsumption;
+            result.crewCapacity = crewCapacity;
+            result.crewCount = crewCount;
 
             if (!isRosterResource)
             {
@@ -159,7 +179,7 @@ namespace Snacks
                 requestAmount *= crewCount;
 
                 //If we have enough to support the whole crew, then we're good.
-                if (vesselCurrentAmount >= requestAmount)
+                if ((vesselCurrentAmount / requestAmount) >= 0.999)
                 {
                     //Request resource
                     requestResource(vessel, requestAmount, protoPartResources);
@@ -174,14 +194,15 @@ namespace Snacks
                 //We don't have enough to support the whole crew. Figure out how many we can support.
                 else
                 {
-                    result.affectedKerbalCount = (int)Math.Floor(vesselCurrentAmount / amount);
+                    int totalServed = (int)Math.Floor(vesselCurrentAmount / amount);
 
-                    requestAmount = result.affectedKerbalCount * amount;
+                    requestAmount = totalServed * amount;
                     requestResource(vessel, requestAmount, protoPartResources);
 
                     result.completedSuccessfully = false;
                     result.currentAmount = vesselCurrentAmount - requestAmount;
                     result.maxAmount = vesselMaxAmount;
+                    result.affectedKerbalCount = crewCount - totalServed;
                 }
             }
 
@@ -203,20 +224,115 @@ namespace Snacks
         /// <param name="crewCapacity">Current crew capacity</param>
         /// <param name="consumptionResults">Results of resource consumption.</param>
         /// <returns>A SnacksConsumerResult containing the resuls of the production.</returns>
-        public SnacksConsumerResult ProduceResource(Vessel vessel, double elapsedTime, int crewCount, int crewCapacity, Dictionary<string, SnacksConsumerResult> consumptionResults)
+        public SnacksProcessorResult ProduceResource(Vessel vessel, double elapsedTime, int crewCount, int crewCapacity, Dictionary<string, SnacksProcessorResult> consumptionResults)
         {
-            SnacksConsumerResult result = new SnacksConsumerResult();
-            SnacksConsumerResult dependencyConsumptionResult;
+            SnacksProcessorResult dependencyConsumptionResult;
+            int adjustedCrewCount = crewCount;
+            List<ProtoPartResourceSnapshot> protoPartResources = new List<ProtoPartResourceSnapshot>();
 
             //If our output depends upon the results of a dependency resource, then retrieve the results.
             if (!string.IsNullOrEmpty(dependencyResourceName) && consumptionResults.ContainsKey(dependencyResourceName))
             {
                 dependencyConsumptionResult = consumptionResults[dependencyResourceName];
+                adjustedCrewCount = dependencyConsumptionResult.affectedKerbalCount;
             }
+
+            SnacksProcessorResult result = new SnacksProcessorResult();
+            result.resourceName = resourceName;
+            result.resultType = SnacksResultType.resultProduction;
+            result.crewCapacity = crewCapacity;
+            result.crewCount = crewCount;
+
+            if (!isRosterResource)
+            {
+                double vesselCurrentAmount = 0;
+                double vesselMaxAmount = 0;
+                double supplyAmount = amount;
+
+                //Get current totals
+                getResourceTotals(vessel, out vesselCurrentAmount, out vesselMaxAmount, protoPartResources);
+
+                //Multiply supply amount by crew count
+                supplyAmount *= adjustedCrewCount;
+
+                //Make sure we have enough room
+                if (vesselCurrentAmount + supplyAmount <= vesselMaxAmount)
+                {
+                    //Add resource
+                    addResource(vessel, supplyAmount, protoPartResources);
+
+                    //Update results
+                    result.affectedKerbalCount = adjustedCrewCount;
+                    result.completedSuccessfully = true;
+                    result.currentAmount = vesselCurrentAmount + supplyAmount;
+                    result.maxAmount = vesselMaxAmount;
+                }
+                else
+                {
+                    int totalServed = (int)Math.Floor(vesselCurrentAmount / amount);
+                    supplyAmount = totalServed * amount;
+
+                    //Add resource
+                    addResource(vessel, supplyAmount, protoPartResources);
+
+                    //Update results
+                    result.completedSuccessfully = false;
+                    result.currentAmount = vesselCurrentAmount + supplyAmount;
+                    result.maxAmount = vesselMaxAmount;
+                    result.affectedKerbalCount = crewCount - totalServed;
+                }
+            }
+            else
+            {
+
+            }
+
             return result;
         }
 
         #region Helpers
+        protected virtual double addResource(Vessel vessel, double supply, List<ProtoPartResourceSnapshot> resourceList)
+        {
+            double amountSupplied = 0;
+            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
+            int resourceID = definitions[resourceName].id;
+            double supplyRemaining = supply;
+            int count = resourceList.Count;
+            ProtoPartResourceSnapshot resource;
+
+            if (vessel.loaded)
+            {
+                amountSupplied = vessel.rootPart.RequestResource(resourceID, -supply);
+            }
+            else
+            {
+                for (int index = 0; index < count; index++)
+                {
+                    resource = resourceList[index];
+
+                    if (amountSupplied >= supply)
+                    {
+                        amountSupplied = supply;
+                        return amountSupplied;
+                    }
+
+                    if (resource.amount + supplyRemaining <= resource.maxAmount)
+                    {
+                        resource.amount += supplyRemaining;
+                        amountSupplied = supply;
+                        break;
+                    }
+                    else
+                    {
+                        amountSupplied += resource.maxAmount - resource.amount;
+                        resource.amount = resource.maxAmount;
+                    }
+                }
+            }
+
+            return amountSupplied;
+        }
+
         protected virtual double requestResource(Vessel vessel, double demand, List<ProtoPartResourceSnapshot> resourceList)
         {
             double amountObtained = 0;

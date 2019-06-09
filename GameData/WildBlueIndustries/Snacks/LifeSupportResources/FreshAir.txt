@@ -1,0 +1,193 @@
+RESOURCE_DEFINITION
+{
+	name = FreshAir
+	density = 0.00435
+	unitCost = .5
+	flowMode = ALL_VESSEL
+	transfer = PUMP
+	isTweakable = true
+	volume = 5
+}
+
+RESOURCE_DEFINITION
+{
+	name = StaleAir
+	density = 0.00435
+	unitCost = .5
+	flowMode = ALL_VESSEL
+	transfer = PUMP
+	isTweakable = true
+	volume = 5
+}
+
+//When a part with crew capacity is loaded in the editor and it lacks this resource, 
+//or when a vessel is loaded into the scene and its parts with crew capacity lack this resource, 
+//add it to the part. Doesn’t apply to kerbals going on EVA. Use SNACKS_EVA_RESOURCE for that.
+SNACKS_PART_RESOURCE
+{
+	resourceName = FreshAir
+	amount = 16
+	maxAmount = 16
+
+	//If true (which is the default), then amount and maxAmount added are multiplied by the part's crew capacity.
+	isPerKerbal = true
+}
+
+//When a kerbal goes on EVA, take this resource along and remove a corresponding amount from the vessel.
+//NOTE: Snacks is a special case since we have game settings that affect snacks per meal and meals per day.
+//So for these values, the SNACKS_EVA_RESOURCE config will reflect the game settings. This config node is provided as an example.
+SNACKS_EVA_RESOURCE
+{
+	resourceName = FreshAir
+	amount = 1.0
+	maxAmount = 1.0
+}
+
+//This is how you define a resource processor that can consume inputs and produce outputs. The inputs and outputs are applied per kerbal.
+//The resources can be part of a vessel or a characteristic of a kerbal, such as Courage, Stupidity, and Stress. If a vessel/kerbal runs out of a consumed resource
+//then outcomes defined by the OUTCOME node are applied if told to do so. Similarly, if the vessel/kerbal has no more space to store a produced resource
+//then outcomes are applied if told to do so.
+SNACKS_RESOURCE_PROCESSOR
+{
+	name = Air
+	secondsPerCycle = 3600
+
+	CONSUMED_RESOURCE
+	{
+		//Name of the resource
+		resourceName = FreshAir
+
+		//Amount to consume per kerbal per cycle.
+		amount = 0.166667
+
+		//If true, then resource will be displayed in the snapshots window.
+		showInSnapshot = true
+
+		//if true then outcomes are applied when vessel/kerbal runs out of the resource.
+		failureResultAppliesOutcomes = true
+	}
+
+	PRODUCED_RESOURCE
+	{
+		//Name of the resource
+		resourceName = StaleAir
+
+		//Amount to produce per kerbal per cycle.
+		amount = 0.166667
+
+		//If true, then resource will be displayed in the snapshots window.
+		showInSnapshot = false
+
+		//if true then outcomes are applied when vessel/kerbal runs out of space for the resource.
+		failureResultAppliesOutcomes = false
+	}
+
+	//Outcomes represent what to do when the vessel/kerbal runs out of a resource and failures apply or the vessel/kerbal runs out of room for the resource and failures apply.
+	//When a consumption and/or production process fails, Snacks records the failure. Outcomes like the FaintPenalty below can check to see how many cycles have failed before
+	//applying the outcome.
+	OUTCOME
+	{
+		//Name of the outcome. In this case it's the FaintPenalty. For this to be applied, fainting must be enabled in game settings.
+		name = FaintPenalty
+
+		//If true, then the outcome will be chosen at random and applied if random penalties are enabled. Otherwise it will always be applied.
+		//Default is false.
+		canBeRandom = false
+
+		//Message to show to the player. You can omit this for a silent outcome.
+		playerMessage = is gasping for air and faints!
+
+		//The following fields depend upon the name of the outcome.
+
+		//The name of the resource to check for failed process cycles.
+		resourceName = FreshAir
+
+		//Number of cycles before fainting occurs.
+		cyclesBeforeFainting = 1
+
+		//How many seconds to faint for.
+		faintDurationSeconds = 180
+	}
+
+	OUTCOME
+	{
+		name = DeathPenalty
+		playerMessage = has suffocated to death!
+		resourceName = FreshAir
+		cyclesBeforeDeath = 6
+	}
+}
+
+@PART[ISRU]
+{
+	MODULE
+	{
+		name = SnacksConverter
+		ConverterName = Air Maker
+		StartActionName = Start Air Maker
+		StopActionName = Stop Air Maker
+		AutoShutdown = false
+		GeneratesHeat = false
+		UseSpecialistBonus = true
+		ExperienceEffect = ConverterSkill
+		EfficiencyBonus = 1.0
+	 
+		INPUT_RESOURCE
+		{
+			ResourceName = Oxidizer
+			Ratio = 0.1
+			FlowMode = ALL_VESSEL
+  		}
+
+		INPUT_RESOURCE
+		{
+			ResourceName = ElectricCharge
+			Ratio = 3
+		}
+
+		OUTPUT_RESOURCE
+		{
+			ResourceName = FreshAir
+			Ratio = 0.1
+			DumpExcess = false
+			FlowMode = ALL_VESSEL
+		}
+	}
+}
+
+@PART[MiniISRU]
+{
+	MODULE
+	{
+		name = SnacksConverter
+		ConverterName = Air Maker
+		StartActionName = Start Air Maker
+		StopActionName = Stop Air Maker
+		AutoShutdown = false
+		GeneratesHeat = false
+		UseSpecialistBonus = true
+		ExperienceEffect = ConverterSkill
+		EfficiencyBonus = 1.0
+	 
+		INPUT_RESOURCE
+		{
+			ResourceName = Oxidizer
+			Ratio = 0.01
+			FlowMode = ALL_VESSEL
+  		}
+
+		INPUT_RESOURCE
+		{
+			ResourceName = ElectricCharge
+			Ratio = 3
+		}
+
+		OUTPUT_RESOURCE
+		{
+			ResourceName = FreshAir
+			Ratio = 0.01
+			DumpExcess = false
+			FlowMode = ALL_VESSEL
+		}
+	}
+}

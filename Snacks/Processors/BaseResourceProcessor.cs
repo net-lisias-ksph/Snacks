@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,7 @@ namespace Snacks
     /// <summary>
     /// This is a result that has data regarding what happened during resource consumption or production.
     /// </summary>
-    public struct SnacksConsumerResult
+    public struct SnacksProcessorResult
     {
         /// <summary>
         /// Name of the resource that was processed.
@@ -75,6 +75,16 @@ namespace Snacks
         /// Max amount of the resource in the vessel/kerbal.
         /// </summary>
         public double maxAmount;
+
+        /// <summary>
+        /// Current number of crew aboard the vessel
+        /// </summary>
+        public int crewCount;
+
+        /// <summary>
+        /// Total crew capacity.
+        /// </summary>
+        public int crewCapacity;
     }
 
     /// <summary>
@@ -85,14 +95,21 @@ namespace Snacks
     public class BaseResourceProcessor
     {
         #region Constants
-        public const string ConfigNodeName = "SNACKS_RESOURCE_PROCESSOR";
+        public const string ProcessorNode = "SNACKS_RESOURCE_PROCESSOR";
+        public const string ProcessorNodeSecondsPerCycle = "secondsPerCycle";
+        public const string ProcessorNodeName = "name";
+        public const string ProcessorNodeRemainingTime = "remainingTime";
+
+        public const string ConsumedResourceNode = "CONSUMED_RESOURCE";
+        public const string ProducedResourceNode = "PRODUCED_RESOURCE";
+        public const string OutcomeNode = "OUTCOME";
         #endregion
 
         #region Fields
         /// <summary>
-        /// User friendly name of the resource processor
+        /// Name of the resource processor
         /// </summary>
-        public string processName = string.Empty;
+        public string name = string.Empty;
 
         /// <summary>
         /// Number of seconds that must pass before running the consumer.
@@ -103,29 +120,77 @@ namespace Snacks
         #region Housekeeping
         public List<ProcessedResource> inputList;
         public List<ProcessedResource> outputList;
-        public Dictionary<string, SnacksConsumerResult> consumptionResults;
-        public Dictionary<string, SnacksConsumerResult> productionResults;
+        public Dictionary<string, SnacksProcessorResult> consumptionResults;
+        public Dictionary<string, SnacksProcessorResult> productionResults;
+        public List<BaseOutcome> outcomes;
 
         double remainingTime = 0;
 
         public BaseResourceProcessor()
         {
-
+            //Create lists
+            inputList = new List<ProcessedResource>();
+            outputList = new List<ProcessedResource>();
+            consumptionResults = new Dictionary<string, SnacksProcessorResult>();
+            productionResults = new Dictionary<string, SnacksProcessorResult>();
+            outcomes = new List<BaseOutcome>();
         }
 
         public BaseResourceProcessor(ConfigNode node)
         {
-            if (node.HasValue("processName"))
-                processName = node.GetValue("processName");
+            if (node.HasValue(ProcessorNodeName))
+                name = node.GetValue(ProcessorNodeName);
 
-            if (node.HasValue("secondsPerCycle"))
-                double.TryParse(node.GetValue("secondsPerCycle"), out secondsPerCycle);
+            if (node.HasValue(ProcessorNodeSecondsPerCycle))
+                double.TryParse(node.GetValue(ProcessorNodeSecondsPerCycle), out secondsPerCycle);
 
             //Create lists
             inputList = new List<ProcessedResource>();
             outputList = new List<ProcessedResource>();
-            consumptionResults = new Dictionary<string, SnacksConsumerResult>();
-            productionResults = new Dictionary<string, SnacksConsumerResult>();
+            consumptionResults = new Dictionary<string, SnacksProcessorResult>();
+            productionResults = new Dictionary<string, SnacksProcessorResult>();
+            outcomes = new List<BaseOutcome>();
+
+            //Add processed resources
+            ConfigNode[] nodes;
+            ConfigNode configNode;
+            ProcessedResource resource;
+            BaseOutcome outcome;
+            if (node.HasNode(ConsumedResourceNode))
+            {
+                nodes = node.GetNodes(ConsumedResourceNode);
+                for (int index = 0; index < nodes.Length; index++)
+                {
+                    configNode = nodes[index];
+                    resource = new ProcessedResource();
+                    resource.Load(configNode);
+                    inputList.Add(resource);
+                }
+            }
+
+            if (node.HasNode(ProducedResourceNode))
+            {
+                nodes = node.GetNodes(ProducedResourceNode);
+                for (int index = 0; index < nodes.Length; index++)
+                {
+                    configNode = nodes[index];
+                    resource = new ProcessedResource();
+                    resource.Load(configNode);
+                    outputList.Add(resource);
+                }
+            }
+
+            //Add outcomes
+            if (node.HasNode(OutcomeNode))
+            {
+                nodes = node.GetNodes(OutcomeNode);
+                for (int index = 0; index < nodes.Length; index++)
+                {
+                    configNode = nodes[index];
+                    outcome = SnacksScenario.Instance.CreateOutcome(configNode);
+                    outcomes.Add(outcome);
+                }
+            }
         }
         #endregion
 
@@ -199,6 +264,38 @@ namespace Snacks
         }
 
         /// <summary>
+        /// Handles the vessel recovery event
+        /// </summary>
+        /// <param name="protoVessel">The ProtoVessel being recovered</param>
+        public virtual void onVesselRecovered(ProtoVessel protoVessel)
+        {
+            ProtoCrewMember[] astronauts = protoVessel.GetVesselCrew().ToArray();
+            AstronautData astronautData;
+            ProcessedResource resource;
+            int count;
+
+            //Remove processing data for each resource if needed.
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+
+                count = inputList.Count;
+                for (int resourceIndex = 0; resourceIndex < count; resourceIndex++)
+                {
+                    resource = inputList[resourceIndex];
+                    if (resource.clearDataDuringRecovery)
+                    {
+                        if (astronautData.processedResourceSuccesses.ContainsKey(resource.resourceName))
+                            astronautData.processedResourceSuccesses.Remove(resource.resourceName);
+
+                        if (astronautData.processedResourceFailures.ContainsKey(resource.resourceName))
+                            astronautData.processedResourceFailures.Remove(resource.resourceName);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Handles changes to game settings.
         /// </summary>
         public virtual void OnGameSettingsApplied()
@@ -209,14 +306,14 @@ namespace Snacks
 
         #region API
         /// <summary>
-        /// Loads the SNACKS_RESOURCE_CONSUMER config nodes and returns a list of consumers.
+        /// Loads the SNACKS_RESOURCE_PROCESSOR config nodes and returns a list of processors.
         /// </summary>
         /// <returns>A list of resource consumers.</returns>
-        public static List<BaseResourceProcessor> LoadConsumers()
+        public static List<BaseResourceProcessor> LoadProcessors()
         {
             List<BaseResourceProcessor> resourceProcessors = new List<BaseResourceProcessor>();
-            BaseResourceProcessor resourceConsumer;
-            ConfigNode[] consumerNodes = GameDatabase.Instance.GetConfigNodes(ConfigNodeName);
+            BaseResourceProcessor resourceProcessor;
+            ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes(ProcessorNode);
             ConfigNode node;
 
             //Add the snacks consumer
@@ -225,12 +322,12 @@ namespace Snacks
             resourceProcessors.Add(snacksConsumer);
 
             //Now go through all the config nodes and load them
-            for (int index = 0; index < consumerNodes.Length; index++)
+            for (int index = 0; index < nodes.Length; index++)
             {
-                node = consumerNodes[index];
-                resourceConsumer = new BaseResourceProcessor(node);
-                resourceConsumer.Initialize();
-                resourceProcessors.Add(resourceConsumer);
+                node = nodes[index];
+                resourceProcessor = new BaseResourceProcessor(node);
+                resourceProcessor.Initialize();
+                resourceProcessors.Add(resourceProcessor);
             }
 
             //Return all the consumers
@@ -251,8 +348,8 @@ namespace Snacks
         /// <param name="node">The ConfigNode with the persistence data</param>
         public virtual void OnLoad(ConfigNode node)
         {
-            if (node.HasValue("remainingTime"))
-                double.TryParse(node.GetValue("remainingTime"), out remainingTime);
+            if (node.HasValue(ProcessorNodeRemainingTime))
+                double.TryParse(node.GetValue(ProcessorNodeRemainingTime), out remainingTime);
         }
 
         /// <summary>
@@ -261,9 +358,9 @@ namespace Snacks
         /// <returns>A ConfigNode containing persistence data, if any.</returns>
         public virtual ConfigNode OnSave()
         {
-            ConfigNode node = new ConfigNode(ConfigNodeName);
+            ConfigNode node = new ConfigNode(ProcessorNode);
 
-            node.AddValue("remainingTime", remainingTime);
+            node.AddValue(ProcessorNodeRemainingTime, remainingTime);
 
             return node;
         }
@@ -277,7 +374,16 @@ namespace Snacks
         /// <param name="producedResources">The list of produced resources to add the outputs to.</param>
         public virtual void AddConsumedAndProducedResources(Vessel vessel, double secondsPerCycle, List<ResourceRatio> consumedResources, List<ResourceRatio>  producedResources)
         {
+            //Make sure we have crew
+            int crewCount = 0;
+            if (vessel.loaded)
+                crewCount = vessel.GetCrewCount();
+            else
+                crewCount = vessel.protoVessel.GetVesselCrew().Count;
+            if (crewCount <= 0)
+                return;
 
+            AddConsumedAndProducedResources(crewCount, secondsPerCycle, consumedResources, producedResources);
         }
 
         /// <summary>
@@ -289,7 +395,30 @@ namespace Snacks
         /// <param name="producedResources">The list of produced resources to add the outputs to.</param>
         public virtual void AddConsumedAndProducedResources(int crewCount, double secondsPerCycle, List<ResourceRatio> consumedResources, List<ResourceRatio> producedResources)
         {
+            if (crewCount <= 0)
+                return;
 
+            ResourceRatio resourceRatio;
+
+            //Process input list
+            int count = inputList.Count;
+            for (int index = 0; index < count; index++)
+            {
+                resourceRatio = new ResourceRatio();
+                resourceRatio.ResourceName = inputList[index].resourceName;
+                resourceRatio.Ratio = inputList[index].amount * crewCount;
+                consumedResources.Add(resourceRatio);
+            }
+
+            //Process output list
+            count = outputList.Count;
+            for (int index = 0; index < count; index++)
+            {
+                resourceRatio = new ResourceRatio();
+                resourceRatio.ResourceName = outputList[index].resourceName;
+                resourceRatio.Ratio = outputList[index].amount * crewCount;
+                producedResources.Add(resourceRatio);
+            }
         }
 
         /// <summary>
@@ -326,7 +455,7 @@ namespace Snacks
         }
         #endregion
 
-        #region Consumer Cycle
+        #region Process Cycle
         /// <summary>
         /// Runs the processor, consuming input resources, producing output resources, and collating results.
         /// </summary>
@@ -336,10 +465,9 @@ namespace Snacks
         /// <param name="crewCapacity">The vessel's total crew capacity.</param>
         public virtual void ProcessResources(Vessel vessel, double elapsedTime, int crewCount, int crewCapacity)
         {
-            elapsedTime = 3600;
             int count = 0;
             ProcessedResource resource;
-            SnacksConsumerResult result;
+            SnacksProcessorResult result;
 
             remainingTime += elapsedTime;
             while (remainingTime >= secondsPerCycle)
@@ -354,6 +482,13 @@ namespace Snacks
                     resource = inputList[index];
                     result = resource.ConsumeResource(vessel, elapsedTime, crewCount, crewCapacity);
                     consumptionResults.Add(result.resourceName, result);
+
+                    //Update astronaut data
+                    updateAstronautData(vessel, resource, result);
+
+                    //Handle outcomes
+                    if (!result.completedSuccessfully && resource.failureResultAppliesOutcomes)
+                        applyFailureOutcomes(vessel, resource, result);
                 }
 
                 //Produce outputs
@@ -364,12 +499,98 @@ namespace Snacks
                     resource = outputList[index];
                     result = resource.ProduceResource(vessel, elapsedTime, crewCount, crewCapacity, consumptionResults);
                     productionResults.Add(result.resourceName, result);
+
+                    //Update astronaut data
+                    updateAstronautData(vessel, resource, result);
+
+                    //Handle outcomes
+                    if (!result.completedSuccessfully && resource.failureResultAppliesOutcomes)
+                        applyFailureOutcomes(vessel, resource, result);
                 }
             }
         }
         #endregion
 
         #region Helpers
+        protected virtual void updateAstronautData(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+        {
+            ProtoCrewMember[] astronauts;
+            AstronautData astronautData;
+
+            //Get astronauts
+            if (vessel.loaded)
+                astronauts = vessel.GetVesselCrew().ToArray();
+            else
+                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                //Get astronaut data
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+                if (astronautData == null)
+                    continue;
+
+                //If the result was successful then remove failed count and increment success count.
+                if (result.completedSuccessfully)
+                {
+                    //Increment success count
+                    if (!astronautData.processedResourceSuccesses.ContainsKey(resource.resourceName))
+                        astronautData.processedResourceSuccesses.Add(resource.resourceName, 0);
+                    astronautData.processedResourceSuccesses[resource.resourceName] += 1;
+
+                    //Remove failure count
+                    if (astronautData.processedResourceFailures.ContainsKey(resource.resourceName))
+                        astronautData.processedResourceFailures.Remove(resource.resourceName);
+                }
+
+                //Otherwise, remove success count and increment failed count.
+                else
+                {
+                    //Increment failure count
+                    if (!astronautData.processedResourceFailures.ContainsKey(resource.resourceName))
+                        astronautData.processedResourceFailures.Add(resource.resourceName, 0);
+                    astronautData.processedResourceFailures[resource.resourceName] += 1;
+
+                    //Remove success count
+                    if (astronautData.processedResourceSuccesses.ContainsKey(resource.resourceName))
+                        astronautData.processedResourceSuccesses.Remove(resource.resourceName);
+                }
+            }
+        }
+
+        protected virtual void applyFailureOutcomes(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+        {
+            int count = outcomes.Count;
+            List<BaseOutcome> enabledOutcomes = new List<BaseOutcome>();
+            List<BaseOutcome> randomOutcomes = new List<BaseOutcome>();
+            bool randomOutcomesEnabled = SnacksProperties.RandomPenaltiesEnabled;
+
+            //Find the outcomes that are enabled and add them to the appropriate lists.
+            for (int index = 0; index < count; index++)
+            {
+                if (outcomes[index].IsEnabled())
+                {
+                    if (outcomes[index].canBeRandom && randomOutcomesEnabled)
+                        randomOutcomes.Add(outcomes[index]);
+                    else
+                        enabledOutcomes.Add(outcomes[index]);
+                }
+            }
+
+            //Now go through and apply the outcomes (if any).
+            count = enabledOutcomes.Count;
+            for (int index = 0; index < count; index++)
+            {
+                enabledOutcomes[index].ApplyOutcome(vessel, resource, result);
+            }
+
+            //Finally, pick a random outcome to apply (if any).
+            if (randomOutcomes.Count > 0)
+            {
+                int randomIndex = UnityEngine.Random.Range(0, randomOutcomes.Count - 1);
+                randomOutcomes[randomIndex].ApplyOutcome(vessel, resource, result);
+            }
+        }
         #endregion
     }
 }

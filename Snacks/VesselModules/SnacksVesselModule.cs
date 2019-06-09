@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,17 @@ namespace Snacks
 {
     public class SnacksVesselModule : VesselModule
     {
+        #region Constants
+        public const string SnacksVesselModuleNode = "SnacksVesselModule";
+        public const string ValueSolarFlux = "solarFlux";
+        public const string ValueSciencePenalties = "sciencePenalties";
+        #endregion
+
+        /// <summary>
+        /// Number of science penalties to apply when the vessel becomes active.
+        /// </summary>
+        public int sciencePenalties = 0;
+
         public override Activation GetActivation()
         {
             return Activation.LoadedVessels;
@@ -62,7 +73,17 @@ namespace Snacks
             base.OnSave(node);
 
             //Record solar flux for simulations and background processing.
-            node.AddValue("solarFlux", SnacksScenario.GetSolarFlux(vessel));
+            node.AddValue(ValueSolarFlux, SnacksScenario.GetSolarFlux(vessel));
+
+            node.AddValue(ValueSciencePenalties, sciencePenalties);
+        }
+
+        protected override void OnLoad(ConfigNode node)
+        {
+            base.OnLoad(node);
+
+            if (node.HasValue(ValueSciencePenalties))
+                int.TryParse(ValueSciencePenalties, out sciencePenalties);
         }
     }
 }

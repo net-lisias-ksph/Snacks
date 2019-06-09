@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +36,10 @@ namespace Snacks
     /// </summary>
     public class SnacksResourceProcessor: BaseResourceProcessor
     {
-        #region Housekeeping
+        #region Constructors
         public SnacksResourceProcessor()
         {
-            processName = "Snacks!";
+            name = "Snacks!";
 
             //Get input list
             inputList = new List<ProcessedResource>();
@@ -48,17 +48,9 @@ namespace Snacks
 
             //Get output list
             outputList = new List<ProcessedResource>();
-            if (SnacksProperties.RecyclersEnabled)
-            {
-                resource = new ProcessedResource(SnacksProperties.SoilResourceName, SnacksProperties.SnacksResourceName, SnacksProperties.SnacksPerMeal, false, false);
-                outputList.Add(resource);
-            }
 
             //Setup the amounts and such based on current game settings
             OnGameSettingsApplied();
-
-            //Get penalties list
-
         }
         #endregion
 
@@ -66,10 +58,7 @@ namespace Snacks
         public override void OnGameSettingsApplied()
         {
             //Update seconds per cycle
-            if (GameSettings.KERBIN_TIME)
-                secondsPerCycle = (6 * 3600) / SnacksProperties.MealsPerDay;
-            else
-                secondsPerCycle = (24 * 3600) / SnacksProperties.MealsPerDay;
+            secondsPerCycle = SnacksScenario.GetSecondsPerDay() / SnacksProperties.MealsPerDay;
 
             //Update input amounts
             inputList[0].amount = SnacksProperties.SnacksPerMeal;
@@ -78,9 +67,19 @@ namespace Snacks
             outputList.Clear();
             if (SnacksProperties.RecyclersEnabled)
             {
-                ProcessedResource resource = new ProcessedResource(SnacksProperties.SoilResourceName, SnacksProperties.SnacksResourceName, SnacksProperties.SnacksPerMeal, false, false);
+                ProcessedResource resource = new ProcessedResource(SnacksProperties.SoilResourceName, SnacksProperties.SnacksResourceName, SnacksProperties.SnacksPerMeal, false, false, false);
                 outputList.Add(resource);
             }
+
+            //Outcomes
+            outcomes.Clear();
+            outcomes.Add(new FundingPenalty(true, "Kerbals are hungry for snacks! You have been fined {0:N2} Funds", SnacksProperties.FinePerKerbal));
+            outcomes.Add(new RepPenalty(true, SnacksProperties.RepLostWhenHungry, "Kerbals are hungry for snacks! Your reputation has decreased by {0:N3}"));
+            outcomes.Add(new SciencePenalty(true));
+            if (SnacksProperties.CanStarveToDeath)
+                outcomes.Add(new DeathPenalty(SnacksProperties.SnacksResourceName, SnacksProperties.MealsSkippedBeforeDeath, "has died from a lack of Snacks!"));
+            if (SnacksProperties.FaintWhenHungry)
+                outcomes.Add(new FaintPenalty(SnacksProperties.SnacksResourceName, SnacksProperties.MealsBeforeFainting, SnacksProperties.NapTime * 60f, "has fainted from a lack of Snacks!"));
         }
         #endregion
 
@@ -99,32 +98,7 @@ namespace Snacks
             if (crewCount <= 0)
                 return;
 
-            ResourceRatio resourceRatio;
-
-            //Calculate amount
-            //Start with total snacks consumed per day, accounting for crew count.
-            double amount = SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay * crewCount;
-
-            //Now get snacks per second consumed.
-            amount /= SnacksScenario.GetSecondsPerDay();
-
-            //Finally, account for seconds per cycle
-            amount *= secondsPerCycle;
-
-            //Add snacks
-            resourceRatio = new ResourceRatio();
-            resourceRatio.ResourceName = SnacksProperties.SnacksResourceName;
-            resourceRatio.Ratio = amount;
-            consumedResources.Add(resourceRatio);
-
-            //Add soil
-            if (SnacksProperties.RecyclersEnabled)
-            {
-                resourceRatio = new ResourceRatio();
-                resourceRatio.ResourceName = SnacksProperties.SoilResourceName;
-                resourceRatio.Ratio = amount;
-                producedResources.Add(resourceRatio);
-            }
+            AddConsumedAndProducedResources(crewCount, secondsPerCycle, consumedResources, producedResources);
         }
 
         public override void AddConsumedAndProducedResources(int crewCount, double secondsPerCycle, List<ResourceRatio> consumedResources, List<ResourceRatio> producedResources)

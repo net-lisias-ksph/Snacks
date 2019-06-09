@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -62,6 +62,8 @@ namespace Snacks
         {
             //Record the vessel and its consumed resource durations.
             mutex.WaitOne();
+            if (vesselResourceDurations.ContainsKey(simulator.vessel))
+                vesselResourceDurations.Remove(simulator.vessel);
             vesselResourceDurations.Add(simulator.vessel, simulator.consumedResourceDurations);
 
             if (simulator.convertersAssumedActive && !convertersAssumedActive.ContainsKey(simulator.vessel))

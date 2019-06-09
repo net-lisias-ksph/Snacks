@@ -24,11 +24,15 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.16.2
+- Fixed issue where parts weren't receiving their correct allotment of Snacks for parts where the crew capacity is greater than one kerbal.
+
 1.16.1
 - Updated Snacks Trip Planner in the Docs folder - new Timewarp Calcs tab.
 - SnacksConverter now has new options:
   requiresHomeConnection - Requires connection to homeworld to operate.
   minimumCrew - Minimum number of crew that must be in the host part in order to run the converter.
+NOTE: Snacks Processor and Soil Recycler don't use these.
 - Fixed NREs generated when converters are added in the editor.
 - Fixed issue where Snacks wasn't being added to parts in the editor.
 - Fixed debug info in SnacksProcessor.

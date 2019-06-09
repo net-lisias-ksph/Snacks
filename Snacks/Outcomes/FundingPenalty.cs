@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,27 +31,37 @@ using KSP.IO;
 
 namespace Snacks
 {
-    public class FundingPenalty : ISnacksPenalty
+    public class FundingPenalty : BaseOutcome
     {
-        public void GameSettingsApplied()
+        #region Constants
+        const string ValueFinePerKerbal = "finePerKerbal";
+        #endregion
+
+        #region Housekeeping
+        double finePerKerbal;
+        #endregion
+
+        #region Constructors
+        public FundingPenalty(ConfigNode node) : base (node)
         {
+            if (node.HasValue(ValueFinePerKerbal))
+                double.TryParse(node.GetValue(ValueFinePerKerbal), out finePerKerbal);
         }
 
-        public bool IsEnabled()
+        public FundingPenalty(bool canBeRandom, string playerMessage, double finePerKerbal) : base(canBeRandom)
+        {
+            this.playerMessage = playerMessage;
+            this.finePerKerbal = finePerKerbal;
+        }
+        #endregion
+
+        #region Overrides
+        public override bool IsEnabled()
         {
             return SnacksProperties.LoseFundsWhenHungry;
         }
 
-        public bool AlwaysApply()
-        {
-            return !SnacksProperties.RandomPenaltiesEnabled;
-        }
-
-        public void RemovePenalty(Vessel vessel)
-        {
-        }
-
-        public void ApplyPenalty(int hungryKerbals, Vessel vessel)
+        public override void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
         {
             //Only applies to Career mode
             if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
@@ -59,12 +69,20 @@ namespace Snacks
                 //Apply funding loss
                 if (SnacksProperties.LoseFundsWhenHungry)
                 {
-                    double fine = SnacksProperties.FinePerKerbal * hungryKerbals;
+                    double fine = finePerKerbal * result.affectedKerbalCount;
 
                     Funding.Instance.AddFunds(-fine, TransactionReasons.Any);
-                    ScreenMessages.PostScreenMessage("You've been fined " + Convert.ToInt32(fine) + " Funds", 5, ScreenMessageStyle.UPPER_LEFT);
+
+                    if (!string.IsNullOrEmpty(playerMessage))
+                    {
+                        if (playerMessage.Contains("{0:N2}"))
+                            ScreenMessages.PostScreenMessage(string.Format(playerMessage, fine), 5, ScreenMessageStyle.UPPER_LEFT);
+                        else
+                            ScreenMessages.PostScreenMessage(playerMessage, 5, ScreenMessageStyle.UPPER_LEFT);
+                    }
                 }
             }
         }
+        #endregion
     }
 }

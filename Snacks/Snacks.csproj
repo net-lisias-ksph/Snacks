@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -60,25 +62,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ResourceClasses\ProcessedResource.cs" />
-    <Compile Include="Consumers\BaseResourceProcessor.cs" />
-    <Compile Include="LifeSupport\AstronautData.cs" />
+    <Compile Include="Processors\BaseResourceProcessor.cs" />
+    <Compile Include="AstronautClasses\AstronautData.cs" />
     <Compile Include="Experimental\BlackoutTest.cs" />
     <Compile Include="Experimental\CommNetController.cs" />
-    <Compile Include="Penalties\DeathPenalty.cs" />
-    <Compile Include="Experimental\EVARefiller.cs" />
-    <Compile Include="Penalties\MissingMealsMonitor.cs" />
-    <Compile Include="Penalties\FaintPenalty.cs" />
-    <Compile Include="Penalties\FundingPenalty.cs" />
-    <Compile Include="LifeSupport\SnacksVesselModule.cs" />
-    <Compile Include="Penalties\RepPenalty.cs" />
-    <Compile Include="Penalties\SciencePenalty.cs" />
+    <Compile Include="Outcomes\DeathPenalty.cs" />
+    <Compile Include="Outcomes\FaintPenalty.cs" />
+    <Compile Include="Outcomes\FundingPenalty.cs" />
+    <Compile Include="VesselModules\SnacksVesselModule.cs" />
+    <Compile Include="Outcomes\RepPenalty.cs" />
+    <Compile Include="Outcomes\SciencePenalty.cs" />
     <Compile Include="SettingsAndScenario\SnacksScenario.cs" />
     <Compile Include="Converters\SnackProcessor.cs" />
     <Compile Include="Experimental\SnacksModuleCommand.cs" />
     <Compile Include="Converters\SnacksBackgroundConverter.cs" />
     <Compile Include="Experimental\SnacksControlSource.cs" />
     <Compile Include="Converters\SnacksConverter.cs" />
-    <Compile Include="Consumers\SnacksResourceProcessor.cs" />
+    <Compile Include="Processors\SnacksResourceProcessor.cs" />
     <Compile Include="ResourceClasses\SnacksPartResource.cs" />
     <Compile Include="ResourceClasses\SnacksEVAResource.cs" />
     <Compile Include="ResourceClasses\Snackshot.cs" />
@@ -91,14 +91,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="GUI\SnackApp.cs" />
     <Compile Include="GUI\SnackAppView.cs" />
-    <Compile Include="Consumers\SnackConsumer.cs" />
-    <Compile Include="LifeSupport\SnackController.cs" />
     <Compile Include="Converters\SoilRecycler.cs" />
     <Compile Include="SettingsAndScenario\SnacksProperties.cs" />
     <Compile Include="Utilities\Window.cs" />
     <Compile Include="Utilities\WindowUtils.cs" />
-    <Compile Include="Penalties\VesselControlPenalty.cs" />
+    <Compile Include="Experimental\VesselControlPenalty.cs" />
     <Compile Include="ResourceClasses\VesselSnackshot.cs" />
+    <Compile Include="Outcomes\BaseOutcome.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

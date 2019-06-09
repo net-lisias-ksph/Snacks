@@ -9,7 +9,7 @@ using KSP.UI;
 /**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,7 @@ namespace Snacks
         int crewCapacity = 0;
 
         public SnackAppView() :
-        base("Snack Supply", 500, 500)
+        base("Vessel Status", 500, 500)
         {
             Resizable = false;
         }
@@ -66,7 +66,7 @@ namespace Snacks
                 if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedScene == GameScenes.SPACECENTER)
                 {
                     SnacksScenario.Instance.UpdateSnapshots();
-                    SnackController.onSnackTime.Add(onSnackTime);
+                    SnacksScenario.onSnackTime.Add(onSnackTime);
                 }
                 else if (HighLogic.LoadedSceneIsEditor)
                 {
@@ -91,7 +91,8 @@ namespace Snacks
                 SnacksScenario.Instance.exemptKerbals = exemptKerbals;
                 if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedScene == GameScenes.SPACECENTER)
                 {
-                    SnackController.onSnackTime.Remove(onSnackTime);
+                    SnacksScenario.onSnackTime.Remove(onSnackTime);
+
                     if (SnacksScenario.Instance != null && SnacksScenario.Instance.threadPool != null)
                         SnacksScenario.Instance.threadPool.StopAllJobs();
                 }
@@ -312,9 +313,7 @@ namespace Snacks
             {
                 if (GUILayout.Button("Snack Time!"))
                 {
-                    SnacksScenario.Instance.RunSnackCyleImmediately();
-                    SnackController.Instance.EatSnacks();
-                    SnacksScenario.Instance.UpdateSnapshots();
+                    SnacksScenario.Instance.RunSnackCyleImmediately(SnacksScenario.GetSecondsPerDay() / SnacksProperties.MealsPerDay);
                 }
             }
 

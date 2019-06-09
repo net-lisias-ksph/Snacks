@@ -1,0 +1,28 @@
+//This resource is added to a kerbal’s crew roster entry. These aren’t resources in the traditional sense; they are characteristics of the kerbal itself.
+SNACKS_ROSTER_RESOURCE
+{
+	resourceName = Stress
+
+	//Amount to add
+	amount = 0
+
+	//Max amount possible. Note that for Stress, the maxAmount will actually depend upon the vessel's crew capacity.
+	maxAmount = 100
+
+	//Amount to add when the kerbal levels up
+	experienceBonusAmount = 0
+
+	//Max amount to add when the kerbal levels up
+	experienceBonusMaxAmount = 10
+}
+
+//A lack of air will definitely cause stress...
+@SNACKS_RESOURCE_PROCESSOR[Air]
+{
+	OUTCOME
+	{
+		name = ResourceProduced
+		resourceNameProduced = Stress
+		amount = 1
+	}
+}

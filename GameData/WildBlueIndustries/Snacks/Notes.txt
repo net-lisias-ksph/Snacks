@@ -1,0 +1,8 @@
+Air and Stress
+
+- Snacks now has the ability to define custom life support resources besides just Snacks! All it takes is a config file. With this feature you can:
+  - Define your own life support resource to consume and/or produce.
+  - Optionally track its status in the vessel snapshot window- with support in the multithreaded simulator!
+  - Optionally apply one or more outcomes (like penalties) if the consumed resource runs out, or if space for the produced resource is full.
+As an example of a tracked resource, check out the LifeSupportResources folder for the FreshAir.txt file. Rename it with the .cfg extension to enable it.
+NOTE: You can make FreshAir using the stock ISRU and mini ISRU.

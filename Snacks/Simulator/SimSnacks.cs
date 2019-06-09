@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -535,36 +535,58 @@ namespace Snacks
                 count = consumedResources.Count;
                 for (int index = 0; index < count; index++)
                 {
+                    //Get the consumed resource
                     consumerRatio = consumedResources[index];
 
+                    //Get the vessel resource
                     if (!resources.ContainsKey(consumerRatio.ResourceName))
                         continue;
                     vesselResourceRatio = resources[consumerRatio.ResourceName];
 
-                    vesselResourceRatio.amount -= consumerRatio.Ratio;
-                    if (vesselResourceRatio.amount <= 0)
-                        vesselResourceRatio.amount = 0;
-                    resources[consumerRatio.ResourceName] = vesselResourceRatio;
+                    if (vesselResourceRatio.amount > 0)
+                    {
+                        //Update simulator cycle duration
+                        vesselResourceRatio.durationSeconds += secondsPerCycle;
+
+                        //Adjust amount
+                        vesselResourceRatio.amount -= consumerRatio.Ratio;
+                        if (vesselResourceRatio.amount <= 0)
+                            vesselResourceRatio.amount = 0;
+
+                        //Save current values
+                        resources[consumerRatio.ResourceName] = vesselResourceRatio;
+                    }
                 }
 
                 //Process produced resources
                 count = producedResources.Count;
                 for (int index = 0; index < count; index++)
                 {
+                    //Get the consumed resource
                     consumerRatio = producedResources[index];
 
+                    //Get the vessel resource
                     if (!resources.ContainsKey(consumerRatio.ResourceName))
                         continue;
                     vesselResourceRatio = resources[consumerRatio.ResourceName];
 
-                    vesselResourceRatio.amount += consumerRatio.Ratio;
-                    if (vesselResourceRatio.amount > vesselResourceRatio.maxAmount)
-                        vesselResourceRatio.amount = vesselResourceRatio.maxAmount;
-                    resources[consumerRatio.ResourceName] = vesselResourceRatio;
+                    if (vesselResourceRatio.amount < vesselResourceRatio.maxAmount)
+                    {
+                        //Update simulator cycle duration
+                        vesselResourceRatio.durationSeconds += secondsPerCycle;
+
+                        //Adjust amount
+                        vesselResourceRatio.amount += consumerRatio.Ratio;
+                        if (vesselResourceRatio.amount > vesselResourceRatio.maxAmount)
+                            vesselResourceRatio.amount = vesselResourceRatio.maxAmount;
+
+                        //Save current values
+                        resources[consumerRatio.ResourceName] = vesselResourceRatio;
+                    }
                 }
                 OnConsumersRunComplete?.Invoke(this);
 
-                //Update consumed resource durations and check to see if we've depleted all of them.
+                //Check consumed resources to see if we've depleted all of them.
                 count = consumedResources.Count;
                 int depletedResourcesCount = 0;
                 for (int index = 0; index < count; index++)
@@ -578,15 +600,8 @@ namespace Snacks
                     }
                     vesselResourceRatio = resources[consumerRatio.ResourceName];
 
-                    if (vesselResourceRatio.amount > 0)
-                    {
-                        vesselResourceRatio.durationSeconds += secondsPerCycle;
-                        resources[consumerRatio.ResourceName] = vesselResourceRatio;
-                    }
-                    else
-                    {
+                    if (vesselResourceRatio.amount <= 0)
                         depletedResourcesCount += 1;
-                    }
                 }
 
                 //Increment simulator cycle count and inform delegate.

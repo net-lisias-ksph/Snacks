@@ -1,7 +1,7 @@
 ﻿/**
 The MIT License (MIT)
 Copyright (c) 2014-2019 by Michael Billard
-Original concept by Troy Gruetzmacher
+ 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,18 +31,41 @@ using KSP.IO;
 
 namespace Snacks
 {
-    public class DeathPenalty : ISnacksPenalty
+    public class DeathPenalty : BaseOutcome
     {
-        public const string kDeathMessage = " has died from a lack of Snacks!";
+        #region Constants
+        const string ValueResourceName = "resourceName";
+        const string ValueCyclesBeforeDeath = "cyclesBeforeDeath";
+        #endregion
 
-        public static void CheckDeadKerbals(Vessel vessel)
+        #region Housekeeping
+        protected string resourceName = string.Empty;
+        protected int cyclesBeforeDeath = 0;
+        #endregion
+
+        #region Constructors
+        public DeathPenalty(ConfigNode node) : base (node)
         {
-            if (!SnacksProperties.CanStarveToDeath)
-                return;
+            if (node.HasValue(ValueResourceName))
+                resourceName = node.GetValue(ValueResourceName);
 
-            int mealsBeforeDeath = SnacksProperties.MealsSkippedBeforeDeath;
+            if (node.HasValue(ValueCyclesBeforeDeath))
+                int.TryParse(node.GetValue(ValueCyclesBeforeDeath), out cyclesBeforeDeath);
+        }
+
+        public DeathPenalty(string resourceName, int cyclesBeforeDeath, string playerMessage)
+        {
+            this.resourceName = resourceName;
+            this.cyclesBeforeDeath = cyclesBeforeDeath;
+            this.playerMessage = playerMessage;
+        }
+        #endregion
+
+        #region Overrides
+        public override void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+        {
             ProtoCrewMember[] astronauts;
-            AstronautData data;
+            AstronautData astronautData;
 
             //Get the astronauts
             if (vessel.loaded)
@@ -50,19 +73,19 @@ namespace Snacks
             else
                 astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
 
-            //If crew member has gone hungry too many times then it's time to die.
+            //If crew member has failed too many cycles then it's time to die.
             List<ProtoCrewMember> doomed = new List<ProtoCrewMember>();
             KerbalRoster roster = HighLogic.CurrentGame.CrewRoster;
             for (int index = 0; index < astronauts.Length; index++)
             {
-                data = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
 
                 //Handle exemptions
-                if (data.isExempt)
+                if (astronautData.isExempt)
                     continue;
 
                 //Add to our cleanup list
-                if (data.mealsMissed >= mealsBeforeDeath)
+                if (astronautData.processedResourceFailures.ContainsKey(resourceName) && astronautData.processedResourceFailures[resourceName] >= cyclesBeforeDeath)
                     doomed.Add(astronauts[index]);
             }
 
@@ -91,35 +114,20 @@ namespace Snacks
                 astronauts[index].rosterStatus = ProtoCrewMember.RosterStatus.Dead;
 
                 //Give player the bad news
-                message = astronauts[index].name + kDeathMessage;
+                message = astronauts[index].name + " " + playerMessage;
                 Debug.Log("[DeathPenalty] - " + message);
                 ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 
-        public bool IsEnabled()
+        public static void CheckDeadKerbals(Vessel vessel)
+        {
+        }
+
+        public override bool IsEnabled()
         {
             return SnacksProperties.CanStarveToDeath;
         }
-
-        public bool AlwaysApply()
-        {
-            return true;
-        }
-
-        public void ApplyPenalty(int hungryKerbals, Vessel vessel)
-        {
-            CheckDeadKerbals(vessel);
-        }
-
-        public void RemovePenalty(Vessel vessel)
-        {
-            //NOP, can't make a kerbal undead...
-        }
-
-        public void GameSettingsApplied()
-        {
-            //NOP
-        }
+        #endregion
     }
 }
