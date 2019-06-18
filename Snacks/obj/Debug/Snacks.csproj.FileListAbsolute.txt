@@ -32,7 +32,6 @@ C:/Projects/KSP/Snacks/Snacks/obj/Debug/Snacks.pdb
 /Users/michael/Projects/Snacks/Snacks/obj/Debug/Snacks.csproj.CoreCompileInputs.cache
 /Users/michael/Projects/Snacks/Snacks/obj/Debug/SnacksUtils.dll
 /Users/michael/Projects/Snacks/Snacks/obj/Debug/SnacksUtils.pdb
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csprojAssemblyReference.cache
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CoreCompileInputs.cache
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.pdb
@@ -48,3 +47,4 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Mono.Cecil.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Ionic.Zip.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\TDx.TDxInput.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CopyComplete
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csprojAssemblyReference.cache

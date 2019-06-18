@@ -57,7 +57,7 @@ namespace Snacks
         public bool isRosterResource = false;
 
         /// <summary>
-        /// Flag to indicate whether or not to show the resource in the Snapshots window.
+        /// Flag to indicate whether or not to show the resource in the Snapshots window. Ignored if isRosterResource is set to true.
         /// Default: true
         /// </summary>
         public bool showInSnapshot = true;
@@ -175,6 +175,13 @@ namespace Snacks
                 //Get current totals
                 getResourceTotals(vessel, out vesselCurrentAmount, out vesselMaxAmount, protoPartResources);
 
+                //If the vessel has no resource at all then it hasn't been visited in-game yet.
+                if (vesselMaxAmount <= 0)
+                {
+                    result.resultType = SnacksResultType.notApplicable;
+                    return result;
+                }
+
                 //Multiply request amount by crew count
                 requestAmount *= crewCount;
 
@@ -209,7 +216,7 @@ namespace Snacks
             //Process the roster resource
             else
             {
-
+                consumeRosterInputs(vessel, elapsedTime);
             }
 
             return result;
@@ -284,13 +291,79 @@ namespace Snacks
             }
             else
             {
-
+                produceRosterOutputs(vessel, elapsedTime);
             }
 
             return result;
         }
 
         #region Helpers
+        protected virtual void produceRosterOutputs(Vessel vessel, double elapsedTime)
+        {
+            AstronautData astronautData;
+            SnacksRosterResource rosterResource;
+            ProtoCrewMember[] astronauts;
+            if (vessel.loaded)
+                astronauts = vessel.GetVesselCrew().ToArray();
+            else
+                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+            if (astronauts.Length <= 0)
+                return;
+
+            for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
+            {
+                //Get astronaut data
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[astronautIndex]);
+                if (!astronautData.rosterResources.ContainsKey(resourceName))
+                    continue;
+
+                //Get roster resource
+                rosterResource = astronautData.rosterResources[resourceName];
+
+                //Process the input
+                rosterResource.amount += amount * elapsedTime;
+                if (rosterResource.amount >= rosterResource.maxAmount)
+                    rosterResource.amount = rosterResource.maxAmount;
+                astronautData.rosterResources[resourceName] = rosterResource;
+
+                //Fire event
+                SnacksScenario.onRosterResourceUpdated.Fire(vessel, rosterResource, astronautData, astronauts[astronautIndex]);
+            }
+        }
+
+        protected virtual void consumeRosterInputs(Vessel vessel, double elapsedTime)
+        {
+            AstronautData astronautData;
+            SnacksRosterResource rosterResource;
+            ProtoCrewMember[] astronauts;
+            if (vessel.loaded)
+                astronauts = vessel.GetVesselCrew().ToArray();
+            else
+                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+            if (astronauts.Length <= 0)
+                return;
+
+            for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
+            {
+                //Get astronaut data
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[astronautIndex]);
+                if (!astronautData.rosterResources.ContainsKey(resourceName))
+                    continue;
+
+                //Get roster resource
+                rosterResource = astronautData.rosterResources[resourceName];
+
+                //Process the input
+                rosterResource.amount -= amount * elapsedTime;
+                if (rosterResource.amount <= 0)
+                    rosterResource.amount = 0;
+                astronautData.rosterResources[resourceName] = rosterResource;
+
+                //Fire event
+                SnacksScenario.onRosterResourceUpdated.Fire(vessel, rosterResource, astronautData, astronauts[astronautIndex]);
+            }
+        }
+
         protected virtual double addResource(Vessel vessel, double supply, List<ProtoPartResourceSnapshot> resourceList)
         {
             double amountSupplied = 0;

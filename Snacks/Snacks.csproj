@@ -61,6 +61,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Experimental\ModuleSkillTester.cs" />
+    <Compile Include="Outcomes\OnStrikePenalty.cs" />
     <Compile Include="ResourceClasses\ProcessedResource.cs" />
     <Compile Include="Processors\BaseResourceProcessor.cs" />
     <Compile Include="AstronautClasses\AstronautData.cs" />
@@ -69,6 +71,9 @@
     <Compile Include="Outcomes\DeathPenalty.cs" />
     <Compile Include="Outcomes\FaintPenalty.cs" />
     <Compile Include="Outcomes\FundingPenalty.cs" />
+    <Compile Include="ResourceClasses\SnacksRosterResource.cs" />
+    <Compile Include="Processors\StressProcessor.cs" />
+    <Compile Include="GUI\SnacksIntroScreen.cs" />
     <Compile Include="VesselModules\SnacksVesselModule.cs" />
     <Compile Include="Outcomes\RepPenalty.cs" />
     <Compile Include="Outcomes\SciencePenalty.cs" />

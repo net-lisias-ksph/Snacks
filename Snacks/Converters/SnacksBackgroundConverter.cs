@@ -87,6 +87,8 @@ namespace Snacks
         ProtoPartSnapshot protoPart;
         ProtoPartModuleSnapshot moduleSnapshot;
         Dictionary<string, List<ProtoPartResourceSnapshot>> protoResources = new Dictionary<string, List<ProtoPartResourceSnapshot>>();
+        List<SnacksRosterRatio> rosterInputList = new List<SnacksRosterRatio>();
+        List<SnacksRosterRatio> rosterOutputList = new List<SnacksRosterRatio>();
         #endregion
 
         #region Constructors
@@ -281,6 +283,12 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                     requiredResourceNames += requiredList[index].ResourceName;
 
+                //Get roster input resources
+                if (node.HasNode(SnacksConverter.ROSTER_INPUT_RESOURCE))
+                    getRosterResources(SnacksConverter.ROSTER_INPUT_RESOURCE, rosterInputList, node);
+                if (node.HasNode(SnacksConverter.ROSTER_OUTPUT_RESOURCE))
+                    getRosterResources(SnacksConverter.ROSTER_OUTPUT_RESOURCE, rosterOutputList, node);
+
                 //Get yield resources
                 if (node.HasNode("YIELD_RESOURCE"))
                     getConverterResources("YIELD_RESOURCE", yieldsList, node);
@@ -396,6 +404,40 @@ namespace Snacks
                 demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
                 requestAmount(resourceRatio.ResourceName, demand, resourceRatio.FlowMode);
             }
+
+            //Now consume roster inputs
+            if (protoPart.protoModuleCrew.Count > 0 && rosterInputList.Count > 0)
+            {
+                SnacksRosterRatio rosterRatio;
+                AstronautData astronautData;
+                SnacksRosterResource rosterResource;
+                ProtoCrewMember[] astronauts = protoPart.protoModuleCrew.ToArray();
+
+                count = rosterInputList.Count;
+                for (int index = 0; index < count; index++)
+                {
+                    rosterRatio = rosterInputList[index];
+                    for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
+                    {
+                        //Get astronaut data
+                        astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[astronautIndex]);
+                        if (!astronautData.rosterResources.ContainsKey(rosterRatio.ResourceName))
+                            continue;
+
+                        //Get roster resource
+                        rosterResource = astronautData.rosterResources[rosterRatio.ResourceName];
+
+                        //Process the input
+                        rosterResource.amount -= rosterRatio.AmountPerSecond * elapsedTime;
+                        if (rosterResource.amount <= 0)
+                            rosterResource.amount = 0;
+                        astronautData.rosterResources[rosterRatio.ResourceName] = rosterResource;
+
+                        //Fire event
+                        SnacksScenario.onRosterResourceUpdated.Fire(vessel.vesselRef, rosterResource, astronautData, astronauts[astronautIndex]);
+                    }
+                }
+            }
         }
 
         public void ProduceOutputResources(ProtoVessel vessel, double elapsedTime)
@@ -415,6 +457,40 @@ namespace Snacks
                 resourceRatio = outputList[index];
                 supply = resourceRatio.Ratio * outputEfficiency * elapsedTime;
                 supplyAmount(resourceRatio.ResourceName, supply, resourceRatio.FlowMode, resourceRatio.DumpExcess);
+            }
+
+            //Now produce roster outputs
+            if (protoPart.protoModuleCrew.Count > 0 && rosterOutputList.Count > 0)
+            {
+                SnacksRosterRatio rosterRatio;
+                AstronautData astronautData;
+                SnacksRosterResource rosterResource;
+                ProtoCrewMember[] astronauts = protoPart.protoModuleCrew.ToArray();
+
+                count = rosterOutputList.Count;
+                for (int index = 0; index < count; index++)
+                {
+                    rosterRatio = rosterOutputList[index];
+                    for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
+                    {
+                        //Get astronaut data
+                        astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[astronautIndex]);
+                        if (!astronautData.rosterResources.ContainsKey(rosterRatio.ResourceName))
+                            continue;
+
+                        //Get roster resource
+                        rosterResource = astronautData.rosterResources[rosterRatio.ResourceName];
+
+                        //Process the output
+                        rosterResource.amount += rosterRatio.AmountPerSecond * elapsedTime;
+                        if (rosterResource.amount >= rosterResource.maxAmount)
+                            rosterResource.amount = rosterResource.maxAmount;
+                        astronautData.rosterResources[rosterRatio.ResourceName] = rosterResource;
+
+                        //Fire event
+                        SnacksScenario.onRosterResourceUpdated.Fire(vessel.vesselRef, rosterResource, astronautData, astronauts[astronautIndex]);
+                    }
+                }
             }
         }
 
@@ -611,6 +687,47 @@ namespace Snacks
         #endregion
 
         #region Helpers
+        protected static void getRosterResources(string nodeName, List<SnacksRosterRatio> rosterResourceList, ConfigNode node)
+        {
+            ConfigNode rosterNode;
+            SnacksRosterRatio rosterRatio;
+
+            //Seconds per day
+            double secondsPerDay = 1.0;
+            if (HighLogic.LoadedSceneIsFlight ||
+                HighLogic.LoadedSceneIsEditor ||
+                HighLogic.LoadedScene == GameScenes.SPACECENTER ||
+                HighLogic.LoadedScene == GameScenes.TRACKSTATION)
+                secondsPerDay = SnacksScenario.GetSecondsPerDay();
+
+            ConfigNode[] nodes = node.GetNodes(nodeName);
+
+            for (int index = 0; index < nodes.Length; index++)
+            {
+                rosterNode = nodes[index];
+                if (rosterNode.HasValue(SnacksConverter.ROSTER_RESOURCE_NAME) && 
+                    (rosterNode.HasValue(SnacksConverter.ROSTER_RESOURCE_AMOUNT_PER_DAY) || 
+                    rosterNode.HasValue(SnacksConverter.ROSTER_RESOURCE_AMOUNT_PER_SECOND)))
+                {
+                    rosterRatio = new SnacksRosterRatio();
+                    rosterRatio.ResourceName = rosterNode.GetValue(SnacksConverter.ROSTER_RESOURCE_NAME);
+
+                    //AmountPerDay takes precedence over AmountPerSecond
+                    if (rosterNode.HasValue(SnacksConverter.ROSTER_RESOURCE_AMOUNT_PER_DAY))
+                    {
+                        double.TryParse(rosterNode.GetValue(SnacksConverter.ROSTER_RESOURCE_AMOUNT_PER_DAY), out rosterRatio.AmountPerDay);
+                        rosterRatio.AmountPerSecond = rosterRatio.AmountPerDay / secondsPerDay;
+                    }
+                    else
+                    {
+                        double.TryParse(rosterNode.GetValue(SnacksConverter.ROSTER_RESOURCE_AMOUNT_PER_SECOND), out rosterRatio.AmountPerSecond);
+                    }
+
+                    rosterResourceList.Add(rosterRatio);
+                }
+            }
+        }
+
         protected static void getConverterResources(string nodeName, List<ResourceRatio> resourceList, ConfigNode node)
         {
             ConfigNode[] resourceNodes;

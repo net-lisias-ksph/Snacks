@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using KSP.IO;
+using KSP.Localization;
 
 /**
 The MIT License (MIT)
@@ -30,6 +31,13 @@ SOFTWARE.
  * */
 namespace Snacks
 {
+    public struct SnacksRosterRatio
+    {
+        public string ResourceName;
+        public double AmountPerDay;
+        public double AmountPerSecond;
+    }
+
     public class SnacksConverter: ModuleResourceConverter
     {
         #region constants
@@ -50,6 +58,13 @@ namespace Snacks
         public string criticalSuccessMessage = "Production yield higher than expected.";
         public string failMessage = "Production yield lower than expected.";
         public string successMessage = "Production completed.";
+
+        //Roster resources
+        public const string ROSTER_INPUT_RESOURCE = "ROSTER_INPUT_RESOURCE";
+        public const string ROSTER_OUTPUT_RESOURCE = "ROSTER_OUTPUT_RESOURCE";
+        public const string ROSTER_RESOURCE_NAME = "ResourceName";
+        public const string ROSTER_RESOURCE_AMOUNT_PER_SECOND = "AmountPerSecond";
+        public const string ROSTER_RESOURCE_AMOUNT_PER_DAY = "AmountPerDay";
         #endregion
 
         #region FX fields
@@ -83,7 +98,7 @@ namespace Snacks
         public int minimumCrew = 0;
 
         [KSPField]
-        public bool removeSkillsWhenActive;
+        public string conditionSummary = string.Empty;
         #endregion
 
         #region Background Processing Fields
@@ -167,8 +182,75 @@ namespace Snacks
         public double elapsedTime;
         public double secondsPerCycle = 0f;
         public List<ResourceRatio> yieldsList = new List<ResourceRatio>();
+        public List<SnacksRosterRatio> rosterInputList = new List<SnacksRosterRatio>();
+        public List<SnacksRosterRatio> rosterOutputList = new List<SnacksRosterRatio>();
         protected bool missingResources;
         protected float crewEfficiencyBonus = 1.0f;
+        #endregion
+
+        #region Game Event Handlers
+        private void onCrewOnEva(GameEvents.FromToAction<Part, Part> data)
+        {
+            Part evaKerbal = data.to;
+            Part partExited = data.from;
+
+            if (!string.IsNullOrEmpty(conditionSummary) && partExited == this.part)
+            {
+                ProtoCrewMember astronaut = evaKerbal.vessel.GetVesselCrew()[0];
+                AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+
+                //Remove condition
+                astronautData.ClearCondition(conditionSummary);
+                SnacksScenario.Instance.RestoreSkillsIfNeeded(astronaut);
+            }
+        }
+
+        private void onCrewBoardVessel(GameEvents.FromToAction<Part, Part> data)
+        {
+            Part evaKerbal = data.from;
+            Part boardedPart = data.to;
+
+            if (!string.IsNullOrEmpty(conditionSummary) && IsActivated && boardedPart == this.part)
+            {
+                ProtoCrewMember astronaut = evaKerbal.vessel.GetVesselCrew()[0];
+                AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+
+                //Set condition
+                astronautData.SetCondition(conditionSummary);
+                SnacksScenario.Instance.RemoveSkillsIfNeeded(astronaut);
+            }
+        }
+
+        private void onCrewTransferred(GameEvents.HostedFromToAction<ProtoCrewMember, Part> data)
+        {
+            ProtoCrewMember astronaut = data.host;
+            Part fromPart = data.from;
+            Part toPart = data.to;
+
+            if (!string.IsNullOrEmpty(conditionSummary) && IsActivated && toPart == this.part)
+            {
+                AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+
+                //Set condition
+                astronautData.SetCondition(conditionSummary);
+                SnacksScenario.Instance.RemoveSkills(astronaut);
+            }
+        }
+
+        private void OnVesselRecoveryRequested(Vessel vessel)
+        {
+            if (string.IsNullOrEmpty(conditionSummary))
+                return;
+
+            ProtoCrewMember[] astronauts = this.part.protoModuleCrew.ToArray();
+            AstronautData astronautData;
+
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+                astronautData.ClearCondition(conditionSummary);
+            }
+        }
         #endregion
 
         #region Overrides
@@ -182,7 +264,106 @@ namespace Snacks
             ConfigNode[] yieldNodes = null;
             ConfigNode yieldNode;
             string moduleName;
+            SnacksRosterResource resource;
+            SnacksRosterRatio ratio;
+            Dictionary<string, SnacksRosterResource> rosterResources = SnacksRosterResource.LoadRosterResources();
 
+            //Home connection
+            if (requiresHomeConnection)
+                moduleInfo = moduleInfo.Replace(ConverterName, ConverterName + "\n - Requires connection to homeworld");
+
+            //Minimum crew
+            if (minimumCrew > 0)
+                moduleInfo = moduleInfo.Replace(ConverterName, ConverterName + "\n - Minimum Crew: " + minimumCrew);
+
+            //Roster resources
+            if (rosterInputList.Count == 0 && rosterOutputList.Count == 0)
+                setupRosterResources();
+            int count = rosterInputList.Count;
+            if (count > 0)
+            {
+                for (int index = 0; index < count; index++)
+                {
+                    ratio = rosterInputList[index];
+                    resource = rosterResources[ratio.ResourceName];
+                    info.Append("\n - ");
+                    info.Append(!string.IsNullOrEmpty(resource.resourceName) ? resource.displayName : resource.resourceName);
+                    info.Append(": ");
+                    if (ratio.AmountPerDay > 0)
+                    {
+                        info.Append(string.Format("{0:f2}/day", ratio.AmountPerDay));
+                    }
+                    else
+                    {
+                        if (ratio.AmountPerSecond < 0.0001)
+                            info.Append(string.Format(": {0:f2}/day", ratio.AmountPerSecond * (double)KSPUtil.dateTimeFormatter.Day));
+                        else if (ratio.AmountPerSecond < 0.01)
+                            info.Append(string.Format(": {0:f2}/hr", ratio.AmountPerSecond * (double)KSPUtil.dateTimeFormatter.Hour));
+                        else
+                            info.Append(string.Format(": {0:f2}/sec", ratio.AmountPerSecond));
+                    }
+                }
+
+                //Add resources before Outputs if it exists
+                if (moduleInfo.Contains(Localizer.Format("#autoLOC_259594")))
+                {
+                    moduleInfo = moduleInfo.Replace(Localizer.Format("#autoLOC_259594"), info.ToString() + Localizer.Format("#autoLOC_259594"));
+                }
+                //Add resources before Requirements if it exists
+                else if (moduleInfo.Contains(Localizer.Format("#autoLOC_259620")))
+                {
+                    moduleInfo = moduleInfo.Replace(Localizer.Format("#autoLOC_259620"), info.ToString() + Localizer.Format("#autoLOC_259620"));
+                }
+                //Add to the end
+                else
+                {
+                    moduleInfo += info.ToString();
+                }
+            }
+
+            count = rosterOutputList.Count;
+            info = new StringBuilder();
+            if (count > 0)
+            {
+                for (int index = 0; index < count; index++)
+                {
+                    ratio = rosterOutputList[index];
+                    resource = rosterResources[ratio.ResourceName];
+                    info.Append("\n - ");
+                    info.Append(!string.IsNullOrEmpty(resource.resourceName) ? resource.displayName : resource.resourceName);
+                    info.Append(": ");
+                    if (ratio.AmountPerDay > 0)
+                    {
+                        info.Append(string.Format("{0:f2}/day", ratio.AmountPerDay));
+                    }
+                    else
+                    {
+                        if (ratio.AmountPerSecond < 0.0001)
+                            info.Append(string.Format(": {0:f2}/day", ratio.AmountPerSecond * (double)KSPUtil.dateTimeFormatter.Day));
+                        else if (ratio.AmountPerSecond < 0.01)
+                            info.Append(string.Format(": {0:f2}/hr", ratio.AmountPerSecond * (double)KSPUtil.dateTimeFormatter.Hour));
+                        else
+                            info.Append(string.Format(": {0:f2}/sec", ratio.AmountPerSecond));
+                    }
+                }
+
+                //Add resources before Requirements if it exists
+                if (moduleInfo.Contains(Localizer.Format("#autoLOC_259620")))
+                {
+                    moduleInfo = moduleInfo.Replace(Localizer.Format("#autoLOC_259620"), info.ToString() + Localizer.Format("#autoLOC_259620"));
+                }
+                //Add to the end.
+                else
+                {
+                    moduleInfo += info.ToString();
+                }
+            }
+
+            //Trim Outputs if we have none
+            if (moduleInfo.EndsWith(Localizer.Format("#autoLOC_259594")))
+                moduleInfo = moduleInfo.Replace(Localizer.Format("#autoLOC_259594"), "");
+
+            info = new StringBuilder();
             info.AppendLine(moduleInfo);
 
             //See if the module has a yield list. If so, get it.
@@ -196,7 +377,7 @@ namespace Snacks
                 else
                     continue;
 
-                if (moduleWatchlist.Contains(moduleName))
+                if (moduleWatchlist.Contains(moduleName) && node.GetValue("ConverterName") == ConverterName)
                 {
                     if (node.HasNode("YIELD_RESOURCE"))
                         yieldNodes = node.GetNodes("YIELD_RESOURCE");
@@ -238,21 +419,18 @@ namespace Snacks
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
-
-            //Resources specific to astronauts
-            //Flow mode applies
-            if (node.HasNode("ASTRONAUT_INPUT"))
-            {
-
-            }
-            if (node.HasNode("ASTRONAUT_OUTPUT"))
-            {
-
-            }
+            setupRosterResources();
         }
 
         private void OnDestroy()
         {
+            if (!string.IsNullOrEmpty(conditionSummary))
+            {
+                GameEvents.onCrewBoardVessel.Remove(onCrewBoardVessel);
+                GameEvents.onCrewOnEva.Remove(onCrewOnEva);
+                GameEvents.onCrewTransferred.Remove(onCrewTransferred);
+                GameEvents.OnVesselRecoveryRequested.Remove(OnVesselRecoveryRequested);
+            }
         }
 
         public override void OnStart(StartState state)
@@ -274,6 +452,15 @@ namespace Snacks
                 Fields["timeRemainingDisplay"].guiActive = false;
             }
 
+            //If the converter should remove skills when operating, then set up the module to do so
+            if (!string.IsNullOrEmpty(conditionSummary))
+            {
+                GameEvents.onCrewOnEva.Add(onCrewOnEva);
+                GameEvents.onCrewBoardVessel.Add(onCrewBoardVessel);
+                GameEvents.onCrewTransferred.Add(onCrewTransferred);
+                GameEvents.OnVesselRecoveryRequested.Add(OnVesselRecoveryRequested);
+            }
+
             //Do a quick preprocessing to update our input/output effincies
             secondsPerCycle = hoursPerCycle * 3600;
             PreProcessing();
@@ -290,6 +477,7 @@ namespace Snacks
             lastUpdateTime = cycleStartTime;
             elapsedTime = 0.0f;
 
+            SetConditionIfNeeded();
             PreProcessing();
         }
 
@@ -303,6 +491,8 @@ namespace Snacks
                 this.part.Effect(stopEffect, 1.0f);
             if (!string.IsNullOrEmpty(runningEffect))
                 this.part.Effect(runningEffect, 0.0f);
+
+            RemoveConditionIfNeeded();
         }
 
         protected override ConversionRecipe PrepareRecipe(double deltatime)
@@ -480,9 +670,66 @@ namespace Snacks
                     }
                 }
 
-                //Process astronaut inputs
+                //Process roster resources
+                ProtoCrewMember[] astronauts = this.part.protoModuleCrew.ToArray();
+                if (astronauts.Length > 0)
+                {
+                    SnacksRosterRatio rosterRatio;
+                    AstronautData astronautData;
+                    SnacksRosterResource rosterResource;
 
-                //Process astronaut outputs
+                    //Process astronaut inputs
+                    count = rosterInputList.Count;
+                    for (int index = 0; index < count; index++)
+                    {
+                        rosterRatio = rosterInputList[index];
+                        for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
+                        {
+                            //Get astronaut data
+                            astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[astronautIndex]);
+                            if (!astronautData.rosterResources.ContainsKey(rosterRatio.ResourceName))
+                                continue;
+
+                            //Get roster resource
+                            rosterResource = astronautData.rosterResources[rosterRatio.ResourceName];
+
+                            //Process the input
+                            rosterResource.amount -= rosterRatio.AmountPerSecond * TimeWarp.fixedDeltaTime;
+                            if (rosterResource.amount <= 0)
+                                rosterResource.amount = 0;
+                            astronautData.rosterResources[rosterRatio.ResourceName] = rosterResource;
+
+                            //Fire event
+                            SnacksScenario.onRosterResourceUpdated.Fire(this.part.vessel, rosterResource, astronautData, astronauts[astronautIndex]);
+                        }
+                    }
+
+                    //Process astronaut outputs
+                    count = rosterOutputList.Count;
+                    for (int index = 0; index < count; index++)
+                    {
+                        rosterRatio = rosterOutputList[index];
+                        for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
+                        {
+                            //Get astronaut data
+                            astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[astronautIndex]);
+                            if (!astronautData.rosterResources.ContainsKey(rosterRatio.ResourceName))
+                                continue;
+
+                            //Get roster resource
+                            rosterResource = astronautData.rosterResources[rosterRatio.ResourceName];
+
+                            //Process the output
+                            rosterResource.amount += rosterRatio.AmountPerSecond * TimeWarp.fixedDeltaTime;
+                            if (rosterResource.amount >= rosterResource.maxAmount)
+                                rosterResource.amount = rosterResource.maxAmount;
+                            astronautData.rosterResources[rosterRatio.ResourceName] = rosterResource;
+
+                            //Fire event
+                            SnacksScenario.onRosterResourceUpdated.Fire(this.part.vessel, rosterResource, astronautData, astronauts[astronautIndex]);
+                        }
+                    }
+                }
 
                 //Post process the results
                 results.Status = status;
@@ -575,7 +822,6 @@ namespace Snacks
             ConfigNode converterNode = null;
             ConfigNode node = null;
             string moduleName;
-            List<string> optionNamesList = new List<string>();
 
             //Get the switcher config node.
             for (int index = 0; index < nodes.Length; index++)
@@ -583,11 +829,12 @@ namespace Snacks
                 node = nodes[index];
                 if (node.HasValue("name"))
                 {
-                    moduleName = node.GetValue("name");
+                    moduleName = nodes[index].GetValue("name");
                     if (moduleName == this.ClassName)
                     {
-                        converterNode = node;
-                        break;
+                        converterNode = nodes[index];
+                        if (converterNode.HasValue("ConverterName") && converterNode.GetValue("ConverterName") == ConverterName)
+                            break;
                     }
                 }
             }
@@ -748,6 +995,135 @@ namespace Snacks
         {
             //Create UUID
             ID = Guid.NewGuid().ToString();
+        }
+        #endregion
+
+        #region Helpers
+        protected void setupRosterResources()
+        {
+            if (this.part.partInfo == null || this.part.partInfo.partConfig == null)
+                return;
+            ConfigNode[] nodes = this.part.partInfo.partConfig.GetNodes("MODULE");
+            ConfigNode converterNode = null;
+            ConfigNode node;
+            string moduleName;
+
+            //Get the config node.
+            for (int index = 0; index < nodes.Length; index++)
+            {
+                node = nodes[index];
+                if (nodes[index].HasValue("name"))
+                {
+                    moduleName = nodes[index].GetValue("name");
+                    if (moduleName == this.ClassName)
+                    {
+                        converterNode = nodes[index];
+                        if (converterNode.HasValue("ConverterName") && converterNode.GetValue("ConverterName") == ConverterName)
+                            break;
+                    }
+                }
+            }
+            if (converterNode == null)
+                return;
+
+            //Seconds per day
+            double secondsPerDay = 1.0;
+            if (HighLogic.LoadedSceneIsFlight ||
+                HighLogic.LoadedSceneIsEditor ||
+                HighLogic.LoadedScene == GameScenes.SPACECENTER ||
+                HighLogic.LoadedScene == GameScenes.TRACKSTATION)
+                secondsPerDay = SnacksScenario.GetSecondsPerDay();
+
+            //Roster resources
+            ConfigNode rosterNode;
+            SnacksRosterRatio rosterRatio;
+            if (converterNode.HasNode(ROSTER_INPUT_RESOURCE))
+            {
+                nodes = converterNode.GetNodes(ROSTER_INPUT_RESOURCE);
+
+                for (int index = 0; index < nodes.Length; index++)
+                {
+                    rosterNode = nodes[index];
+                    if (rosterNode.HasValue(ROSTER_RESOURCE_NAME) && (rosterNode.HasValue(ROSTER_RESOURCE_AMOUNT_PER_DAY) || rosterNode.HasValue(ROSTER_RESOURCE_AMOUNT_PER_SECOND)))
+                    {
+                        rosterRatio = new SnacksRosterRatio();
+                        rosterRatio.ResourceName = rosterNode.GetValue(ROSTER_RESOURCE_NAME);
+
+                        //AmountPerDay takes precedence over AmountPerSecond
+                        if (rosterNode.HasValue(ROSTER_RESOURCE_AMOUNT_PER_DAY))
+                        {
+                            double.TryParse(rosterNode.GetValue(ROSTER_RESOURCE_AMOUNT_PER_DAY), out rosterRatio.AmountPerDay);
+                            rosterRatio.AmountPerSecond = rosterRatio.AmountPerDay / secondsPerDay;
+                        }
+                        else
+                        {
+                            double.TryParse(rosterNode.GetValue(ROSTER_RESOURCE_AMOUNT_PER_SECOND), out rosterRatio.AmountPerSecond);
+                        }
+
+                        rosterInputList.Add(rosterRatio);
+                    }
+                }
+            }
+
+            if (converterNode.HasNode(ROSTER_OUTPUT_RESOURCE))
+            {
+                nodes = converterNode.GetNodes(ROSTER_OUTPUT_RESOURCE);
+
+                for (int index = 0; index < nodes.Length; index++)
+                {
+                    rosterNode = nodes[index];
+                    if (rosterNode.HasValue(ROSTER_RESOURCE_NAME) && (rosterNode.HasValue(ROSTER_RESOURCE_AMOUNT_PER_DAY) || rosterNode.HasValue(ROSTER_RESOURCE_AMOUNT_PER_SECOND)))
+                    {
+                        rosterRatio = new SnacksRosterRatio();
+                        rosterRatio.ResourceName = rosterNode.GetValue(ROSTER_RESOURCE_NAME);
+
+                        //AmountPerDay takes precedence over AmountPerSecond
+                        if (rosterNode.HasValue(ROSTER_RESOURCE_AMOUNT_PER_DAY))
+                        {
+                            double.TryParse(rosterNode.GetValue(ROSTER_RESOURCE_AMOUNT_PER_DAY), out rosterRatio.AmountPerDay);
+                            rosterRatio.AmountPerSecond = rosterRatio.AmountPerDay / secondsPerDay;
+                        }
+                        else
+                        {
+                            double.TryParse(rosterNode.GetValue(ROSTER_RESOURCE_AMOUNT_PER_SECOND), out rosterRatio.AmountPerSecond);
+                        }
+
+                        rosterOutputList.Add(rosterRatio);
+                    }
+                }
+            }
+        }
+
+        public void SetConditionIfNeeded()
+        {
+            if (IsActivated && !string.IsNullOrEmpty(conditionSummary))
+            {
+                int count = this.part.protoModuleCrew.Count;
+                AstronautData astronautData;
+
+                for (int index = 0; index < count; index++)
+                {
+                    astronautData = SnacksScenario.Instance.GetAstronautData(this.part.protoModuleCrew[index]);
+                    astronautData.SetCondition(conditionSummary);
+                    SnacksScenario.Instance.RemoveSkillsIfNeeded(this.part.protoModuleCrew[index]);
+                }
+            }
+        }
+
+        public void RemoveConditionIfNeeded()
+        {
+            if (!IsActivated && !string.IsNullOrEmpty(conditionSummary))
+            {
+                int count = this.part.protoModuleCrew.Count;
+                AstronautData astronautData;
+
+                for (int index = 0; index < count; index++)
+                {
+                    astronautData = SnacksScenario.Instance.GetAstronautData(this.part.protoModuleCrew[index]);
+                    astronautData.ClearCondition(conditionSummary);
+                    SnacksScenario.Instance.RestoreSkillsIfNeeded(this.part.protoModuleCrew[index]);
+                }
+            }
         }
         #endregion
     }

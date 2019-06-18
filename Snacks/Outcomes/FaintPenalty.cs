@@ -76,7 +76,7 @@ namespace Snacks
             return SnacksProperties.FaintWhenHungry;
         }
 
-        public override void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+        public override void ApplyOutcome(Vessel vessel, SnacksProcessorResult result)
         {
             ProtoCrewMember[] astronauts;
             AstronautData astronautData;

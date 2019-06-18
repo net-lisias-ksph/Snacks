@@ -49,6 +49,8 @@ namespace Snacks
         private List<Snackshot> snackshots = null;
         private SnackSimThread snackThread = null;
         private bool convertersAssumedActive = false;
+        private bool showCrewView = false;
+        private bool showAvailableCrew = false;
         int crewCapacity = 0;
 
         public SnackAppView() :
@@ -123,7 +125,7 @@ namespace Snacks
                 currentCrewCount = -1;
             }
 
-            scrollPos = GUILayout.BeginScrollView(scrollPos);//, GUILayout.Height(300), GUILayout.Width(500));
+            scrollPos = GUILayout.BeginScrollView(scrollPos);
 
             //Setup simulator
             setupSimulatorIfNeeded();
@@ -391,25 +393,81 @@ namespace Snacks
 
             //Draw right pane
             GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, flightWindowRightPaneOptions);
-            GUILayout.Label("<color=lightBlue><b>" + bodies[selectedBody].bodyName + "</b></color>");
-            count = keys.Count;
-            string statusDisplay;
-            for (int index = 0; index < count; index++)
+            if (SnacksScenario.Instance.rosterResources.Count > 0)
             {
-                vesselSnackshot = snapshotMap[keys[index]];
+                showCrewView = GUILayout.Toggle(showCrewView, "Show Crew View");
+                if (showCrewView)
+                    showAvailableCrew = GUILayout.Toggle(showAvailableCrew, "Show Available Crew");
+            }
 
-                //Skip if vessel's planetary body doesn't match the filter.
-                if (vesselSnackshot.bodyID != selectedBody)
-                    continue;
+            if (!showAvailableCrew)
+            {
+                scrollPos = GUILayout.BeginScrollView(scrollPos, flightWindowRightPaneOptions);
+                GUILayout.Label("<color=lightBlue><b>" + bodies[selectedBody].bodyName + "</b></color>");
+                count = keys.Count;
+                string statusDisplay;
+                for (int index = 0; index < count; index++)
+                {
+                    vesselSnackshot = snapshotMap[keys[index]];
 
-                //Get status
-                statusDisplay = vesselSnackshot.GetStatusDisplay();
-                if (vesselSnackshot.convertersAssumedActive)
-                    statusDisplay = statusDisplay + "<color=orange>Assumes converters are active; be sure to turn them on.</color>";
+                    //Skip if vessel's planetary body doesn't match the filter.
+                    if (vesselSnackshot.bodyID != selectedBody)
+                        continue;
 
-                //Print status
-                GUILayout.Label(statusDisplay);
+                    //Get status
+                    statusDisplay = vesselSnackshot.GetStatusDisplay(showCrewView);
+                    if (vesselSnackshot.convertersAssumedActive && !showCrewView)
+                        statusDisplay = statusDisplay + "<color=orange>Assumes converters are active; be sure to turn them on.</color>";
+
+                    //Print status
+                    GUILayout.Label(statusDisplay);
+                }
+            }
+
+            //Show status of crews available to fly
+            else
+            {
+                KerbalRoster roster = HighLogic.CurrentGame.CrewRoster;
+                ProtoCrewMember astronaut;
+                IEnumerator<ProtoCrewMember> enumerator = roster.Crew.GetEnumerator();
+                AstronautData astronautData;
+                StringBuilder status = new StringBuilder();
+                string conditionSummary;
+
+                scrollPos = GUILayout.BeginScrollView(scrollPos, flightWindowRightPaneOptions);
+
+                while (enumerator.MoveNext())
+                {
+                    astronaut = enumerator.Current;
+                    if (astronaut.rosterStatus != ProtoCrewMember.RosterStatus.Available)
+                        continue;
+
+                    if (SnacksScenario.Instance.crewData.ContainsKey(astronaut.name))
+                    {
+                        astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+
+                        status.AppendLine("<color=orange><i>" + astronaut.name + "</i></color>");
+                        if (!string.IsNullOrEmpty(astronautData.conditionSummary))
+                            conditionSummary = astronautData.conditionSummary;
+                        else
+                            conditionSummary = "Cleared for flight";
+                        status.AppendLine("<color=white> - Status: " + conditionSummary + "</color>");
+
+                        string[] rosterResourceKeys = astronautData.rosterResources.Keys.ToArray();
+                        for (int rosterIndex = 0; rosterIndex < rosterResourceKeys.Length; rosterIndex++)
+                        {
+                            if (astronautData.rosterResources[rosterResourceKeys[rosterIndex]].showInSnapshot)
+                                status.AppendLine(astronautData.rosterResources[rosterResourceKeys[rosterIndex]].GetStatusDisplay());
+                        }
+                    }
+                    else
+                    {
+                        status.AppendLine("<color=orange><i>" + astronaut.name + "</i></color>");
+                        conditionSummary = "Cleared for flight";
+                        status.AppendLine("<color=white> - Status: " + conditionSummary + "</color>");
+                    }
+                }
+                GUILayout.Label(status.ToString());
             }
 
             GUILayout.EndScrollView();

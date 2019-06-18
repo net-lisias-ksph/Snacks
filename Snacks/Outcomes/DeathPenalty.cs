@@ -62,7 +62,8 @@ namespace Snacks
         #endregion
 
         #region Overrides
-        public override void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+
+        public override void ApplyOutcome(Vessel vessel, SnacksProcessorResult result)
         {
             ProtoCrewMember[] astronauts;
             AstronautData astronautData;

@@ -24,12 +24,8 @@ SOFTWARE.
 
 using System;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
-using System.Text;
-using System.IO;
 using UnityEngine;
-using KSP.IO;
 
 namespace Snacks
 {
@@ -41,6 +37,7 @@ namespace Snacks
         const string AstronautNodeTrait = "experienceTrait";
         const string AstronautNodeUpdated = "lastUpdated";
         const string AstronautNodeExempt = "isExempt";
+        const string AstronautNodeCondition = "conditionSummary";
 
         const string ResourceCounterNode = "RESOURCE_COUNT";
         const string ResourceCounterIsSuccess = "isSuccess";
@@ -58,9 +55,11 @@ namespace Snacks
         public double lastUpdated;
         public int mealsMissed;
         public bool isExempt;
+        public string conditionSummary = string.Empty;
         public DictionaryValueList<string, string> keyValuePairs;
         public Dictionary<string, int> processedResourceSuccesses;
         public Dictionary<string, int> processedResourceFailures;
+        public Dictionary<string, SnacksRosterResource> rosterResources;
         #endregion
 
         #region Constructors
@@ -69,6 +68,7 @@ namespace Snacks
             keyValuePairs = new DictionaryValueList<string, string>();
             processedResourceFailures = new Dictionary<string, int>();
             processedResourceSuccesses = new Dictionary<string, int>();
+            rosterResources = new Dictionary<string, SnacksRosterResource>();
         }
         #endregion
 
@@ -96,9 +96,12 @@ namespace Snacks
                     astronautData.experienceTrait = astronautNode.GetValue(AstronautNodeTrait);
                     astronautData.lastUpdated = double.Parse(astronautNode.GetValue(AstronautNodeUpdated));
                     astronautData.isExempt = bool.Parse(astronautNode.GetValue(AstronautNodeExempt));
-                    astronautData.keyValuePairs = new DictionaryValueList<string, string>();
+
+                    if (astronautNode.HasValue(AstronautNodeCondition))
+                        astronautData.conditionSummary = astronautNode.GetValue(AstronautNodeCondition);
 
                     //Key value pairs
+                    astronautData.keyValuePairs = new DictionaryValueList<string, string>();
                     if (astronautNode.HasNode(KeyValueNode))
                     {
                         ConfigNode[] keyValuePairs = astronautNode.GetNodes(KeyValueNode);
@@ -129,6 +132,10 @@ namespace Snacks
                         }
                     }
 
+                    //Roster resources
+                    if (astronautNode.HasNode(SnacksRosterResource.RosterResourceNode))
+                        astronautData.rosterResources = SnacksRosterResource.LoadFromAstronautData(astronautNode);
+
                     crewData.Add(astronautData.name, astronautData);
                 }
                 catch (Exception ex)
@@ -157,6 +164,9 @@ namespace Snacks
                 astronautNode.AddValue(AstronautNodeTrait, astronautData.experienceTrait);
                 astronautNode.AddValue(AstronautNodeUpdated, astronautData.lastUpdated);
                 astronautNode.AddValue(AstronautNodeExempt, astronautData.isExempt);
+
+                if (!string.IsNullOrEmpty(astronautData.conditionSummary))
+                    astronautNode.AddValue(AstronautNodeCondition, astronautData.conditionSummary);
 
                 //Save keyvalue pairs
                 keys = astronautData.keyValuePairs.Keys.ToArray();
@@ -189,10 +199,35 @@ namespace Snacks
                     astronautNode.AddNode(configNode);
                 }
 
+                //Save roster resources
+                SnacksRosterResource.SaveToAstronautData(astronautData.rosterResources, astronautNode);
+
                 node.AddNode(astronautNode);
             }
         }
         #endregion
 
+        #region API
+        public void SetCondition(string condition)
+        {
+            if (string.IsNullOrEmpty(conditionSummary))
+                conditionSummary = condition;
+
+            else if (!conditionSummary.Contains(condition))
+                conditionSummary += ", " + condition;
+        }
+
+        public void ClearCondition(string condition)
+        {
+            if (conditionSummary == condition)
+                conditionSummary = string.Empty;
+
+            else if (conditionSummary.Contains(condition))
+            {
+                conditionSummary = conditionSummary.Replace(", " + condition, "");
+                conditionSummary = conditionSummary.Replace(condition + ", ", "");
+            }
+        }
+        #endregion
     }
 }

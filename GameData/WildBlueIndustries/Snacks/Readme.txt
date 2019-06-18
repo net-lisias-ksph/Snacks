@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.16.3
+- Fixed issue where Snacks was being consumed by occupants of vessel that's part of a rescue contract. NOTE: Once the craft is loaded into the scene, they will be tracked by Snacks.
+
 1.16.2
 - Fixed issue where parts weren't receiving their correct allotment of Snacks for parts where the crew capacity is greater than one kerbal.
 

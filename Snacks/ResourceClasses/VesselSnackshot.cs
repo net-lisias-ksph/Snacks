@@ -69,11 +69,11 @@ namespace Snacks
         /// <summary>
         /// Returns the status of the vessel and its resources.
         /// </summary>
+        /// <param name="showCrewView">A flag to indicate whether to show crew status instead of vessel resource status.</param>
         /// <returns>A string containing the vessel's status.</returns>
-        public virtual string GetStatusDisplay()
+        public virtual string GetStatusDisplay(bool showCrewView = false)
         {
             StringBuilder status = new StringBuilder();
-            int snapshotCount = snackshots.Count;
 
             //Vessel name
             status.AppendLine("<color=white><b>" + vesselName + "</b></color>");
@@ -82,9 +82,42 @@ namespace Snacks
             status.AppendLine("<color=white>Crew: " + crewCount + "/" + maxCrewCount + "</color>");
 
             //Resource snapshots
-            for (int snapshotIndex = 0; snapshotIndex < snapshotCount; snapshotIndex++)
+            if (!showCrewView)
             {
-                status.AppendLine(snackshots[snapshotIndex].GetStatusDisplay());
+                int count = snackshots.Count;
+                for (int snapshotIndex = 0; snapshotIndex < count; snapshotIndex++)
+                {
+                    status.AppendLine(snackshots[snapshotIndex].GetStatusDisplay());
+                }
+            }
+            else
+            {
+                ProtoCrewMember[] astronauts;
+                if (vessel.loaded)
+                    astronauts = vessel.GetVesselCrew().ToArray();
+                else
+                    astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+                AstronautData astronautData;
+                string conditionSummary;
+
+                for (int index = 0; index < astronauts.Length; index++)
+                {
+                    astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+
+                    status.AppendLine("<color=orange><i>" + astronauts[index].name + "</i></color>");
+                    if (!string.IsNullOrEmpty(astronautData.conditionSummary))
+                        conditionSummary = astronautData.conditionSummary;
+                    else
+                        conditionSummary = "A-OK";
+                    status.AppendLine("<color=white> - Status: " + conditionSummary + "</color>");
+
+                    string[] keys = astronautData.rosterResources.Keys.ToArray();
+                    for (int rosterIndex = 0; rosterIndex < keys.Length; rosterIndex++)
+                    {
+                        if (astronautData.rosterResources[keys[rosterIndex]].showInSnapshot)
+                            status.AppendLine(astronautData.rosterResources[keys[rosterIndex]].GetStatusDisplay());
+                    }
+                }
             }
 
             return status.ToString();

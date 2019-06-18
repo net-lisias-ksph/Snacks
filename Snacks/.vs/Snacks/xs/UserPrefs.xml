@@ -1,25 +1,19 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workbench ActiveDocument="LifeSupport/AstronautData.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="AstronautClasses/AstronautData.cs">
     <Files>
-      <File FileName="Consumers/BaseResourceProcessor.cs" Line="397" Column="42" />
-      <File FileName="ResourceClasses/ProcessedResource.cs" Line="132" Column="45" />
-      <File FileName="Penalties/DeathPenalty.cs" Line="34" Column="42" />
-      <File FileName="Penalties/BaseOutcome.cs" Line="40" Column="39" />
-      <File FileName="SettingsAndScenario/SnacksScenario.cs" Line="1232" Column="71" />
-      <File FileName="LifeSupport/SnackController.cs" Line="1" Column="1" />
-      <File FileName="LifeSupport/AstronautData.cs" Line="200" Column="1" />
+      <File FileName="Processors/BaseResourceProcessor.cs" Line="474" Column="45" />
+      <File FileName="SettingsAndScenario/SnacksScenario.cs" Line="400" Column="33" />
+      <File FileName="AstronautClasses/AstronautData.cs" Line="225" Column="18" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
           <Node name="Snacks" expanded="True">
             <Node name="Snacks" expanded="True">
-              <Node name="References" expanded="True" />
-              <Node name="Consumers" expanded="True" />
-              <Node name="LifeSupport" expanded="True">
+              <Node name="AstronautClasses" expanded="True">
                 <Node name="AstronautData.cs" selected="True" />
               </Node>
-              <Node name="Penalties" expanded="True" />
+              <Node name="Processors" expanded="True" />
               <Node name="Properties" expanded="True" />
               <Node name="ResourceClasses" expanded="True" />
               <Node name="SettingsAndScenario" expanded="True" />

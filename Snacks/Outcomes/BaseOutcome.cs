@@ -97,12 +97,11 @@ namespace Snacks
         }
 
         /// <summary>
-        /// Applies the outcome to the vessel's crew.
+        /// Applies the outcome to the vessel's crew
         /// </summary>
         /// <param name="vessel">The Vessel being processed.</param>
-        /// <param name="resource">The Resource that was processed.</param>
         /// <param name="result">The Result of the processing attempt.</param>
-        public virtual void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+        public virtual void ApplyOutcome(Vessel vessel, SnacksProcessorResult result)
         {
 
         }

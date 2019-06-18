@@ -51,7 +51,7 @@ namespace Snacks
             return SnacksProperties.LoseScienceWhenHungry;
         }
 
-        public override void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+        public override void ApplyOutcome(Vessel vessel, SnacksProcessorResult result)
         {
             if ((HighLogic.CurrentGame.Mode == Game.Modes.CAREER || HighLogic.CurrentGame.Mode == Game.Modes.SCIENCE_SANDBOX) && SnacksProperties.LoseScienceWhenHungry)
             {

@@ -61,7 +61,7 @@ namespace Snacks
             return SnacksProperties.LoseFundsWhenHungry;
         }
 
-        public override void ApplyOutcome(Vessel vessel, ProcessedResource resource, SnacksProcessorResult result)
+        public override void ApplyOutcome(Vessel vessel, SnacksProcessorResult result)
         {
             //Only applies to Career mode
             if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
