@@ -398,6 +398,12 @@ namespace Snacks
             AstronautData astronautData = GetAstronautData(astronaut);
             int count = lossOfSkillConditions.Count;
 
+            //Special case: defer skill removal if the active vessel is flying or sub-orbital.
+            if (astronaut.KerbalRef.InVessel == FlightGlobals.ActiveVessel && 
+                (astronaut.KerbalRef.InVessel.situation == Vessel.Situations.FLYING || 
+                astronaut.KerbalRef.InVessel.situation == Vessel.Situations.SUB_ORBITAL))
+                return false;
+
             //See if the astronaut's condition summary has any of the conditions that
             //would result in a loss of skills.
             for (int index = 0; index < count; index++)
@@ -707,6 +713,7 @@ namespace Snacks
             GameEvents.onProtoCrewMemberLoad.Add(onProtoCrewMemberLoad);
             GameEvents.onVesselGoOffRails.Add(onVesselGoOffRails);
             GameEvents.onKerbalLevelUp.Add(onKerbalLevelUp);
+            GameEvents.onVesselSituationChange.Add(onVesselSituationChange);
 
             //Create skill loss conditions list
             lossOfSkillConditions = new List<string>();
@@ -806,6 +813,7 @@ namespace Snacks
             GameEvents.onProtoCrewMemberLoad.Remove(onProtoCrewMemberLoad);
             GameEvents.onVesselGoOffRails.Remove(onVesselGoOffRails);
             GameEvents.onKerbalLevelUp.Remove(onKerbalLevelUp);
+            GameEvents.onVesselSituationChange.Remove(onVesselSituationChange);
         }
 
         public override void OnLoad(ConfigNode node)
@@ -1088,6 +1096,21 @@ namespace Snacks
         {
         }
 
+        private void onVesselSituationChange(GameEvents.HostedFromToAction<Vessel, Vessel.Situations> action)
+        {
+            if (!HighLogic.LoadedSceneIsFlight)
+                return;
+            if (!action.host == FlightGlobals.ActiveVessel)
+                return;
+
+            ProtoCrewMember[] astronauts = action.host.GetVesselCrew().ToArray();
+            if (astronauts.Length <= 0)
+                return;
+
+            for (int index = 0; index < astronauts.Length; index++)
+                RemoveSkillsIfNeeded(astronauts[index]);
+        }
+
         private void onVesselRecovered(ProtoVessel protoVessel, bool someBool)
         {
             //Give processors a chance to remove their data if needed.
@@ -1180,20 +1203,15 @@ namespace Snacks
         {
             int count = 0;
 
-            if (vessel.isEVA)
-            {
-                //Inform all eva resources
-                count = snacksEVAResources.Count;
-                for (int index = 0; index < count; index++)
-                    snacksEVAResources[index].addResourcesIfNeeded(vessel);
-            }
-            else
-            {
-                //Inform all part resources
-                count = snacksPartResources.Count;
-                for (int index = 0; index < count; index++)
-                    snacksPartResources[index].addResourcesIfNeeded(vessel);
-            }
+            string objectName = vessel.name;
+
+            if (vessel.isEVA || objectName.Contains("EVA"))
+                return;
+
+            //Inform all part resources
+            count = snacksPartResources.Count;
+            for (int index = 0; index < count; index++)
+                snacksPartResources[index].addResourcesIfNeeded(vessel);
 
             //Inform all roster resources
             count = rosterResources.Count;

@@ -583,7 +583,7 @@ namespace Snacks
                 count = recipe.Inputs.Count;
 
                 //Handle required resources
-                if (requiresHomeConnection && !this.part.vessel.connection.IsConnectedHome)
+                if (requiresHomeConnection && CommNet.CommNetScenario.CommNetEnabled && !this.part.vessel.connection.IsConnectedHome)
                 {
                     status = "Requires home connection";
                     return;

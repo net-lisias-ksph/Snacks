@@ -35,12 +35,11 @@ RESOURCE_DEFINITION
 
 STORAGE_TEMPLATE
 {
-	name = FreshAir
-	author = Angel-125
-	shortName = FreshAir
-	logoPanel = WildBlueIndustries/000WildBlueTools/Decals/Prop
-	glowPanel = WildBlueIndustries/000WildBlueTools/Decals/PropGlow
-	description = This kit stores Fresh Air for kerbals to breathe.
+	author = JadeOfMaar
+	name = Air
+	logoPanel = WildBlueIndustries/000WildBlueTools/Decals/Air
+	glowPanel = WildBlueIndustries/000WildBlueTools/Decals/AirGlow
+	description = Fresh Air! in contrast to Atmosphere, is especially described as the storable, breathable kind that occurs on Kerbin. In the case of this kit, Air! is pressurized too. Be very careful. It tends to want to want to get into space much more than kerbals do, and may get quite the help if BARIS is around.
 	templateTags = stowage
 
 	RESOURCE
@@ -49,7 +48,44 @@ STORAGE_TEMPLATE
 		amount = 1800
 		maxAmount = 1800
 	}
+}
+STORAGE_TEMPLATE
+{
+	author = JadeOfMaar
+	name = AirCombo
+	logoPanel = WildBlueIndustries/000WildBlueTools/Decals/AirCombo
+	glowPanel = WildBlueIndustries/000WildBlueTools/Decals/AirComboGlow
+	description = This kit holds much needed Fresh Air but also an equal portion of Stale Air. Try not to hyperventilate.
+	templateTags = stowage
 
+	RESOURCE
+	{
+		name = FreshAir
+		amount = 900
+		maxAmount = 900
+	}
+	RESOURCE
+	{
+		name = StaleAir
+		amount = 0
+		maxAmount = 900
+	}
+}
+STORAGE_TEMPLATE
+{
+	author = JadeOfMaar
+	name = StaleAir
+	logoPanel = WildBlueIndustries/000WildBlueTools/Decals/StaleAir
+	glowPanel = WildBlueIndustries/000WildBlueTools/Decals/StaleAirGlow
+	description = Stale Air! is what happens when kerbals breathe, and also when they eat snacks that are rich in certain components that may not agree with each peculiar kerbal. This kit meets the need to sift and contain these kinds of air... Venting it into space is a worse idea than keeping it around.
+	templateTags = stowage
+
+	RESOURCE
+	{
+		name = StaleAir
+		amount = 0
+		maxAmount = 1800
+	}
 }
 
 //When a part with crew capacity is loaded in the editor and it lacks this resource, 

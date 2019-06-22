@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.16.4
+- Fix for kerbals taking too many snacks with them when going on EVA.
+
 1.16.3
 - Fixed issue where Snacks was being consumed by occupants of vessel that's part of a rescue contract. NOTE: Once the craft is loaded into the scene, they will be tracked by Snacks.
 

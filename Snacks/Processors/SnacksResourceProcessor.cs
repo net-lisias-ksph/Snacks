@@ -80,6 +80,9 @@ namespace Snacks
                 outcomes.Add(new DeathPenalty(SnacksProperties.SnacksResourceName, SnacksProperties.MealsSkippedBeforeDeath, "has died from a lack of Snacks!"));
             if (SnacksProperties.FaintWhenHungry)
                 outcomes.Add(new FaintPenalty(SnacksProperties.SnacksResourceName, SnacksProperties.MealsBeforeFainting, SnacksProperties.NapTime * 60f, "has fainted from a lack of Snacks!"));
+
+            if (SnacksScenario.Instance.rosterResources.ContainsKey(StressProcessor.StressResourceName))
+                outcomes.Add(new ProduceResource(StressProcessor.StressResourceName, 1.0, false, string.Empty));
         }
         #endregion
 

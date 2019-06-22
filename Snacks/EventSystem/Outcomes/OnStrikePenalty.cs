@@ -79,7 +79,7 @@ namespace Snacks
 
                 //If the vessel is loaded then remove skills
                 if (vessel.loaded)
-                    SnacksScenario.Instance.RemoveSkills(astronauts[index]);
+                    SnacksScenario.Instance.RemoveSkillsIfNeeded(astronauts[index]);
 
                 //Inform player
                 if (!string.IsNullOrEmpty(playerMessage))

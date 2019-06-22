@@ -61,27 +61,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Experimental\ModuleSkillTester.cs" />
-    <Compile Include="Outcomes\OnStrikePenalty.cs" />
+    <Compile Include="EventSystem\Outcomes\OnStrikePenalty.cs" />
+    <Compile Include="EventSystem\Outcomes\ProduceResource.cs" />
     <Compile Include="ResourceClasses\ProcessedResource.cs" />
     <Compile Include="Processors\BaseResourceProcessor.cs" />
     <Compile Include="AstronautClasses\AstronautData.cs" />
-    <Compile Include="Experimental\BlackoutTest.cs" />
-    <Compile Include="Experimental\CommNetController.cs" />
-    <Compile Include="Outcomes\DeathPenalty.cs" />
-    <Compile Include="Outcomes\FaintPenalty.cs" />
-    <Compile Include="Outcomes\FundingPenalty.cs" />
+    <Compile Include="EventSystem\Outcomes\DeathPenalty.cs" />
+    <Compile Include="EventSystem\Outcomes\FaintPenalty.cs" />
+    <Compile Include="EventSystem\Outcomes\FundingPenalty.cs" />
     <Compile Include="ResourceClasses\SnacksRosterResource.cs" />
     <Compile Include="Processors\StressProcessor.cs" />
     <Compile Include="GUI\SnacksIntroScreen.cs" />
+    <Compile Include="EventSystem\SnacksEvent.cs" />
     <Compile Include="VesselModules\SnacksVesselModule.cs" />
-    <Compile Include="Outcomes\RepPenalty.cs" />
-    <Compile Include="Outcomes\SciencePenalty.cs" />
+    <Compile Include="EventSystem\Outcomes\RepPenalty.cs" />
+    <Compile Include="EventSystem\Outcomes\SciencePenalty.cs" />
     <Compile Include="SettingsAndScenario\SnacksScenario.cs" />
     <Compile Include="Converters\SnackProcessor.cs" />
-    <Compile Include="Experimental\SnacksModuleCommand.cs" />
     <Compile Include="Converters\SnacksBackgroundConverter.cs" />
-    <Compile Include="Experimental\SnacksControlSource.cs" />
     <Compile Include="Converters\SnacksConverter.cs" />
     <Compile Include="Processors\SnacksResourceProcessor.cs" />
     <Compile Include="ResourceClasses\SnacksPartResource.cs" />
@@ -100,11 +97,12 @@
     <Compile Include="SettingsAndScenario\SnacksProperties.cs" />
     <Compile Include="Utilities\Window.cs" />
     <Compile Include="Utilities\WindowUtils.cs" />
-    <Compile Include="Experimental\VesselControlPenalty.cs" />
     <Compile Include="ResourceClasses\VesselSnackshot.cs" />
-    <Compile Include="Outcomes\BaseOutcome.cs" />
+    <Compile Include="EventSystem\Outcomes\BaseOutcome.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="EventSystem\Preconditions\" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="Textures\snacks.png" />
   </ItemGroup>
