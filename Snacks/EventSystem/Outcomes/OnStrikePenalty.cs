@@ -31,26 +31,50 @@ using KSP.IO;
 
 namespace Snacks
 {
+    /// <summary>
+    /// This outcome sets a condition on the affected kerbals. If that condition is defined in a
+    /// SKILL_LOSS_CONDITION config node, then the kerbals' skills will be removed until the 
+    /// condition is cleared.
+    /// Example definition:
+    /// OUTCOME 
+    /// {
+    ///     name  = ClearCondition
+    ///     conditionSummary = Stressed Out
+    /// }
+    /// </summary>   
+
     public class OnStrikePenalty: BaseOutcome
     {
-        #region Constants
-        const string ValueConditionName = "conditionName";
-        #endregion
-
         #region Housekeeping
+        /// <summary>
+        /// The name of the condition to set. If defined in a SKILL_LOSS_CONDITION node then the affected kerbals
+        /// will lose their skills until the condition is cleared.
+        /// </summary>
         public string conditionName = "On Strike";
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.OnStrikePenalty"/> class.
+        /// </summary>
+        /// <param name="conditionName">The name of the condition to set. It must be added to a SKILL_LOSS_CONDITION
+        /// config node in order for the kerbal to lose its skills.</param>
+        /// <param name="canBeRandom">If set to <c>true</c> it can be randomly selected from the outcomes list.</param>
+        /// <param name="playerMessage">A string containing the bad news.</param>
         public OnStrikePenalty(string conditionName, bool canBeRandom, string playerMessage) : base(canBeRandom, playerMessage)
         {
             this.conditionName = conditionName;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.OnStrikePenalty"/> class.
+        /// </summary>
+        /// <param name="node">A ConfigNode containing initialization parameters. Parameters in the
+        /// <see cref="T:Snacks.BaseOutcome"/> class also apply.</param>
         public OnStrikePenalty(ConfigNode node) : base(node)
         {
-            if (node.HasValue(ValueConditionName))
-                conditionName = node.GetValue(ValueConditionName);
+            if (node.HasValue(ConditionName))
+                conditionName = node.GetValue(ConditionName);
         }
 
         #endregion
@@ -70,6 +94,13 @@ namespace Snacks
             else
                 astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
 
+            //Select random crew if needed
+            if (selectRandomCrew)
+            {
+                int randomIndex = UnityEngine.Random.Range(0, astronauts.Length - 1);
+                astronauts = new ProtoCrewMember[] { astronauts[randomIndex] };
+            }
+
             //Go through each kerbal and set their condition
             for (int index = 0; index < astronauts.Length; index++)
             {
@@ -88,6 +119,9 @@ namespace Snacks
                     ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_LEFT);
                 }
             }
+
+            //Call the base class
+            base.ApplyOutcome(vessel, result);
         }
 
         public override void RemoveOutcome(Vessel vessel)
@@ -112,6 +146,9 @@ namespace Snacks
 
                 astronautData.ClearCondition(conditionName);
             }
+
+            //Call base class
+            base.RemoveOutcome(vessel);
         }
 
         public override bool IsEnabled()

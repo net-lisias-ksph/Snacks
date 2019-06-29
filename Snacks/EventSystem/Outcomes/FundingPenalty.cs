@@ -31,6 +31,16 @@ using KSP.IO;
 
 namespace Snacks
 {
+    /// <summary>
+    /// This outcome fines the space agency by a certain amount per affected kerbal.
+    /// Example definition:
+    /// OUTCOME 
+    /// {
+    ///     name  = FundingPenalty
+    ///     finePerKerbal = 1000
+    /// }
+    /// </summary>   
+
     public class FundingPenalty : BaseOutcome
     {
         #region Constants
@@ -38,16 +48,30 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
-        double finePerKerbal;
+        /// <summary>
+        /// The amount of Funds to lose per kerbal.
+        /// </summary>
+        public double finePerKerbal;
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.FundingPenalty"/> class.
+        /// </summary>
+        /// <param name="node">A ConfigNode containing initialization parameters. Parameters in the
+        /// <see cref="T:Snacks.BaseOutcome"/> class also apply.</param>
         public FundingPenalty(ConfigNode node) : base (node)
         {
             if (node.HasValue(ValueFinePerKerbal))
                 double.TryParse(node.GetValue(ValueFinePerKerbal), out finePerKerbal);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.FundingPenalty"/> class.
+        /// </summary>
+        /// <param name="canBeRandom">If set to <c>true</c> the outcome can be randomly selected from the outcome list.</param>
+        /// <param name="playerMessage">A string containing the bad news.</param>
+        /// <param name="finePerKerbal">The amount of Funds lost per affected kerval.</param>
         public FundingPenalty(bool canBeRandom, string playerMessage, double finePerKerbal) : base(canBeRandom)
         {
             this.playerMessage = playerMessage;
@@ -82,6 +106,9 @@ namespace Snacks
                     }
                 }
             }
+
+            //Call the base class
+            base.ApplyOutcome(vessel, result);
         }
         #endregion
     }

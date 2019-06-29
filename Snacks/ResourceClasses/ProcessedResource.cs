@@ -298,6 +298,122 @@ namespace Snacks
         }
 
         #region Helpers
+        public static double AddResource(Vessel vessel, string resourceName, double supply, List<ProtoPartResourceSnapshot> resourceList)
+        {
+            double amountSupplied = 0;
+            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
+            int resourceID = definitions[resourceName].id;
+            double supplyRemaining = supply;
+            int count = resourceList.Count;
+            ProtoPartResourceSnapshot resource;
+
+            if (vessel.loaded)
+            {
+                amountSupplied = vessel.rootPart.RequestResource(resourceID, -supply);
+            }
+            else
+            {
+                for (int index = 0; index < count; index++)
+                {
+                    resource = resourceList[index];
+
+                    if (amountSupplied >= supply)
+                    {
+                        amountSupplied = supply;
+                        return amountSupplied;
+                    }
+
+                    if (resource.amount + supplyRemaining <= resource.maxAmount)
+                    {
+                        resource.amount += supplyRemaining;
+                        amountSupplied = supply;
+                        break;
+                    }
+                    else
+                    {
+                        amountSupplied += resource.maxAmount - resource.amount;
+                        resource.amount = resource.maxAmount;
+                    }
+                }
+            }
+
+            return amountSupplied;
+        }
+
+        public static double RequestResource(Vessel vessel, string resourceName, double demand, List<ProtoPartResourceSnapshot> resourceList)
+        {
+            double amountObtained = 0;
+            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
+            int resourceID = definitions[resourceName].id;
+            double demandRemaining = demand;
+            int count = resourceList.Count;
+            ProtoPartResourceSnapshot resource;
+
+            if (vessel.loaded)
+            {
+                amountObtained = vessel.rootPart.RequestResource(resourceID, demand);
+            }
+            else
+            {
+                for (int index = 0; index < count; index++)
+                {
+                    resource = resourceList[index];
+
+                    if (resource.amount >= demandRemaining)
+                    {
+                        resource.amount -= demandRemaining;
+                        amountObtained = demandRemaining;
+                        break;
+                    }
+                    else
+                    {
+                        demandRemaining -= resource.amount;
+                        amountObtained += resource.amount;
+                        resource.amount = 0;
+                    }
+                }
+            }
+
+            return amountObtained;
+        }
+
+        public static void GetResourceTotals(Vessel vessel, string resourceName, out double amount, out double maxAmount, List<ProtoPartResourceSnapshot> resourceList)
+        {
+            amount = 0;
+            maxAmount = 0;
+            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
+            int resourceID = definitions[resourceName].id;
+
+            if (vessel.loaded)
+            {
+                vessel.rootPart.GetConnectedResourceTotals(resourceID, out amount, out maxAmount);
+            }
+            else
+            {
+                ProtoPartSnapshot[] protoPartSnapshots = vessel.protoVessel.protoPartSnapshots.ToArray();
+                ProtoPartSnapshot partSnapshot;
+                ProtoPartResourceSnapshot[] protoResources;
+                ProtoPartResourceSnapshot resource;
+
+                for (int partIndex = 0; partIndex < protoPartSnapshots.Length; partIndex++)
+                {
+                    partSnapshot = protoPartSnapshots[partIndex];
+
+                    protoResources = partSnapshot.resources.ToArray();
+                    for (int resourceIndex = 0; resourceIndex < protoResources.Length; resourceIndex++)
+                    {
+                        resource = protoResources[resourceIndex];
+                        if (resource.resourceName == resourceName && resource.flowState)
+                        {
+                            amount += resource.amount;
+                            maxAmount += resource.maxAmount;
+                            resourceList.Add(resource);
+                        }
+                    }
+                }
+            }
+        }
+
         protected virtual void produceRosterOutputs(Vessel vessel, double elapsedTime)
         {
             AstronautData astronautData;

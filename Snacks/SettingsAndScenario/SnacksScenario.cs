@@ -33,6 +33,7 @@ using KSP.IO;
 
 namespace Snacks
 {
+    #region ISnacksPenalty
     /// <summary>
     /// Interface for creating and running penalties when a processor resource runs out or has too much aboard the vessel or kerbal.
     /// </summary>
@@ -68,7 +69,11 @@ namespace Snacks
         /// </summary>
         void GameSettingsApplied();
     }
+    #endregion
 
+    /// <summary>
+    /// The SnacksScenario class is the heart of Snacks. It runs all the processes.
+    /// </summary>
     [KSPScenario(ScenarioCreationOptions.AddToAllGames, GameScenes.SPACECENTER, GameScenes.EDITOR, GameScenes.FLIGHT, GameScenes.TRACKSTATION)]
     public class SnacksScenario : ScenarioModule
     {
@@ -107,31 +112,107 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
+        /// <summary>
+        /// Instance of the scenario.
+        /// </summary>
         public static SnacksScenario Instance;
+
+        /// <summary>
+        /// Flag indicating whether or not logging is enabled.
+        /// </summary>
         public static bool LoggingEnabled;
         private static double secondsPerDay = 0;
         private static double secondsPerYear = 0;
+
+        /// <summary>
+        /// Map of sciecnce penalties sorted by vessel.
+        /// </summary>
         public DictionaryValueList<string, int> sciencePenalties;
+
+        /// <summary>
+        /// Map of astronaut data, keyed by astronaut name.
+        /// </summary>
         public DictionaryValueList<string, AstronautData> crewData;
+
+        /// <summary>
+        /// List of kerbals that are exempt from outcome effects.
+        /// </summary>
         public string exemptKerbals = string.Empty;
+
+        /// <summary>
+        /// Last time the processing cycle started.
+        /// </summary>
         public double cycleStartTime;
+
+        /// <summary>
+        /// Map of the background conveters list, keyed by vessel.
+        /// </summary>
         public Dictionary<Vessel, List<SnacksBackgroundConverter>> backgroundConverters;
+
+        /// <summary>
+        /// List of resource processors that handle life support consumption and waste production.
+        /// </summary>
         public List<BaseResourceProcessor> resourceProcessors;
+
+        /// <summary>
+        /// List of resources that will be added to parts as they are created or loaded.
+        /// </summary>
         public List<SnacksPartResource> snacksPartResources;
+
+        /// <summary>
+        /// List of resources that are added to kerbals when they go on EVA.
+        /// </summary>
         public List<SnacksEVAResource> snacksEVAResources;
+
+        /// <summary>
+        /// Map of snapshots, keyed by vessel, that give a status of each vessel's visible life support resources and crew status.
+        /// </summary>
         public Dictionary<Vessel, VesselSnackshot> snapshotMap;
+
+        /// <summary>
+        /// Helper that gives a count, by celestial body id, of how many vessels are on or around the celestial body.
+        /// </summary>
         public Dictionary<int, int> bodyVesselCountMap;
+
+        /// <summary>
+        /// Map of all roster resources to add to kerbals as they are created.
+        /// </summary>
         public Dictionary<string, SnacksRosterResource> rosterResources;
+
+        /// <summary>
+        /// List of conditions that will cause a skill loss. These conditions are defined via SKILL_LOSS_CONDITION nodes.
+        /// </summary>
         public List<String> lossOfSkillConditions;
         public SnackSimThreadPool threadPool = null;
 
+        /// <summary>
+        /// List of converters to watch for when creating snapshot simulations.
+        /// </summary>
         public string converterWatchlist = "SnacksConverter;SnacksProcessor;SoilRecycler;WBIResourceConverter;WBIModuleResourceConverterFX;ModuleResourceConverter;ModuleFusionReactor";
+
+        /// <summary>
+        /// How many simulated seconds pass per simulator cycle.
+        /// </summary>
         public double simulatorSecondsPerCycle = 3600;
+
+        /// <summary>
+        /// Maximum number of simulator cycles to run.
+        /// </summary>
         public int maxSimulatorCycles = 10000;
+
+        /// <summary>
+        /// Max number of simulator threads to create.
+        /// </summary>
         public int maxThreads = 4;
 
         private double elapsedTime;
         private string introStreensDisplayed = string.Empty;
+
+        private Dictionary<string, SnacksEvent> postProcessEvents;
+        private Dictionary<string, SnacksEvent> levelUpEvents;
+        private Dictionary<string, SnacksEvent> eventCards;
+        private int vesselsBeingProcessed;
+        private bool snackCycleStarted;
         #endregion
 
         #region Snapshots
@@ -305,6 +386,9 @@ namespace Snacks
         #endregion
 
         #region Fixed Update
+        /// <summary>
+        /// FixedUpdate handles all the processing tasks related to life support resources and event processing.
+        /// </summary>
         void FixedUpdate()
         {
             //Record cycle start time if needed.
@@ -314,17 +398,42 @@ namespace Snacks
                 return;
             }
 
+            //Check to see if we've finished processing all the vessels.
+            //If so, then process events.
+            if (vesselsBeingProcessed == 0 && snackCycleStarted)
+            {
+                snackCycleStarted = false;
+                StartCoroutine(processEvents(postProcessEvents));
+            }
+
             //To avoid hammering the game with updates, we only run background converters, processors, and events once per game hour.
             elapsedTime = Planetarium.GetUniversalTime() - cycleStartTime;
+
             if (elapsedTime < secondsPerCycle)
                 return;
             cycleStartTime = Planetarium.GetUniversalTime();
 
+            //Run the snacks cycle
             RunSnackCyleImmediately(elapsedTime);
+
+            //Process event cards if needed.
+            if (elapsedTime >= SnacksScenario.GetSecondsPerDay())
+            {
+                if (SnacksProperties.EnableRandomSnacking)
+                    StartCoroutine(playEventCard());
+            }
         }
 
+        /// <summary>
+        /// Runs the snack cyle immediately.
+        /// </summary>
+        /// <param name="secondsElapsed">Seconds elapsed.</param>
         public void RunSnackCyleImmediately(double secondsElapsed)
         {
+            //Reset our process monitors
+            vesselsBeingProcessed = 0;
+            snackCycleStarted = true;
+
             //Go through all the vessels. For loaded vessels, run the processors and events.
             //For unloaded vessels, run the background converters, processors, and events.
             Vessel vessel;
@@ -341,8 +450,12 @@ namespace Snacks
                     continue;
 
                 //Start snack cycle
+                vesselsBeingProcessed += 1;
                 StartCoroutine(runSnackCycle(vessel, secondsElapsed));
             }
+
+            //Fire snack time event
+            onSnackTime.Fire();
         }
         #endregion
 
@@ -389,6 +502,39 @@ namespace Snacks
         #endregion
 
         #region Astronaut API
+        /// <summary>
+        /// Finds the vessel that the kerbal is residing in.
+        /// </summary>
+        /// <returns>The Vessel where the kerbal resides.</returns>
+        /// <param name="astronaut">The astronaut to check.</param>
+        public Vessel FindVessel(ProtoCrewMember astronaut)
+        {
+            int count = FlightGlobals.Vessels.Count;
+            Vessel vessel;
+
+            for (int index = 0; index < count; index++)
+            {
+                vessel = FlightGlobals.Vessels[index];
+                if (vessel.loaded)
+                {
+                    if (vessel.GetVesselCrew().Contains(astronaut))
+                        return vessel;
+                }
+                else
+                {
+                    if (vessel.protoVessel.GetVesselCrew().Contains(astronaut))
+                        return vessel;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Determines whether or not the kerbal's skills should be removed.
+        /// </summary>
+        /// <returns><c>true</c>, if remove skills should be removed, <c>false</c> otherwise.</returns>
+        /// <param name="astronaut">the ProtoCrewMember to investigate.</param>
         public bool ShouldRemoveSkills(ProtoCrewMember astronaut)
         {
             if (astronaut.KerbalRef == null || astronaut.KerbalRef.InVessel == null)
@@ -415,6 +561,11 @@ namespace Snacks
             return false;
         }
 
+        /// <summary>
+        /// Removes the skills if needed. The supplied kerbal must have at least one condition
+        /// registered in a SKILL_LOSS_CONDITION config node in order to remove the skills.
+        /// </summary>
+        /// <param name="astronaut">The kerbal to check.</param>
         public void RemoveSkillsIfNeeded(ProtoCrewMember astronaut)
         {
             if (astronaut.KerbalRef == null || astronaut.KerbalRef.InVessel == null)
@@ -426,6 +577,10 @@ namespace Snacks
                 RemoveSkills(astronaut);
         }
 
+        /// <summary>
+        /// Restores the skills if needed. The kerbal in question must not have any conditions that would result in a loss of skill.
+        /// </summary>
+        /// <param name="astronaut">The kerbal to query.</param>
         public void RestoreSkillsIfNeeded(ProtoCrewMember astronaut)
         {
             if (astronaut.KerbalRef == null || astronaut.KerbalRef.InVessel == null)
@@ -437,6 +592,10 @@ namespace Snacks
                 RestoreSkills(astronaut);
         }
 
+        /// <summary>
+        /// Removes skills from the desired kerbal. Does not check to see if they should be removed based on condition summary.
+        /// </summary>
+        /// <param name="astronaut">The ProtoCrewMember to remove skills from.</param>
         public void RemoveSkills(ProtoCrewMember astronaut)
         {
             if (astronaut.KerbalRef == null || astronaut.KerbalRef.InVessel == null)
@@ -452,6 +611,10 @@ namespace Snacks
             FlightInputHandler.ResumeVesselCtrlState(astronaut.KerbalRef.InVessel);
         }
 
+        /// <summary>
+        /// Restores skills to the desired kerbal. Does not check to see if they can be restored based on condition summary.
+        /// </summary>
+        /// <param name="astronaut"></param>
         public void RestoreSkills(ProtoCrewMember astronaut)
         {
             if (astronaut.KerbalRef == null || astronaut.KerbalRef.InVessel == null)
@@ -467,6 +630,10 @@ namespace Snacks
             FlightInputHandler.ResumeVesselCtrlState(astronaut.KerbalRef.InVessel);
         }
 
+        /// <summary>
+        /// Adds the name of the kerbal to the exemptions list.
+        /// </summary>
+        /// <param name="exemptedCrew">The name of the kerbal to add to the list.</param>
         public void SetExemptCrew(string exemptedCrew)
         {
             if (string.IsNullOrEmpty(exemptedCrew))
@@ -485,6 +652,10 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Registers crew into the astronaut database.
+        /// </summary>
+        /// <param name="vessel">The vessel to search for crew.</param>
         public void RegisterCrew(Vessel vessel)
         {
             List<ProtoCrewMember> crewManifest;
@@ -507,6 +678,10 @@ namespace Snacks
 
         }
 
+        /// <summary>
+        /// Unregisters the crew from the astronaut database.
+        /// </summary>
+        /// <param name="protoVessel">The vessel to search for crew to unregister.</param>
         public void UnregisterCrew(ProtoVessel protoVessel)
         {
             List<ProtoCrewMember> crewManifest;
@@ -519,6 +694,10 @@ namespace Snacks
                 UnregisterCrew(crewManifest[index]);
         }
 
+        /// <summary>
+        /// Unregisters the crew from the astronaut database.
+        /// </summary>
+        /// <param name="vessel">The vessel to search for crew to unregister.</param>
         public void UnregisterCrew(Vessel vessel)
         {
             List<ProtoCrewMember> crewManifest;
@@ -540,23 +719,40 @@ namespace Snacks
                 UnregisterCrew(crewManifest[index]);
         }
 
+        /// <summary>
+        /// Registers the astronaut into the astronaut database.
+        /// </summary>
+        /// <param name="astronaut">The astronaut to register.</param>
         public void RegisterCrew(ProtoCrewMember astronaut)
         {
             GetAstronautData(astronaut);
         }
 
+        /// <summary>
+        /// Unregisters the astronaut from the astronaut database.
+        /// </summary>
+        /// <param name="astronaut">The astronaut to unregister.</param>
         public void UnregisterCrew(ProtoCrewMember astronaut)
         {
             if (crewData.Contains(astronaut.name))
                 crewData.Remove(astronaut.name);
         }
 
+        /// <summary>
+        /// Unregisters the astronaut data from the astronaut database.
+        /// </summary>
+        /// <param name="data">The astronaut data to unregister.</param>
         public void UnregisterCrew(AstronautData data)
         {
             if (crewData.Contains(data.name))
                 crewData.Remove(data.name);
         }
 
+        /// <summary>
+        /// Returns the number of crew that aren't exempt.
+        /// </summary>
+        /// <param name="vessel">The vessel to query for crew.</param>
+        /// <returns>The number of victims. Er, number of non-exempt crew.</returns>
         public int GetNonExemptCrewCount(Vessel vessel)
         {
             ProtoCrewMember[] astronauts;
@@ -578,68 +774,17 @@ namespace Snacks
             return nonExemptCrew;
         }
 
-        public int AddMissedMeals(ProtoCrewMember astronaut, int mealsMissed)
-        {
-            AstronautData data = GetAstronautData(astronaut);
-
-            //Handle exemptions
-            if (data.isExempt)
-                return 0;
-
-            data.mealsMissed += mealsMissed;
-
-            return data.mealsMissed;
-        }
-
-        public int GetMealsMissed(ProtoCrewMember astronaut)
-        {
-            AstronautData data = GetAstronautData(astronaut);
-
-            return data.mealsMissed;
-        }
-
-        public void ClearMissedMeals(ProtoVessel protoVessel)
-        {
-            if (protoVessel.GetVesselCrew().Count == 0)
-                return;
-
-            ProtoCrewMember[] crewMembers = protoVessel.GetVesselCrew().ToArray();
-
-            for (int index = 0; index < crewMembers.Length; index++)
-            {
-                crewMembers[index].inactive = false;
-                SetMealsMissed(crewMembers[index], 0);
-            }
-        }
-
-        public void ClearMissedMeals(Vessel vessel)
-        {
-            if (vessel.GetVesselCrew().Count == 0)
-                return;
-
-            ProtoCrewMember[] crewMembers = vessel.GetVesselCrew().ToArray();
-
-            for (int index = 0; index < crewMembers.Length; index++)
-            {
-                crewMembers[index].inactive = false;
-                SetMealsMissed(crewMembers[index], 0);
-            }
-        }
-
-        public void SetMealsMissed(ProtoCrewMember astronaut, int mealsMissed)
-        {
-            AstronautData data = GetAstronautData(astronaut);
-
-            data.mealsMissed = mealsMissed;
-        }
-
+        /// <summary>
+        /// Returns the astronaut data associated with the astronaut.
+        /// </summary>
+        /// <param name="astronaut">The ProtoCrewMember to check for astronaut data.</param>
+        /// <returns>The AstronautData associated with the kerbal.</returns>
         public AstronautData GetAstronautData(ProtoCrewMember astronaut)
         {
             if (crewData.Contains(astronaut.name) == false)
             {
                 AstronautData data = new AstronautData();
                 data.name = astronaut.name;
-                data.mealsMissed = 0;
                 data.experienceTrait = astronaut.experienceTrait.Title;
                 data.lastUpdated = Planetarium.GetUniversalTime();
                 data.keyValuePairs = new DictionaryValueList<string, string>();
@@ -652,6 +797,10 @@ namespace Snacks
             return crewData[astronaut.name];
         }
 
+        /// <summary>
+        /// Saves the astronaut data into the database.
+        /// </summary>
+        /// <param name="data">The AstronautData to save.</param>
         public void SetAstronautData(AstronautData data)
         {
             if (crewData.Contains(data.name))
@@ -724,22 +873,15 @@ namespace Snacks
                     lossOfSkillConditions.Add(conditions[index].GetValue(SkillLossConditionName));
             }
 
-            //Create part resource list.
-            snacksPartResources = SnacksPartResource.LoadPartResources();
-
-            //Create eva resource list.
-            snacksEVAResources = SnacksEVAResource.LoadEVAResources();
-
-            //Create roster resources map.
-            rosterResources = SnacksRosterResource.LoadRosterResources();
-
-            //Create resource processors list
-            resourceProcessors = BaseResourceProcessor.LoadProcessors();
-
             //Create housekeeping lists and such
+            snacksPartResources = SnacksPartResource.LoadPartResources();
+            snacksEVAResources = SnacksEVAResource.LoadEVAResources();
+            rosterResources = SnacksRosterResource.LoadRosterResources();
+            resourceProcessors = BaseResourceProcessor.LoadProcessors();
             sciencePenalties = new DictionaryValueList<string, int>();
             snapshotMap = new Dictionary<Vessel, VesselSnackshot>();
             bodyVesselCountMap = new Dictionary<int, int>();
+            initializeEventLists();
         }
 
         public void Start()
@@ -869,6 +1011,9 @@ namespace Snacks
 
             //Load astronaut data
             crewData = AstronautData.Load(node);
+
+            //Events
+            loadPersistentEventData(node);
         }
 
         public override void OnSave(ConfigNode node)
@@ -903,6 +1048,9 @@ namespace Snacks
                 if (configNode != null)
                     node.AddNode(configNode);
             }
+
+            //Events
+            savePersistentEventData(node);
         }
         #endregion
 
@@ -924,12 +1072,15 @@ namespace Snacks
 
         private void onKerbalLevelUp(ProtoCrewMember astronaut)
         {
+            //Update roster resources
             string[] keys = rosterResources.Keys.ToArray();
-
             for (int index = 0; index < keys.Length; index++)
             {
                 rosterResources[keys[index]].onKerbalLevelUp(astronaut);
             }
+
+            //Now handle level up events
+            StartCoroutine(processEvents(levelUpEvents));
         }
 
         private void onKerbalStatusChanged(ProtoCrewMember astronaut, ProtoCrewMember.RosterStatus previousStatus, ProtoCrewMember.RosterStatus newStatus)
@@ -1021,18 +1172,21 @@ namespace Snacks
                     snacksEVAResources[index].onCrewBoardedVessel(evaKerbal, boardedPart);
 
                 //Give processors a chance to update their data if needed.
-                ProtoCrewMember astronaut = evaKerbal.vessel.GetVesselCrew()[0];
+                ProtoCrewMember[] astronauts = boardedPart.protoModuleCrew.ToArray();
                 count = resourceProcessors.Count;
                 BaseResourceProcessor processor;
-                for (int index = 0; index < count; index++)
+                for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
                 {
-                    processor = resourceProcessors[index];
-                    processor.onKerbalBoardedVessel(astronaut, boardedPart);
-                }
+                    for (int index = 0; index < count; index++)
+                    {
+                        processor = resourceProcessors[index];
+                        processor.onKerbalBoardedVessel(astronauts[astronautIndex], boardedPart);
+                    }
 
-                //Remove skills if needed
-                if (ShouldRemoveSkills(astronaut))
-                    RemoveSkills(astronaut);
+                    //Remove skills if needed
+                    if (ShouldRemoveSkills(astronauts[astronautIndex]))
+                        RemoveSkills(astronauts[astronautIndex]);
+                }
             }
             catch (Exception ex)
             {
@@ -1157,9 +1311,9 @@ namespace Snacks
                 for (int resourceIndex = 0; resourceIndex < count; resourceIndex++)
                     snacksPartResources[resourceIndex].addResourcesIfNeeded(part);
 
+                //Get the crew and add any roster resources needed.
                 if (keys.Length > 0)
                 {
-                    //Get the crew and add any roster resources needed.
                     astronauts = part.protoModuleCrew.ToArray();
 
                     for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
@@ -1264,6 +1418,71 @@ namespace Snacks
         #endregion
 
         #region Static API
+        /// <summary>
+        /// Adds the stress to crew if Stress is enabled. This is primarily
+        /// used by 3rd party mods like BARIS.
+        /// </summary>
+        /// <param name="vessel">The Vessel to query for crew.</param>
+        /// <param name="stressAmount">The amount of Stress to add.</param>
+        public static void AddStressToCrew(Vessel vessel, float stressAmount)
+        {
+            //Make sure that stress is enabled
+            if (!Instance.rosterResources.ContainsKey(StressProcessor.StressResourceName))
+                return;
+
+            //Get the vessel crew
+            ProtoCrewMember[] astronauts;
+            AstronautData astronautData;
+
+            //Get vessel crew
+            if (vessel.loaded)
+                astronauts = vessel.GetVesselCrew().ToArray();
+            else
+                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+
+            //Clear out exempt crew
+            List<ProtoCrewMember> nonExemptCrew = new List<ProtoCrewMember>();
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                astronautData = Instance.GetAstronautData(astronauts[index]);
+                if (astronautData.isExempt)
+                    continue;
+                nonExemptCrew.Add(astronauts[index]);
+            }
+            if (nonExemptCrew.Count == 0)
+                return;
+            astronauts = nonExemptCrew.ToArray();
+
+            //Now Add Stress
+            SnacksRosterResource resource;
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                //Get astronaut data
+                astronautData = Instance.GetAstronautData(astronauts[index]);
+                if (!astronautData.rosterResources.ContainsKey(StressProcessor.StressResourceName))
+                    continue;
+
+                //Increase Stress
+                resource = astronautData.rosterResources[StressProcessor.StressResourceName];
+                if (!astronauts[index].isBadass)
+                    resource.amount += stressAmount;
+                else
+                    resource.amount += (stressAmount * 0.5f);
+                if (resource.amount >= resource.maxAmount)
+                    resource.amount = resource.maxAmount;
+                astronautData.rosterResources[StressProcessor.StressResourceName] = resource;
+
+                //Fire event
+                onRosterResourceUpdated.Fire(vessel, resource, astronautData, astronauts[index]);
+            }
+        }
+
+        /// <summary>
+        /// Formats the supplied seconds into a string.
+        /// </summary>
+        /// <param name="secondsToFormat">The number of seconds to format.</param>
+        /// <param name="showCompact">A flag to indicate whether or not to show the compact form.</param>
+        /// <returns></returns>
         public static string FormatTime(double secondsToFormat, bool showCompact = false)
         {
             StringBuilder timeBuilder = new StringBuilder();
@@ -1353,6 +1572,10 @@ namespace Snacks
             return timeDisplay;
         }
 
+        /// <summary>
+        /// Gets the number of seconds per day on the homeworld.
+        /// </summary>
+        /// <returns>The lenght of the solar day in seconds of the homeworld.</returns>
         public static double GetSecondsPerDay()
         {
             if (secondsPerDay > 0)
@@ -1384,6 +1607,11 @@ namespace Snacks
             return secondsPerDay;
         }
 
+        /// <summary>
+        /// Gets the solar flux based on vessel location.
+        /// </summary>
+        /// <param name="vessel">The vessel to query.</param>
+        /// <returns>The level of solar flux at the vessel's location.</returns>
         public static double GetSolarFlux(Vessel vessel)
         {
             double solarFlux = 0;
@@ -1474,6 +1702,72 @@ namespace Snacks
 
         #region Processors API
         /// <summary>
+        /// Creates a new precondition based on the config node data passed in.
+        /// </summary>
+        /// <param name="node">The ConfigNode containing data to parse.</param>
+        /// <returns>A BasePrecondition containing the precondition object, or null if the config node couldn't be parsed.</returns>
+        public BasePrecondition CreatePrecondition(ConfigNode node)
+        {
+            //Get the name
+            string name = string.Empty;
+            if (node.HasValue(BasePrecondition.PreconditionName))
+                name = node.GetValue(BasePrecondition.PreconditionName);
+            if (string.IsNullOrEmpty(name))
+                return null;
+
+            //Now create the precondition
+            switch (name)
+            {
+                case "CheckProcessorResult":
+                    return new CheckProcessorResult(node);
+
+                case "CheckRandomChance":
+                    return new CheckRandomChance(node);
+
+                case "CheckCondition":
+                    return new CheckCondition(node);
+
+                case "CheckKeyValue":
+                    return new CheckKeyValue(node);
+
+                case "CheckGravityLevel":
+                    return new CheckGravityLevel(node);
+
+                case "CheckResource":
+                    return new CheckResource(node);
+
+                case "CheckCrewCount":
+                    return new CheckCrewCount(node);
+
+                case "CheckBadass":
+                    return new CheckBadass(node);
+
+                case "CheckHomeworldConnection":
+                    return new CheckHomeworldConnection(node);
+
+                case "CheckCourage":
+                    return new CheckCourage(node);
+
+                case "CheckStupidity":
+                    return new CheckStupidity(node);
+
+                case "CheckTrait":
+                    return new CheckTrait(node);
+
+                case "CheckSkill":
+                    return new CheckSkill(node);
+
+                case "CheckSkillLevel":
+                    return new CheckSkillLevel(node);
+
+                default:
+                    break;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Creates a new outcome based on the config node data passed in.
         /// </summary>
         /// <returns>The outcome corresponding to the desired config.</returns>
@@ -1482,8 +1776,8 @@ namespace Snacks
         {
             //Get the name of the outcome
             string outcomeName = string.Empty;
-            if (node.HasValue("name"))
-                outcomeName = node.GetValue("name");
+            if (node.HasValue(BaseOutcome.OutcomeName))
+                outcomeName = node.GetValue(BaseOutcome.OutcomeName);
             if (string.IsNullOrEmpty(outcomeName))
                 return null;
 
@@ -1505,11 +1799,23 @@ namespace Snacks
                 case "SciencePenalty":
                     return new SciencePenalty(node);
 
-                case "ResourceProduced":
-                    break;
+                case "ProduceResource":
+                    return new ProduceResource(node);
 
-                case "ResourceConsumed":
-                    break;
+                case "ConsumeResource":
+                    return new ConsumeResource(node);
+
+                case "SetCondition":
+                    return new SetCondition(node);
+
+                case "ClearCondition":
+                    return new ClearCondition(node);
+
+                case "SetKeyValue":
+                    return new SetKeyValue(node);
+
+                case "ClearKeyValue":
+                    return new ClearKeyValue(node);
 
                 default:
                     break;
@@ -1597,15 +1903,126 @@ namespace Snacks
                     resourceProcessors[index].ProcessResources(vessel, elapsedTime, crewCount, crewCapacity);
                     yield return new WaitForFixedUpdate();
                 }
-
-                //Process events
             }
 
-            //Fire snack time event
-            onSnackTime.Fire();
-
+            vesselsBeingProcessed -= 1;
             yield return new WaitForFixedUpdate();
         }
-    #endregion
-}
+
+        protected IEnumerator<YieldInstruction> processEvents(Dictionary<string, SnacksEvent> eventList)
+        {
+            string[] keys = eventList.Keys.ToArray();
+            SnacksEvent snacksEvent;
+
+            for (int index = 0; index < keys.Length; index++)
+            {
+                snacksEvent = eventList[keys[index]];
+                snacksEvent.ProcessEvent(elapsedTime);
+                yield return new WaitForFixedUpdate();
+            }
+            yield return new WaitForFixedUpdate();
+        }
+
+        protected IEnumerator<YieldInstruction> playEventCard()
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        protected void initializeEventLists()
+        {
+            ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes(SnacksEvent.SNACKS_EVENT);
+            SnacksEvent snacksEvent;
+
+            postProcessEvents = new Dictionary<string, SnacksEvent>();
+            levelUpEvents = new Dictionary<string, SnacksEvent>();
+            eventCards = new Dictionary<string, SnacksEvent>();
+
+            for (int index = 0; index < nodes.Length; index++)
+            {
+                snacksEvent = new SnacksEvent(nodes[index]);
+                if (!string.IsNullOrEmpty(snacksEvent.name))
+                {
+                    switch (snacksEvent.eventCategory)
+                    {
+                        default:
+                        case SnacksEventCategories.categoryPostProcessCycle:
+                            postProcessEvents.Add(snacksEvent.name, snacksEvent);
+                            break;
+
+                        case SnacksEventCategories.categoryKerbalLevelUp:
+                            levelUpEvents.Add(snacksEvent.name, snacksEvent);
+                            break;
+
+                        case SnacksEventCategories.categoryEventCard:
+                            eventCards.Add(snacksEvent.name, snacksEvent);
+                            break;
+                    }
+                }
+            }
+        }
+
+        protected void savePersistentEventData(ConfigNode node)
+        {
+            string[] keys = postProcessEvents.Keys.ToArray();
+
+            //Event persistent data
+            for (int index = 0; index < keys.Length; index++)
+                node.AddNode(postProcessEvents[keys[index]].Save());
+
+            keys = levelUpEvents.Keys.ToArray();
+            for (int index = 0; index < keys.Length; index++)
+                node.AddNode(levelUpEvents[keys[index]].Save());
+
+            keys = eventCards.Keys.ToArray();
+            for (int index = 0; index < keys.Length; index++)
+                node.AddNode(eventCards[keys[index]].Save());
+        }
+
+        protected void loadPersistentEventData(ConfigNode node)
+        {
+            ConfigNode[] nodes = node.GetNodes(SnacksEvent.SNACKS_EVENT);
+            ConfigNode eventNode;
+            SnacksEvent snacksEvent;
+            string eventName;
+            SnacksEventCategories eventCategory;
+
+            //Event persistent data
+            for (int index = 0; index < nodes.Length; index++)
+            {
+                eventNode = nodes[index];
+
+                eventName = eventNode.GetValue(SnacksEvent.SnacksEventName);
+                eventCategory = (SnacksEventCategories)Enum.Parse(typeof(SnacksEventCategories), eventNode.GetValue(SnacksEvent.SnacksEventCategory));
+
+                switch (eventCategory)
+                {
+                    default:
+                    case SnacksEventCategories.categoryPostProcessCycle:
+                        if (postProcessEvents.ContainsKey(eventName))
+                        {
+                            snacksEvent = postProcessEvents[eventName];
+                            snacksEvent.Load(nodes[index]);
+                        }
+                        break;
+
+                    case SnacksEventCategories.categoryKerbalLevelUp:
+                        if (levelUpEvents.ContainsKey(eventName))
+                        {
+                            snacksEvent = levelUpEvents[eventName];
+                            snacksEvent.Load(nodes[index]);
+                        }
+                        break;
+
+                    case SnacksEventCategories.categoryEventCard:
+                        if (eventCards.ContainsKey(eventName))
+                        {
+                            snacksEvent = eventCards[eventName];
+                            snacksEvent.Load(nodes[index]);
+                        }
+                        break;
+                }
+            }
+        }
+        #endregion
+    }
 }

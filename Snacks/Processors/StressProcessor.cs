@@ -112,6 +112,73 @@ namespace Snacks
             SnacksScenario.onRosterResourceUpdated.Remove(onRosterResourceUpdated);
         }
 
+        public override void onKerbalBoardedVessel(ProtoCrewMember astronaut, Part part)
+        {
+            if (part == null || part.vessel == null)
+                return;
+            ProtoCrewMember[] astronauts = null;
+            AstronautData astronautData = null;
+            Vessel vessel = part.vessel;
+            SnacksProcessorResult result = new SnacksProcessorResult();
+            SnacksRosterResource resource;
+            bool completedSuccessfully = true;
+
+            //Get the crew manifest
+            if (vessel.loaded)
+                astronauts = vessel.GetVesselCrew().ToArray();
+            else
+                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+            if (astronauts.Length == 0)
+                return;
+
+            //Update max space
+            updateMaxSpace(part.vessel);
+
+            result.crewCount = astronauts.Length;
+            result.crewCapacity = astronauts.Length;
+            result.resourceName = StressResourceName;
+            result.completedSuccessfully = true;
+
+            //Now make sure kerbals aren't stressed out, or apply outcomes if they are.
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                //Reset flag
+                completedSuccessfully = true;
+
+                //Get astronaut data
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+                if (astronautData == null)
+                    continue;
+                if (!astronautData.rosterResources.ContainsKey(StressResourceName))
+                    continue;
+
+                //Get the Stress roster resource
+                resource = astronautData.rosterResources[StressResourceName];
+
+                //Check for failure conditions
+                if (resource.amount >= resource.maxAmount)
+                {
+                    //Set the flags
+                    completedSuccessfully = false;
+                    result.completedSuccessfully = false;
+
+                    //Incease affected kerbal count
+                    result.affectedKerbalCount += 1;
+
+                    //Add astronaut to the affected list
+                    if (result.afftectedAstronauts == null)
+                        result.afftectedAstronauts = new List<ProtoCrewMember>();
+                    result.afftectedAstronauts.Add(astronauts[index]);
+                }
+            }
+
+            //Process results
+            if (!completedSuccessfully)
+                applyFailureOutcomes(vessel, result);
+            else
+                removeFailureOutcomes(vessel);
+        }
+
         public override void ProcessResources(Vessel vessel, double elapsedTime, int crewCount, int crewCapacity)
         {
             ProtoCrewMember[] astronauts = null;
@@ -219,6 +286,10 @@ namespace Snacks
         #region Helpers
         protected void onRosterResourceUpdated(Vessel vessel, SnacksRosterResource rosterResource, AstronautData astronautData, ProtoCrewMember astronaut)
         {
+            //Make sure it's a resource we're interested in.
+            if (!rosterResource.resourceName.Contains(StressConditionName))
+                return;
+
             //If the resource has gone down below max, then remove the stress condition.
             if (rosterResource.amount < rosterResource.maxAmount && astronautData.conditionSummary.Contains(StressConditionName))
             {

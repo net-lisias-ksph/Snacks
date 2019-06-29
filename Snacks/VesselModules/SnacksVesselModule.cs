@@ -36,6 +36,7 @@ namespace Snacks
         #region Constants
         public const string SnacksVesselModuleNode = "SnacksVesselModule";
         public const string ValueSolarFlux = "solarFlux";
+        public const string ValueGeeForce = "geeForce";
         public const string ValueSciencePenalties = "sciencePenalties";
         #endregion
 
@@ -76,6 +77,8 @@ namespace Snacks
             node.AddValue(ValueSolarFlux, SnacksScenario.GetSolarFlux(vessel));
 
             node.AddValue(ValueSciencePenalties, sciencePenalties);
+
+            node.AddValue(ValueGeeForce, vessel.graviticAcceleration.magnitude);
         }
 
         protected override void OnLoad(ConfigNode node)

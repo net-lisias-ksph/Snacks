@@ -33,17 +33,52 @@ using KSP.UI.Screens;
 
 namespace Snacks
 {
+    #region Enums
+    /// <summary>
+    /// This enum specifies the diffent types of emails to send during background processing.
+    /// </summary>
     public enum SnacksBackroundEmailTypes
     {
+        /// <summary>
+        /// The processor is missing an input resource.
+        /// </summary>
         missingResources,
+
+        /// <summary>
+        /// The processor is missing a required resource.
+        /// </summary>
         missingRequiredResource,
+
+        /// <summary>
+        /// The vessel is out of room.
+        /// </summary>
         containerFull,
+
+        /// <summary>
+        /// The yield experienced a critical failure.
+        /// </summary>
         yieldCriticalFail,
+
+        /// <summary>
+        /// The yield has had a critical success.
+        /// </summary>
         yieldCriticalSuccess,
+
+        /// <summary>
+        /// The yield amount was lower than normal.
+        /// </summary>
         yieldLower,
+
+        /// <summary>
+        /// The yield amount was normal.
+        /// </summary>
         yieldNominal
     }
+    #endregion
 
+    /// <summary>
+    /// This class runs active converters in the background, consuming inputs, producing outputs, and yielding resources.
+    /// </summary>
     public class SnacksBackgroundConverter
     {
         public static string NodeName = "SnacksBackgroundConverter";
@@ -61,6 +96,48 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
+        /// <summary>
+        /// Name of the converter
+        /// </summary>
+        public string ConverterName = string.Empty;
+
+        /// <summary>
+        /// Name of the converter part module.
+        /// </summary>
+        public string moduleName = string.Empty;
+
+        /// <summary>
+        /// Flag indicating that the converter is active.
+        /// </summary>
+        public bool IsActivated = false;
+
+        /// <summary>
+        /// Flag indicating that the converter is missing resources.
+        /// </summary>
+        public bool isMissingResources = false;
+
+        /// <summary>
+        /// Flag indicating that the container is full.
+        /// </summary>
+        public bool isContainerFull = false;
+
+        /// <summary>
+        /// The input efficiency.
+        /// </summary>
+        public double inputEfficiency = 1.0f;
+
+        /// <summary>
+        /// The output efficiency.
+        /// </summary>
+        public double outputEfficiency = 1.0f;
+
+        bool UseSpecialistBonus = false;
+        float SpecialistBonusBase = 0.05f;
+        float SpecialistEfficiencyFactor = 0.1f;
+        string ExperienceEffect = string.Empty;
+        double cycleStartTime = 0;
+        bool isGenerator = false;
+
         List<ResourceRatio> inputList = new List<ResourceRatio>();
         List<ResourceRatio> outputList = new List<ResourceRatio>();
         List<ResourceRatio> requiredList = new List<ResourceRatio>();
@@ -70,20 +147,6 @@ namespace Snacks
         string requiredResourceNames = string.Empty;
         string yieldResourceNames = string.Empty;
 
-        public string ConverterName = string.Empty;
-        public string moduleName = string.Empty;
-        public bool IsActivated = false;
-        public bool isMissingResources = false;
-        public bool isContainerFull = false;
-        public double inputEfficiency = 1.0f;
-        public double outputEfficiency = 1.0f;
-        bool UseSpecialistBonus = false;
-        float SpecialistBonusBase = 0.05f;
-        float SpecialistEfficiencyFactor = 0.1f;
-        string ExperienceEffect = string.Empty;
-        double cycleStartTime = 0;
-        bool isGenerator = false;
-
         ProtoPartSnapshot protoPart;
         ProtoPartModuleSnapshot moduleSnapshot;
         Dictionary<string, List<ProtoPartResourceSnapshot>> protoResources = new Dictionary<string, List<ProtoPartResourceSnapshot>>();
@@ -92,6 +155,10 @@ namespace Snacks
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Parses a vessel to find active converters to run in the background.
+        /// </summary>
+        /// <returns>A map keyed by Vessel that has a list of running converters to run in the background.</returns>
         public static Dictionary<Vessel, List<SnacksBackgroundConverter>> GetBackgroundConverters()
         {
             string moduleWatchlist = "SnacksConverter;SnacksProcessor;SoilRecycler";
@@ -241,6 +308,12 @@ namespace Snacks
             return backgroundConverters;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.SnacksBackgroundConverter"/> class.
+        /// </summary>
+        /// <param name="protoPart">The ProtPartSnapshot that hosts the converter.</param>
+        /// <param name="protoModule">The ProtoPartModuleSnapshot representing the converter.</param>
+        /// <param name="moduleIndex">The module index.</param>
         public SnacksBackgroundConverter(ProtoPartSnapshot protoPart, ProtoPartModuleSnapshot protoModule, int moduleIndex)
         {
             ConfigNode[] moduleNodes;
@@ -337,6 +410,9 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.SnacksBackgroundConverter"/> class.
+        /// </summary>
         public SnacksBackgroundConverter()
         {
 
@@ -344,6 +420,11 @@ namespace Snacks
         #endregion
 
         #region Converter Operations
+        /// <summary>
+        /// Checks to be sure the vessel has the required resources.
+        /// </summary>
+        /// <param name="vessel">The Vessel to check.</param>
+        /// <param name="elapsedTime">The seconds that have elapsed.</param>
         public void CheckRequiredResources(ProtoVessel vessel, double elapsedTime)
         {
             int count = requiredList.Count;
@@ -367,6 +448,11 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Consumes the input resources.
+        /// </summary>
+        /// <param name="vessel">The Vessel to consume resources from.</param>
+        /// <param name="elapsedTime">Converter elapsed time.</param>
         public void ConsumeInputResources(ProtoVessel vessel, double elapsedTime)
         {
             int count = inputList.Count;
@@ -440,6 +526,11 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Produces the output resources.
+        /// </summary>
+        /// <param name="vessel">The Vessel to add resources to.</param>
+        /// <param name="elapsedTime">Converter elapsed time.</param>
         public void ProduceOutputResources(ProtoVessel vessel, double elapsedTime)
         {
             int count = outputList.Count;
@@ -494,6 +585,10 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Produces the yield resources
+        /// </summary>
+        /// <param name="vessel">The Vessel to add resources to.</param>
         public void ProduceyieldsList(ProtoVessel vessel)
         {
             int count = yieldsList.Count;
@@ -568,6 +663,10 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Prepares the converter to process.
+        /// </summary>
+        /// <param name="vessel">The Vessel to check for preparations.</param>
         public void PrepareToProcess(ProtoVessel vessel)
         {
             //Find out proto part and module and resources
@@ -674,6 +773,10 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Handles post process tasks for the converter.
+        /// </summary>
+        /// <param name="vessel">The Vessel to update.</param>
         public void PostProcess(ProtoVessel vessel)
         {
             if (isGenerator)

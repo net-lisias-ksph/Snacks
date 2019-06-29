@@ -1,22 +1,16 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workbench ActiveDocument="AstronautClasses/AstronautData.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="SettingsAndScenario/SnacksScenario.cs">
     <Files>
-      <File FileName="Processors/BaseResourceProcessor.cs" Line="474" Column="45" />
-      <File FileName="SettingsAndScenario/SnacksScenario.cs" Line="400" Column="33" />
-      <File FileName="AstronautClasses/AstronautData.cs" Line="225" Column="18" />
+      <File FileName="SettingsAndScenario/SnacksScenario.cs" Line="569" Column="56" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
           <Node name="Snacks" expanded="True">
             <Node name="Snacks" expanded="True">
-              <Node name="AstronautClasses" expanded="True">
-                <Node name="AstronautData.cs" selected="True" />
+              <Node name="SettingsAndScenario" expanded="True">
+                <Node name="SnacksScenario.cs" selected="True" />
               </Node>
-              <Node name="Processors" expanded="True" />
-              <Node name="Properties" expanded="True" />
-              <Node name="ResourceClasses" expanded="True" />
-              <Node name="SettingsAndScenario" expanded="True" />
             </Node>
           </Node>
         </State>

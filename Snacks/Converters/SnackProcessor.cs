@@ -30,19 +30,36 @@ SOFTWARE.
  * */
 namespace Snacks
 {
+    /// <summary>
+    /// The SnacksProcessor grinds out Snacks from Ore. It is derived from the SnacksConverter. The output of the
+    /// processor is affected by the game settings.
+    /// </summary>
     public class SnackProcessor : SnacksConverter
     {
+        /// <summary>
+        /// A status field showing the daily output of Snacks.
+        /// </summary>
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "Max Production")]
         public string dailyOutput = string.Empty;
 
+        /// <summary>
+        /// Helper field describing the original output ratio of Snacks.
+        /// </summary>
         [KSPField(isPersistant = true)]
         public double originalSnacksRatio;
 
+        /// <summary>
+        /// Helper field to describe the original input ratio of Ore
+        /// </summary>
         [KSPField(isPersistant = true)]
         public double sourceInputRatio;
 
         protected double productionEfficiency = 0f;
 
+        /// <summary>
+        /// Gets the daily snacks output.
+        /// </summary>
+        /// <returns>The amount of Snacks produced daily, subjected to game settings.</returns>
         public virtual double GetDailySnacksOutput()
         {
             updateProductionEfficiency();

@@ -31,6 +31,16 @@ using KSP.IO;
 
 namespace Snacks
 {
+    /// <summary>
+    /// This outcome reduces the space agency's reputation based on the supplied parameters.
+    /// Example definition:
+    /// OUTCOME 
+    /// {
+    ///     name  = RepPenalty
+    ///     repLossPerKerbal = 5
+    /// }
+    /// </summary>   
+
     public class RepPenalty : BaseOutcome
     {
         #region Constants
@@ -38,16 +48,30 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
-        float repLossPerKerbal = 0;
+        /// <summary>
+        /// The rep loss per kerbal.
+        /// </summary>
+        public float repLossPerKerbal = 0;
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.RepPenalty"/> class.
+        /// </summary>
+        /// <param name="node">A ConfigNode containing initialization parameters. Parameters in the
+        /// <see cref="T:Snacks.BaseOutcome"/> class also apply.</param>
         public RepPenalty(ConfigNode node) : base (node)
         {
             if (node.HasValue(ValueRepLossPerKerbal))
                 float.TryParse(node.GetValue(ValueRepLossPerKerbal), out repLossPerKerbal);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.RepPenalty"/> class.
+        /// </summary>
+        /// <param name="canBeRandom">If set to <c>true</c> it can be randomly selected from the outcomes list.</param>
+        /// <param name="repLossPerKerbal">Rep loss per kerbal.</param>
+        /// <param name="playerMessage">A string containing the bad news.</param>
         public RepPenalty(bool canBeRandom, float repLossPerKerbal, string playerMessage) : base(canBeRandom)
         {
             this.repLossPerKerbal = repLossPerKerbal;
@@ -78,6 +102,9 @@ namespace Snacks
                         ScreenMessages.PostScreenMessage(playerMessage, 5, ScreenMessageStyle.UPPER_LEFT);
                 }
             }
+
+            //Call the base class
+            base.ApplyOutcome(vessel, result);
         }
         #endregion
     }

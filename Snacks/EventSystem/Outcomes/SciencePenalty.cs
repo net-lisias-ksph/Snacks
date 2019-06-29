@@ -31,13 +31,31 @@ using KSP.IO;
 
 namespace Snacks
 {
+    /// <summary>
+    /// This outcome disrupts science experiments aboard a vessel.
+    /// Example definition:
+    /// OUTCOME 
+    /// {
+    ///     name  = SciencePenalty
+    /// }
+    /// </summary>   
+
     public class SciencePenalty : BaseOutcome
     {
         #region Constructors
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.SciencePenalty"/> class.
+        /// </summary>
+        /// <param name="node">A ConfigNode containing initialization parameters. Parameters in the
+        /// <see cref="T:Snacks.BaseOutcome"/> class also apply.</param>
         public SciencePenalty(ConfigNode node) : base (node)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.SciencePenalty"/> class.
+        /// </summary>
+        /// <param name="canBeRandom">If set to <c>true</c> it can be randomly selected from the outcomes list.</param>
         public SciencePenalty(bool canBeRandom) : base(canBeRandom)
         {
 
@@ -101,6 +119,9 @@ namespace Snacks
                     }
                 }
             }
+
+            //Call the base class
+            base.ApplyOutcome(vessel, result);
         }
         #endregion
 

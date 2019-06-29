@@ -31,28 +31,56 @@ using KSP.IO;
 
 namespace Snacks
 {
+    /// <summary>
+    /// This outcome causes affected kerbals to die.
+    /// Example definition:
+    /// OUTCOME 
+    /// {
+    ///     name  = DeathPenalty
+    ///     resourceName = Snacks
+    ///     cyclesBeforeDeath = 10
+    /// }
+    /// </summary>   
     public class DeathPenalty : BaseOutcome
     {
         #region Constants
-        const string ValueResourceName = "resourceName";
         const string ValueCyclesBeforeDeath = "cyclesBeforeDeath";
         #endregion
 
         #region Housekeeping
-        protected string resourceName = string.Empty;
-        protected int cyclesBeforeDeath = 0;
+        /// <summary>
+        /// The name of the resource to check for failed processor cycles.
+        /// </summary>
+        public string resourceName = string.Empty;
+
+        /// <summary>
+        /// The number of cycles that must fail before the kerbal dies.
+        /// </summary>
+        public int cyclesBeforeDeath = 0;
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.DeathPenalty"/> class.
+        /// </summary>
+        /// <param name="node">A ConfigNode containing initialization parameters. Parameters in the
+        /// <see cref="T:Snacks.BaseOutcome"/> class also apply.</param>
         public DeathPenalty(ConfigNode node) : base (node)
         {
-            if (node.HasValue(ValueResourceName))
-                resourceName = node.GetValue(ValueResourceName);
+            if (node.HasValue(ResourceName))
+                resourceName = node.GetValue(ResourceName);
 
             if (node.HasValue(ValueCyclesBeforeDeath))
                 int.TryParse(node.GetValue(ValueCyclesBeforeDeath), out cyclesBeforeDeath);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.DeathPenalty"/> class.
+        /// </summary>
+        /// <param name="resourceName">The name of the resource to check. If no processor has a failed cycle with the resource
+        /// then the outcome is invalidated.</param>
+        /// <param name="cyclesBeforeDeath">The number of failed processor cycles required before applying the outcome.</param>
+        /// <param name="playerMessage">A string containing the bad news for the player.</param>
         public DeathPenalty(string resourceName, int cyclesBeforeDeath, string playerMessage)
         {
             this.resourceName = resourceName;
@@ -119,6 +147,9 @@ namespace Snacks
                 Debug.Log("[DeathPenalty] - " + message);
                 ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_CENTER);
             }
+
+            //Call the base class
+            base.ApplyOutcome(vessel, result);
         }
 
         public static void CheckDeadKerbals(Vessel vessel)

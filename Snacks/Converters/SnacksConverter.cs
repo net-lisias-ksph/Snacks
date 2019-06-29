@@ -31,13 +31,39 @@ SOFTWARE.
  * */
 namespace Snacks
 {
+    #region Structs
+    /// <summary>
+    /// The SnacksRosterRatio is a helper struct that is similar to a ResourceRatio,
+    /// but it's designed for use with roster resources (characteristics of a kerbal).
+    /// </summary>
     public struct SnacksRosterRatio
     {
+        /// <summary>
+        /// The name of the resource.
+        /// </summary>
         public string ResourceName;
+
+        /// <summary>
+        /// The amount per day. This value overwrites AmountPerSecond and is based
+        /// on the homeworld's second per day.
+        /// </summary>
         public double AmountPerDay;
+
+        /// <summary>
+        /// The amount per second.
+        /// </summary>
         public double AmountPerSecond;
     }
+    #endregion
 
+    /// <summary>
+    /// An enhanced version of ModuleResourceConverter, the SnacksConverter offers a number of enhancements including
+    /// producing resources after a set number of hours have elapsed (defined by YIELD_RESOURCES nodes), the ability to
+    /// produce the yield resources based on the result of a random number generation, an optional flag that results in the part
+    /// exploding as a result of a critical failure roll, an optional flag that can prevent the converter from being
+    /// shut off, the ability to play effects, and the ability to be run in the background (when the vessel isn't loaded
+    /// into the scene).
+    /// </summary>
     public class SnacksConverter: ModuleResourceConverter
     {
         #region constants
@@ -87,18 +113,46 @@ namespace Snacks
         public string runningEffect = string.Empty;
         #endregion
 
-        #region Fields
+        #region Converter Fields
+        /// <summary>
+        /// This is a threshold value to ensure that the converter will shut off if the vessel's
+        /// ElectricCharge falls below the specified percentage. It is ignored if the converter doesn't
+        /// use ElectricCharge.
+        /// </summary>
         [KSPField]
         public int minimumVesselPercentEC = 5;
 
+        /// <summary>
+        /// This flag tells the converter to check for a connection to the homeworld if set to true.
+        /// If no connection is present, then the converter operations are suspended. It requires
+        /// CommNet to be enabled.
+        /// </summary>
         [KSPField]
         public bool requiresHomeConnection;
 
+        /// <summary>
+        /// This field specifies the minimum number of crew required to operate the converter. If the part
+        /// lacks the minimum required crew, then operations are suspended.
+        /// </summary>
         [KSPField]
         public int minimumCrew = 0;
 
+        /// <summary>
+        /// This field specifies the condition summary to set when a kerbal enters the part and the converter is
+        /// running. For example, the kerbal could be Relaxing. The condition summary appears in the kerbal's
+        /// condition summary display. Certain conditions will result a loss of skills for the duration that the 
+        /// converter is running. For that to happen, be sure to define a SKILL_LOSS_CONDITION config node with
+        /// the name of the condition.
+        /// </summary>
         [KSPField]
         public string conditionSummary = string.Empty;
+
+        /// <summary>
+        /// This field indicates whether or not the converter can be shut down. If set to false, then the converter
+        /// will remove the shutdown and toggle actions and disable the shutdown button.
+        /// </summary>
+        [KSPField]
+        public bool canBeShutdown = true;
         #endregion
 
         #region Background Processing Fields
@@ -111,22 +165,32 @@ namespace Snacks
 
         #region Timed Resource Fields
         /// <summary>
-        /// On a roll of 1 - 100, the minimum roll required to declare a successful resource yield. Set to 0 if you don't want to roll for success.
+        /// Minimum die roll
         /// </summary>
-        [KSPField]
-        public float minimumSuccess;
+        public int dieRollMin = 1;
 
         /// <summary>
-        /// On a roll of 1 - 100, minimum roll for a resource yield to be declared a critical success.
+        /// Maximum die roll
         /// </summary>
-        [KSPField]
-        public float criticalSuccess;
+        public int dieRollMax = 100;
 
         /// <summary>
-        /// On a roll of 1 - 100, the maximum roll for a resource yield to be declared a critical failure.
+        /// On a roll of dieRollMin - dieRollMax, the minimum roll required to declare a successful resource yield. Set to 0 if you don't want to roll for success.
         /// </summary>
         [KSPField]
-        public float criticalFail;
+        public int minimumSuccess;
+
+        /// <summary>
+        /// On a roll of dieRollMin - dieRollMax, minimum roll for a resource yield to be declared a critical success.
+        /// </summary>
+        [KSPField]
+        public int criticalSuccess;
+
+        /// <summary>
+        /// On a roll of dieRollMin - dieRollMax, the maximum roll for a resource yield to be declared a critical failure.
+        /// </summary>
+        [KSPField]
+        public int criticalFail;
 
         /// <summary>
         /// How many hours to wait before producing resources defined by YIELD_RESOURCE nodes.
@@ -169,6 +233,12 @@ namespace Snacks
         /// </summary>
         [KSPField]
         public double failureMultiplier = 1.0;
+
+        /// <summary>
+        /// Flag to indicate whether or not the part explodes if the yield roll critically fails.
+        /// </summary>
+        [KSPField]
+        public bool explodeUponCriticalFail = false;
         #endregion
 
         #region Housekeeping
@@ -178,13 +248,40 @@ namespace Snacks
         [KSPField(isPersistant = true)]
         public double outputEfficiency = 1f;
 
-        //Timekeeping for producing resources after a set amount of time.
+        /// <summary>
+        /// The amount of time that has passed since the converter was last checked if it should produce yield resources.
+        /// </summary>
         public double elapsedTime;
+
+        /// <summary>
+        /// The number of seconds per yield cycle.
+        /// </summary>
         public double secondsPerCycle = 0f;
+
+        /// <summary>
+        /// The list of resources to produce after the elapsedTime matches the secondsPerCycle.
+        /// </summary>
         public List<ResourceRatio> yieldsList = new List<ResourceRatio>();
+
+        /// <summary>
+        /// Similar to an input list, this list contains the roster resources to consume during the
+        /// converter's processing.
+        /// </summary>
         public List<SnacksRosterRatio> rosterInputList = new List<SnacksRosterRatio>();
+
+        /// <summary>
+        /// Similar to an output list, this list contains the roster resources to produce during the converter's processing.
+        /// </summary>
         public List<SnacksRosterRatio> rosterOutputList = new List<SnacksRosterRatio>();
+
+        /// <summary>
+        /// The converter is missing resources. If set to true then the converter's operations are suspended.
+        /// </summary>
         protected bool missingResources;
+
+        /// <summary>
+        /// The efficieny bonus of the crew.
+        /// </summary>
         protected float crewEfficiencyBonus = 1.0f;
         #endregion
 
@@ -443,6 +540,15 @@ namespace Snacks
             else if (HighLogic.LoadedSceneIsEditor)
                 ResetSettings();
 
+            //Hide action buttons if needed
+            if (!canBeShutdown)
+            {
+                Actions["StopResourceConverterAction"].active = false;
+                Actions["StopResourceConverterAction"].actionGroup = KSPActionGroup.None;
+                Actions["ToggleResourceConverterAction"].active = false;
+                Actions["ToggleResourceConverterAction"].actionGroup = KSPActionGroup.None;
+            }
+
             //Load yield resources if needed
             loadYieldsList();
             if (yieldsList.Count == 0)
@@ -479,10 +585,16 @@ namespace Snacks
 
             SetConditionIfNeeded();
             PreProcessing();
+
+            //Slight chance to go boom upon start...
+            if (explodeUponCriticalFail)
+                PerformAnalysis();
         }
 
         public override void StopResourceConverter()
         {
+            if (!canBeShutdown)
+                return;
             base.StopResourceConverter();
             progress = "None";
             timeRemainingDisplay = "N/A";
@@ -742,6 +854,25 @@ namespace Snacks
             PostUpdateCleanup();
         }
 
+        protected override void UpdateConverterStatus()
+        {
+            if (DirtyFlag == IsActivated)
+                return;
+            DirtyFlag = IsActivated;
+
+            if (IsActivated)
+                status = Localizer.Format("#autoLOC_257237");
+
+            stopEvt.active = this.IsActivated;
+            startEvt.active = !this.IsActivated;
+
+            //if we can't shut down then hide the stop button.
+            if (!canBeShutdown)
+                stopEvt.active = false;
+
+            MonoUtilities.RefreshContextWindows(this.part);
+        }
+
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
             base.PostProcess(result, deltaTime);
@@ -869,6 +1000,15 @@ namespace Snacks
                 yieldsList.Add(yieldResource);
             }
         }
+
+        /// <summary>
+        /// Performs the analysis roll to determine how many yield resources to produce.
+        /// The roll must meet or exceed the minimumSuccess required in order to produce a nominal
+        /// yield (the amount specified in a YIELD_RESOURCE's Ratio entry). If the roll fails,
+        /// then a lower than normal yield is produced. If the roll exceeds the criticalSuccess number,
+        /// then a higher than normal yield is produced. If the roll falls below the criticalFailure number,
+        /// then no yield is produced, and the part will explode if the explodeUponCriticalFailure flag is set.
+        /// </summary>
         public virtual void PerformAnalysis()
         {
             //If we have no minimum success then just produce the yield resources.
@@ -879,7 +1019,7 @@ namespace Snacks
             }
 
             //Ok, go through the analysis.
-            float analysisRoll = performAnalysisRoll();
+            int analysisRoll = performAnalysisRoll();
 
             if (analysisRoll <= criticalFail)
                 onCriticalFailure();
@@ -895,18 +1035,9 @@ namespace Snacks
 
         }
 
-        protected virtual float performAnalysisRoll()
+        protected virtual int performAnalysisRoll()
         {
-            float roll = 0.0f;
-
-            //Roll 3d6 to approximate a bell curve, then convert it to a value between 1 and 100.
-            roll = UnityEngine.Random.Range(1, 6);
-            roll += UnityEngine.Random.Range(1, 6);
-            roll += UnityEngine.Random.Range(1, 6);
-            roll *= 5.5556f;
-
-            //Done
-            return roll;
+            return UnityEngine.Random.Range(dieRollMin, dieRollMax);
         }
 
         protected virtual void onCriticalFailure()
@@ -917,6 +1048,16 @@ namespace Snacks
 
             //Show user message
             ScreenMessages.PostScreenMessage(ConverterName + ": " + criticalFailMessage, kMessageDuration);
+
+            //Explode if required.
+            if (explodeUponCriticalFail)
+            {
+                //Add some stress. Exploding parts aren't exactly calming...
+                SnacksScenario.AddStressToCrew(this.part.vessel, UnityEngine.Random.Range(0.1f, 1.25f));
+
+                //Now go boom.
+                this.part.explode();
+            }
         }
 
         protected virtual void onCriticalSuccess()
@@ -983,6 +1124,9 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Calculates and updates the progress of the yield production cycle.
+        /// </summary>
         public virtual void CalculateProgress()
         {
             //Get elapsed time (seconds)
@@ -1094,6 +1238,7 @@ namespace Snacks
             }
         }
 
+        //Sets the summaryCondition on all kerbals in the part if they don't already have it set.
         public void SetConditionIfNeeded()
         {
             if (IsActivated && !string.IsNullOrEmpty(conditionSummary))
@@ -1110,6 +1255,9 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Removes the summaryCondition from all kerbals in the part if they have it set.
+        /// </summary>
         public void RemoveConditionIfNeeded()
         {
             if (!IsActivated && !string.IsNullOrEmpty(conditionSummary))

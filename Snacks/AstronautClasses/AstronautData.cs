@@ -29,6 +29,15 @@ using UnityEngine;
 
 namespace Snacks
 {
+    /// <summary>
+    /// This class contains data related to a kerbal. Information includes
+    /// roster resources (characteristics of the kerbal akin to Courage and Stupidity),
+    /// a condition summary specifying what states the kerbal is in,
+    /// a list of disqualified conditions that will auto-fail precondition checks,
+    /// a list of processor successes and failures,
+    /// a key-value map suitable for tracking states in the event system,
+    /// an exempt flag that exempts the kerbal from all outcomes.
+    /// </summary>
     public class AstronautData
     {
         #region Constants
@@ -38,6 +47,7 @@ namespace Snacks
         const string AstronautNodeUpdated = "lastUpdated";
         const string AstronautNodeExempt = "isExempt";
         const string AstronautNodeCondition = "conditionSummary";
+        const string AstronautNodeDisqualifiers = "disqualifiedPreconditions";
 
         const string ResourceCounterNode = "RESOURCE_COUNT";
         const string ResourceCounterIsSuccess = "isSuccess";
@@ -50,19 +60,66 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
+        /// <summary>
+        /// Name of the kerbal.
+        /// </summary>
         public string name;
+
+        /// <summary>
+        /// The kerba's current experience trait.
+        /// </summary>
         public string experienceTrait;
+
+        /// <summary>
+        /// Timestamp of when the astronaut data was last update.
+        /// </summary>
         public double lastUpdated;
-        public int mealsMissed;
+
+        /// <summary>
+        /// Flag to indicate that the kerbal is exempt from outcomes.
+        /// </summary>
         public bool isExempt;
+
+        /// <summary>
+        /// Summary of all the conditions that the kerbal currently has. If a
+        /// condition in the summary is defined in a SKILL_LOSS_CONDITION config node,
+        /// then the kerbal will lose its skills until the condition is cleared.
+        /// </summary>
         public string conditionSummary = string.Empty;
+
+        /// <summary>
+        /// A map of key-value pairs.
+        /// </summary>
         public DictionaryValueList<string, string> keyValuePairs;
+
+        /// <summary>
+        /// Map of successful process cycles. The key is the name of the processor,
+        /// the value is the number of successes.
+        /// </summary>
         public Dictionary<string, int> processedResourceSuccesses;
+
+        /// <summary>
+        /// Map of unsuccessfull process cycles. The key is the name of the processor,
+        /// the value is the number of failures.
+        /// </summary>
         public Dictionary<string, int> processedResourceFailures;
+
+        /// <summary>
+        /// A map of roster resources (characteristics of the kerbal), similar to
+        /// vessel resources.
+        /// </summary>
         public Dictionary<string, SnacksRosterResource> rosterResources;
+
+        /// <summary>
+        /// Conditions that will automatically disqualify a precondition check.
+        /// </summary>
+        public string disqualifiedPreconditions = string.Empty;
         #endregion
 
         #region Constructors
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Snacks.AstronautData"/> class.
+        /// </summary>
         public AstronautData()
         {
             keyValuePairs = new DictionaryValueList<string, string>();
@@ -81,6 +138,11 @@ namespace Snacks
             }
         }
 
+        /// <summary>
+        /// Loads the astronaut data from the config node supplied.
+        /// </summary>
+        /// <returns>A map keyed kerbal name that contains astronaut data.</returns>
+        /// <param name="node">The ConfigNode to read data from.</param>
         public static DictionaryValueList<string, AstronautData> Load(ConfigNode node)
         {
             DictionaryValueList<string, AstronautData> crewData = new DictionaryValueList<string, AstronautData>();
@@ -99,6 +161,9 @@ namespace Snacks
 
                     if (astronautNode.HasValue(AstronautNodeCondition))
                         astronautData.conditionSummary = astronautNode.GetValue(AstronautNodeCondition);
+
+                    if (astronautNode.HasValue(AstronautNodeDisqualifiers))
+                        astronautData.disqualifiedPreconditions = astronautNode.GetValue(AstronautNodeDisqualifiers);
 
                     //Key value pairs
                     astronautData.keyValuePairs = new DictionaryValueList<string, string>();
@@ -148,6 +213,11 @@ namespace Snacks
             return crewData;
         }
 
+        /// <summary>
+        /// Saves persistent astronaut data to the supplied config node.
+        /// </summary>
+        /// <param name="crewData">A map of astronaut data, keyed by kerbal name.</param>
+        /// <param name="node">The ConfigNode to save the data to.</param>
         public static void Save(DictionaryValueList<string, AstronautData> crewData, ConfigNode node)
         {
             List<AstronautData>.Enumerator dataValues = crewData.GetListEnumerator();
@@ -167,6 +237,9 @@ namespace Snacks
 
                 if (!string.IsNullOrEmpty(astronautData.conditionSummary))
                     astronautNode.AddValue(AstronautNodeCondition, astronautData.conditionSummary);
+
+                if (!string.IsNullOrEmpty(astronautData.disqualifiedPreconditions))
+                    astronautNode.AddValue(AstronautNodeDisqualifiers, astronautData.disqualifiedPreconditions);
 
                 //Save keyvalue pairs
                 keys = astronautData.keyValuePairs.Keys.ToArray();
@@ -208,6 +281,40 @@ namespace Snacks
         #endregion
 
         #region API
+        /// <summary>
+        /// Sets a disqualifier that will automatically fail a precondition check.
+        /// </summary>
+        /// <param name="disqualifier">The name of the disqualifier to set.</param>
+        public void SetDisqualifier(string disqualifier)
+        {
+            if (string.IsNullOrEmpty(disqualifiedPreconditions))
+                disqualifiedPreconditions = disqualifier;
+
+            else if (!conditionSummary.Contains(disqualifier))
+                disqualifiedPreconditions += ", " + disqualifier;
+        }
+
+        /// <summary>
+        /// Clears a disqualifier that will no longer fail a precondition check.
+        /// </summary>
+        /// <param name="disqualifier">The name of the disqualifier to clear.</param>
+        public void ClearDisqualifier(string disqualifier)
+        {
+            if (disqualifiedPreconditions == disqualifier)
+                disqualifiedPreconditions = string.Empty;
+
+            else if (conditionSummary.Contains(disqualifier))
+            {
+                disqualifiedPreconditions = disqualifiedPreconditions.Replace(", " + disqualifier, "");
+                disqualifiedPreconditions = disqualifiedPreconditions.Replace(disqualifier + ", ", "");
+            }
+        }
+
+        /// <summary>
+        /// Sets a condition that could result in loss of skills if defined in a SKILL_LOSS_CONDITION config node.
+        /// The condition will appear in the kerbal's condition summary in the status window.
+        /// </summary>
+        /// <param name="condition">The name of the condition to set.</param>
         public void SetCondition(string condition)
         {
             if (string.IsNullOrEmpty(conditionSummary))
@@ -217,6 +324,12 @@ namespace Snacks
                 conditionSummary += ", " + condition;
         }
 
+        /// <summary>
+        /// Clears a condition, removing it from the condition summary display. If the condition is defined in
+        /// a SKILL_LOSS_CONDITION config node, and the kerbal has no other conditions that result from skill loss,
+        /// then the kerbal will regain its skills.
+        /// </summary>
+        /// <param name="condition">The name of the condition to clear.</param>
         public void ClearCondition(string condition)
         {
             if (conditionSummary == condition)

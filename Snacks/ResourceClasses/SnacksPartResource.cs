@@ -126,6 +126,8 @@ namespace Snacks
         /// <param name="part"></param>
         public void addResourcesIfNeeded(Part part)
         {
+            if (part == null)
+                return;
             if (part.CrewCapacity <= 0)
                 return;
             PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;

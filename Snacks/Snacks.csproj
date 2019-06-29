@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\xmldoc2md.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -61,8 +62,27 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventSystem\Preconditions\CheckSkillLevel.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckSkill.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckTrait.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckCourage.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckStupidity.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckHomeworldConnection.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckCrewCount.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckBadass.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckVesselStatus.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckGravityLevel.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckKeyValue.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckCondition.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckRandomChance.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckProcessorResult.cs" />
+    <Compile Include="EventSystem\Outcomes\ClearKeyValue.cs" />
+    <Compile Include="EventSystem\Outcomes\ClearCondition.cs" />
+    <Compile Include="EventSystem\Outcomes\ConsumeResource.cs" />
+    <Compile Include="EventSystem\Preconditions\BasePrecondition.cs" />
     <Compile Include="EventSystem\Outcomes\OnStrikePenalty.cs" />
     <Compile Include="EventSystem\Outcomes\ProduceResource.cs" />
+    <Compile Include="EventSystem\Preconditions\CheckResource.cs" />
     <Compile Include="ResourceClasses\ProcessedResource.cs" />
     <Compile Include="Processors\BaseResourceProcessor.cs" />
     <Compile Include="AstronautClasses\AstronautData.cs" />
@@ -73,6 +93,9 @@
     <Compile Include="Processors\StressProcessor.cs" />
     <Compile Include="GUI\SnacksIntroScreen.cs" />
     <Compile Include="EventSystem\SnacksEvent.cs" />
+    <Compile Include="EventSystem\Outcomes\SetCondition.cs" />
+    <Compile Include="EventSystem\Outcomes\SetKeyValue.cs" />
+    <Compile Include="EventSystem\SnacksDisqualifier.cs" />
     <Compile Include="VesselModules\SnacksVesselModule.cs" />
     <Compile Include="EventSystem\Outcomes\RepPenalty.cs" />
     <Compile Include="EventSystem\Outcomes\SciencePenalty.cs" />
@@ -101,10 +124,24 @@
     <Compile Include="EventSystem\Outcomes\BaseOutcome.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="EventSystem\Preconditions\" />
+    <None Include="RunMDSeparator.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="RunPowershell.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="xmldoc2md.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="MarkdownSeparator.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Textures\snacks.png" />
+    <Content Include="xmldoc2md.xsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
