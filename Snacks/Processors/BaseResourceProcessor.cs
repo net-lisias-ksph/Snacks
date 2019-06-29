@@ -124,6 +124,7 @@ namespace Snacks
         #endregion
 
         #region Housekeeping
+        public List<BasePrecondition> preconditions;
         public List<ProcessedResource> inputList;
         public List<ProcessedResource> outputList;
         public Dictionary<string, SnacksProcessorResult> consumptionResults;
@@ -135,6 +136,7 @@ namespace Snacks
         public BaseResourceProcessor()
         {
             //Create lists
+            preconditions = new List<BasePrecondition>();
             inputList = new List<ProcessedResource>();
             outputList = new List<ProcessedResource>();
             consumptionResults = new Dictionary<string, SnacksProcessorResult>();
@@ -151,6 +153,7 @@ namespace Snacks
                 double.TryParse(node.GetValue(ProcessorNodeSecondsPerCycle), out secondsPerCycle);
 
             //Create lists
+            preconditions = new List<BasePrecondition>();
             inputList = new List<ProcessedResource>();
             outputList = new List<ProcessedResource>();
             consumptionResults = new Dictionary<string, SnacksProcessorResult>();
@@ -194,7 +197,22 @@ namespace Snacks
                 {
                     configNode = nodes[index];
                     outcome = SnacksScenario.Instance.CreateOutcome(configNode);
-                    outcomes.Add(outcome);
+                    if (outcome != null)
+                        outcomes.Add(outcome);
+                }
+            }
+
+            //Add preconditions
+            BasePrecondition precondition;
+            if (node.HasNode(BasePrecondition.PRECONDITION))
+            {
+                nodes = node.GetNodes(BasePrecondition.PRECONDITION);
+                for (int index = 0; index < nodes.Length; index++)
+                {
+                    configNode = nodes[index];
+                    precondition = SnacksScenario.Instance.CreatePrecondition(configNode);
+                    if (precondition != null)
+                        preconditions.Add(precondition);
                 }
             }
         }
@@ -473,11 +491,33 @@ namespace Snacks
             int count = 0;
             ProcessedResource resource;
             SnacksProcessorResult result;
+            ProtoCrewMember[] astronauts;
+            int adjustedCrewCount = crewCount;
 
             remainingTime += elapsedTime;
             while (remainingTime >= secondsPerCycle)
             {
                 remainingTime -= secondsPerCycle;
+
+                //Get vessel crew
+                astronauts = SnacksScenario.Instance.GetNonExemptCrew(vessel);
+                if (astronauts == null)
+                    return;
+
+                //Validate preconditions. Adjust crew count if the preconditions aren't valid for that crew member.
+                count = preconditions.Count;
+                for (int index = 0; index < count; index++)
+                {
+                    for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
+                    {
+                        if (!preconditions[index].IsValid(astronauts[astronautIndex], vessel))
+                            adjustedCrewCount -= 1;
+                    }
+                }
+
+                //If no crew member meets the preconditions then we're done.
+                if (adjustedCrewCount <= 0)
+                    return;
 
                 //Consume inputs
                 consumptionResults.Clear();
@@ -485,7 +525,7 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     resource = inputList[index];
-                    result = resource.ConsumeResource(vessel, elapsedTime, crewCount, crewCapacity);
+                    result = resource.ConsumeResource(vessel, elapsedTime, adjustedCrewCount, crewCapacity);
                     if (result.resultType == SnacksResultType.notApplicable)
                         continue;
                     consumptionResults.Add(result.resourceName, result);
@@ -504,7 +544,7 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     resource = outputList[index];
-                    result = resource.ProduceResource(vessel, elapsedTime, crewCount, crewCapacity, consumptionResults);
+                    result = resource.ProduceResource(vessel, elapsedTime, adjustedCrewCount, crewCapacity, consumptionResults);
                     if (result.resultType == SnacksResultType.notApplicable)
                         continue;
                     productionResults.Add(result.resourceName, result);

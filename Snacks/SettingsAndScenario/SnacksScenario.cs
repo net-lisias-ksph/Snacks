@@ -775,6 +775,32 @@ namespace Snacks
         }
 
         /// <summary>
+        /// Returns the non-exempt crew in the vessel.
+        /// </summary>
+        /// <param name="vessel">The Vessel to query.</param>
+        /// <returns>An array of ProtoCrewMember objects if there are non-exempt crew, or null if not.</returns>
+        public ProtoCrewMember[] GetNonExemptCrew(Vessel vessel)
+        {
+            List<ProtoCrewMember> nonExemptCrew = new List<ProtoCrewMember>();
+            ProtoCrewMember[] astronauts;
+
+            if (vessel.loaded)
+                astronauts = vessel.GetVesselCrew().ToArray();
+            else
+                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                if (!SnacksScenario.Instance.exemptKerbals.Contains(astronauts[index].name))
+                    nonExemptCrew.Add(astronauts[index]);
+            }
+
+            if (nonExemptCrew.Count == 0)
+                return null;
+            else
+                return nonExemptCrew.ToArray();
+        }
+
+        /// <summary>
         /// Returns the astronaut data associated with the astronaut.
         /// </summary>
         /// <param name="astronaut">The ProtoCrewMember to check for astronaut data.</param>
@@ -1759,6 +1785,9 @@ namespace Snacks
 
                 case "CheckSkillLevel":
                     return new CheckSkillLevel(node);
+
+                case "CheckBreathableAir":
+                    return new CheckBreathableAir(node);
 
                 default:
                     break;

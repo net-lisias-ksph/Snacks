@@ -1,6 +1,23 @@
 ﻿# SnacksUtils
 
 
+# CheckBreathableAir
+            
+This precondition checks to see if a kerbal or vessel is in an environemnt with breathable air, and matches it with the expected parameter. The vessel's celestial body must have an atmosphere with oxygen, and the vessel altitude must be between sea level and half the atmosphere height. Example definition: PRECONDITION { name = CheckBreathableAir mustExist = false }
+        
+## Fields
+
+### mustExist
+Flag to indicate pressence (true) or absence (false) of the value to check.
+## Methods
+
+
+### Constructor
+Initializes a new instance of the class.
+> #### Parameters
+> **node:** A ConfigNode containing initialization parameters. parameters from the class also apply.
+
+
 # CheckSkillLevel
             
 This precondition checks to see if a kerbal's experience level matches the desired value and type of check to make. For instance you could check to see if a kerbal is above 3 stars. Example definition: PRECONDITION { name = CheckSkillLevel valueToCheck = 3 checkType = checkGreaterOrEqual //Default value } 
@@ -1384,6 +1401,14 @@ Returns the number of crew that aren't exempt.
 
 > #### Return value
 > The number of victims. Er, number of non-exempt crew.
+
+### GetNonExemptCrew(Vessel)
+Returns the non-exempt crew in the vessel.
+> #### Parameters
+> **vessel:** The Vessel to query.
+
+> #### Return value
+> An array of ProtoCrewMember objects if there are non-exempt crew, or null if not.
 
 ### GetAstronautData(ProtoCrewMember)
 Returns the astronaut data associated with the astronaut.

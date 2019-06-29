@@ -38,6 +38,7 @@ namespace Snacks
         public const string ValueSolarFlux = "solarFlux";
         public const string ValueGeeForce = "geeForce";
         public const string ValueSciencePenalties = "sciencePenalties";
+        public const string ValueStaticPressure = "staticPressurekPa";
         #endregion
 
         /// <summary>
@@ -79,6 +80,8 @@ namespace Snacks
             node.AddValue(ValueSciencePenalties, sciencePenalties);
 
             node.AddValue(ValueGeeForce, vessel.graviticAcceleration.magnitude);
+
+            node.AddValue(ValueStaticPressure, vessel.staticPressurekPa);
         }
 
         protected override void OnLoad(ConfigNode node)

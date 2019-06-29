@@ -162,6 +162,14 @@ Returns the number of crew that aren't exempt.
 > #### Return value
 > The number of victims. Er, number of non-exempt crew.
 
+### GetNonExemptCrew(Vessel)
+Returns the non-exempt crew in the vessel.
+> #### Parameters
+> **vessel:** The Vessel to query.
+
+> #### Return value
+> An array of ProtoCrewMember objects if there are non-exempt crew, or null if not.
+
 ### GetAstronautData(ProtoCrewMember)
 Returns the astronaut data associated with the astronaut.
 > #### Parameters
