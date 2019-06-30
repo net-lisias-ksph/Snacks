@@ -24,6 +24,34 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.20 Air and Stress
+
+When I started reworking Snacks to add in the penalty system, I tried to follow the same design philosophies that Squad did when making KerbNet: make it a challenge but don't brick your game or save. I've kept that philosophy and stuck to the original concept as a lightweight life support system as I've made improvements over the years. This update is the collmination of weeks of work that keeps the simplistic life support out of the box but opens the doors to so much more. All it needs is a bit of legwork on your part, but there are plenty of examples.
+
+I'm happy to say that Snacks is feature complete!
+
+Custom Life Support Resources: Snacks now has the ability to define custom life support resources besides just Snacks! All it takes is a config file. With this feature you can:
+  - Define your own life support resource to consume and/or produce.
+  - Optionally track its status in the vessel snapshot window- with support in the multithreaded simulator!
+  - Optionally apply one or more outcomes (like penalties) if the consumed resource runs out, or if space for the produced resource is full.
+
+As an example of a tracked resource, check out the LifeSupportResources folder for the FreshAir.txt file. Rename it with the .cfg extension to enable it.
+NOTE: You can make FreshAir using the stock ISRU and mini ISRU, and all the stock crew cabins have Air Scrubber converters to turn StaleAir into FreshAir.
+
+New Part: SOCS! Similar to the real-world Solid Fuel Oxygen Generator, the Solid Oxium Candle System burns a solid fuel to produce Fresh Air. Once started it can't be stopped and it might explode... It's available at the Survivability tech tree node, and only available if you enable Air.
+
+Roster Resource: Roster resources can now be defined via the SNACKS_ROSTER_RESOURCE config node. A roster resource is a characteristic of a kerbal as opposed to a resource stored in a part. Better yet, the SnacksConverter can work with roster resources- with background processing!
+
+New penalty: The OnStrikePenalty removes a kerbal's skill set without turning him or her into a tourist. That way, should you uninstall the mod for some reason, you won't brick your mission or game.
+
+Stress: You now have an optional resource to keep track of: Stress! Stress reflects the difficulties of living in confined spaces for extended periods of time. The more space available, reflected in a vessel's crew capacity, the longer a kerbal can live and work without getting stressed out. Events like a lack of food and FreshAir, arguments with other crew members, and low gravity can also cause Stress. And when a kerbal gets stressed out, they'll stop using their skills. You can reduce Stress by letting the kerbal hang out in the Cupola, but you won't gain use of their skills while they're relaxing. To enable Stress, just rename the LifeSupportResources/Stress.txt with the .cfg extension and restart your game. If you already have Kerbal Health then you won't need Stress, but it can serve as an example for how to use roster resources.
+
+And if you have BARIS installed, part failures and staging failures will cause Stress!
+
+Events: Random snacking is now reworked into an event system to add flavor to the game. Kerbals might get the munchies, or eat bad food. Maybe a crew member snores and it causes Stress. With a host of preconditions and outcomes, you can make a number of different and entertaining events. Check out the Events.cfg file in the Snacks folder for a couple of examples.
+
+Wiki: updates describe all the preconditions, outcomes and events along with other API objects.
+
 1.16.4
 - Fix for kerbals taking too many snacks with them when going on EVA.
 
