@@ -10,11 +10,9 @@ Now that we have a basic design for the resource, let's set up the config file t
 
 1. Create a new text file with your favorite text editor, and name it Hydrazine.cfg.
 2. In the text file, add the following code:
-`
-SNACKS_RESOURCE_INTRO
-{
-	name = Hydrazine
-	title = Hydrazine!
-	description = If you're a fan of the Kerbfleet series by forum user Kuzzter, then this Snacks addon is for you! When kerbals get stressed, they can turn to "Hydrazine," a hard liquor created by Bill Kerman that's distilled from monopropellant and (hopefully) named so that Kerbfleet Command won't realize what the crew has been up to in deep space. An occasional shot of Hydrazine is great at calming nerves, but sometimes a kerbal ties one too many on and passes out.
-}
-`
+> SNACKS_RESOURCE_INTRO
+> {
+> 	name = Hydrazine
+> 	title = Hydrazine!
+> 	description = If you're a fan of the Kerbfleet series by forum user Kuzzter, then this Snacks addon is for you! When kerbals get stressed, they can turn to "Hydrazine," a hard liquor created by Bill Kerman that's distilled from monopropellant and (hopefully) named so that Kerbfleet Command won't realize what the crew has been up to in deep space. An occasional shot of Hydrazine is great at calming nerves, but sometimes a kerbal ties one too many on and passes out.
+> }
