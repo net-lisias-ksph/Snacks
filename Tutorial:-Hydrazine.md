@@ -18,3 +18,19 @@ SNACKS_RESOURCE_INTRO
 	description = If you're a fan of the Kerbfleet series by forum user Kuzzter, then this Snacks addon is for you! When kerbals get stressed, they can turn to "Hydrazine," a hard liquor created by Bill Kerman that's distilled from monopropellant and (hopefully) named so that Kerbfleet Command won't realize what the crew has been up to in deep space. An occasional shot of Hydrazine is great at calming nerves, but sometimes a kerbal ties one too many on and passes out.
 }
 ```
+The SNACKS_RESOURCE_INTRO config node tells Snacks that it should show the user an introduction screen with the specified description. It's a nice way to let users know that a new resource is being tracked.
+3. Now let's define the Hydrazine resource. Since Hydrazine might exist as a resource somewhere, we have to be careful not to cause naming collisions. So add the following to the file:
+```
+RESOURCE_DEFINITION
+{
+	name = HydrazineVodka
+	displayName = Hydrazine Vodka
+	density = 0.001
+	unitCost = .5
+	flowMode = ALL_VESSEL
+	transfer = PUMP
+	isTweakable = true
+	volume = 0.044
+}
+```
+The RESOURCE_DEFINITION node is standard for KSP. Here we've defined a new resource, Hydrazine Vodka. Kuzzter doesn't define what Hydrazine is, but I suspect it's a pretty pure Vodka. The density is close enough to water that we set it to 0.001, and it's unit volume is 0.044 liters- the typical size of a shot glass.
