@@ -115,3 +115,53 @@ SNACKS_RESOURCE_PROCESSOR:NEEDS[SnacksStress]
 The name field needs to be something unique, so be creative! The _secondsPerCycle_ field tells Snacks how often to run the resource processor. In this case, 21600 seconds, or once every six hours (a standard day length). There are also two PRECONDITION nodes. a PRECONDITION node specifies what conditions must be met before the resource processor can run. You can have any number of PRECONDITION nodes but all of them must be met before the processor runs.
 
 In this case, we have two preconditions: CheckResource and CheckRandomChance. The CheckResource precondition will look and see if the kerbal or vessel has the resource in the amount specified. In our case, we want to know if the kerbal has 10 units or more of Stress. The second precondition, CheckRandomChance, rolls a random number between 1 and 100. If the result is 80 or more, then the precondition is validated.
+
+7. We have more to do with the SNACKS_RESOURCE_PROCESSOR node, so add the following to tell the processor what do do when the preconditions are met:
+```
+	CONSUMED_RESOURCE
+	{
+		resourceName = HydrazineVodka
+		amount = 1.0
+		showInSnapshot = true
+		failureResultAppliesOutcomes = false
+	}
+```
+Here we are telling the resource processor to consume 1 unit of the HydrazineVodka resource. We also want to see the resource show up in the snapshot window. We could set up outcomes to apply if the vessel runs out of Hydrazine, but for our purposes we have no outcomes to apply. For an example of what you could do, take a look at the Air.txt file found in the Snacks/LifeSupportResources folder.
+
+8. So far, so good. We have set up the configs to add Hydrazine to vessels, we have a way to transport an extra bottle of the stuff, and we have a resource processor set up to consume Hydrazine when kerbals get stressed. Now we want to set up what happens when a kerbal consumes Hydrazine. Add the following to the config file:
+```
+SNACKS_EVENT:NEEDS[SnacksStress]
+{
+	name = mellowOut
+	eventCategory = categoryPostProcessCycle
+	kerbalsAffected = affectsAllAssigned
+
+	PRECONDITION 
+	{
+		name = CheckProcessorResult
+		type = resultConsumptionSuccess
+		processorName = TakeAShotOfHydrazine
+		resourceName = HydrazineVodka
+		cyclesRequired = 1
+	}
+
+	OUTCOME
+	{
+		name = ConsumeResource
+		resourceName = Stress
+		amount = 1
+	}
+}
+```
+The SNACKS_EVENT config node is how we define an event. Events are a set of preconditions and outcomes. Just like with the resource processor, all preconditions must be met before outcomes are applied. The _eventCategory_ field tells Snacks what type of event we are defining. In this case, we are defining an event that is checked after a resource process cycle has finished. We could also define a random event card, but that's beyond the scope of this tutorial.
+
+The _kerbalsAffected_ field tells Snacks how to apply the event. In this case, we want to apply it to each kerbal that is out on a mission.
+
+In the above example, we are using the CheckProcessorResult precondition. This precondition lets us examine what happened during a resource process cycle. Here we are looking at the TakeAShotOfHydrazine processor that we defined previously, and we want to see if we successfully consumed HydrazineVodka. The cyclesRequired field tells the precondition that we must have at least one successful cycle in order to validate the precondition.
+
+The OUTCOME node is how we specify what should happen when the preconditions are met. In this case, we are using the ConsumeResource outcome, and we're subtracting one unit of Stress. Putting the above event together, if the processor cycle is successfully completed, then consume one unit of Stress for every kerbal that has 10 or more units of Stress.
+
+9. We have one more event to add: make the kerbal pass out if he or she drank too much. Add this event after the one we created above:
+```
+TBD
+```
