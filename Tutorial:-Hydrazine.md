@@ -19,6 +19,7 @@ SNACKS_RESOURCE_INTRO
 }
 ```
 The SNACKS_RESOURCE_INTRO config node tells Snacks that it should show the user an introduction screen with the specified description. It's a nice way to let users know that a new resource is being tracked.
+
 3. Now let's define the Hydrazine resource. Since Hydrazine might exist as a resource somewhere, we have to be careful not to cause naming collisions. So add the following to the file:
 ```
 RESOURCE_DEFINITION
