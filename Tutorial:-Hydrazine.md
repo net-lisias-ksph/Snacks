@@ -204,7 +204,7 @@ SNACKS_EVENT:NEEDS[SnacksStress]
 ```
 You've seen the preconditions before, but the ConsumeResource has two new fields: _randomMin_ and _randomMax_. You can consume a random number of units of the specified resource with those fields. The FaintPenalty is new; it tells Snacks to make the kerbal pass out similarly to how they pass out due to high-g effects. The _playerMessage_ field is part of every outcome and lets you specify a message to show the player when the outcome is applied.
 
-That's it, you've completed the Hydrazine tutorial! The complete file is listed below:
+That's it, you've completed the Hydrazine tutorial! The complete file is listed below, and you [download it here](https://github.com/Angel-125/Snacks/blob/master/TutorialFiles/Hydrazine.cfg).
 
 ```
 SNACKS_RESOURCE_INTRO:NEEDS[SnacksStress]
