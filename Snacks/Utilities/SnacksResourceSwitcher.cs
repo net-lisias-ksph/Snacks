@@ -129,30 +129,6 @@ namespace Snacks
             return nodes;
         }
 
-        public virtual void RemoveAllResources()
-        {
-            List<PartResource> doomedResources = new List<PartResource>();
-            PartResource[] resources = this.part.Resources.ToArray<PartResource>();
-
-            for (int index = 0; index < resources.Length; index++)
-                doomedResources.Add(resources[index]);
-
-            resources = doomedResources.ToArray();
-            for (int index = 0; index < resources.Length; index++)
-                RemoveResource(resources[index].resourceName);
-
-            //Dirty the GUI
-            MonoUtilities.RefreshContextWindows(this.part);
-        }
-
-        public virtual void RemoveResource(string resourceName)
-        {
-            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
-            int resourceID = definitions[resourceName].id;
-
-            this.part.Resources.dict.Remove(resourceID);
-        }
-
         protected void LoadOptionResources(bool updateSymmetryParts = false)
         {
             ConfigNode[] resourceConfigs;
@@ -160,7 +136,8 @@ namespace Snacks
             SnacksResourceSwitcher switcher;
 
             //Clear our resources
-            RemoveAllResources();
+            this.part.Resources.Clear();
+            MonoUtilities.RefreshContextWindows(this.part);
 
             //Set the option name
             Events["ToggleOption"].guiName = resourceOptions[currentOptionIndex].name;
