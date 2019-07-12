@@ -178,50 +178,56 @@ namespace Snacks
         #region Helpers
         protected void applyOutcome(Vessel vessel, ProtoCrewMember astronaut, AstronautData astronautData)
         {
+            if (string.IsNullOrEmpty(resourceName))
+                causeFainting(vessel, astronaut, astronautData);
+
+            else if (astronautData.processedResourceFailures.ContainsKey(resourceName) && astronautData.processedResourceFailures[resourceName] >= cyclesBeforeFainting)
+                causeFainting(vessel, astronaut, astronautData);
+        }
+
+        protected void causeFainting(Vessel vessel, ProtoCrewMember astronaut, AstronautData astronautData)
+        {
             string message;
 
-            if (astronautData.processedResourceFailures.ContainsKey(resourceName) && astronautData.processedResourceFailures[resourceName] >= cyclesBeforeFainting)
+            //Apply fainting immediately if the vessel is loaded
+            if (vessel.loaded)
             {
-                //Apply fainting immediately if the vessel is loaded
-                if (vessel.loaded)
-                {
-                    astronaut.SetInactive(faintDurationSeconds, true);
-                    if (!string.IsNullOrEmpty(playerMessage))
-                        ScreenMessages.PostScreenMessage(astronaut.name + " " + playerMessage, 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                }
+                astronaut.SetInactive(faintDurationSeconds, true);
+                if (!string.IsNullOrEmpty(playerMessage))
+                    ScreenMessages.PostScreenMessage(astronaut.name + " " + playerMessage, 5.0f, ScreenMessageStyle.UPPER_LEFT);
+            }
 
-                //Vessel isn't loaded, record the info we need so we can make kerbals faint when vessel is loaded.
+            //Vessel isn't loaded, record the info we need so we can make kerbals faint when vessel is loaded.
+            else
+            {
+                if (!astronautData.keyValuePairs.ContainsKey(FaintDurationKey))
+                {
+                    astronautData.keyValuePairs.Add(FaintDurationKey, faintDurationSeconds.ToString());
+                }
                 else
                 {
-                    if (!astronautData.keyValuePairs.ContainsKey(FaintDurationKey))
-                    {
-                        astronautData.keyValuePairs.Add(FaintDurationKey, faintDurationSeconds.ToString());
-                    }
-                    else
-                    {
-                        //Add to existing duration
-                        float currentDuration = 0;
-                        float.TryParse(astronautData.keyValuePairs[FaintDurationKey], out currentDuration);
-                        currentDuration += faintDurationSeconds;
-                        astronautData.keyValuePairs[FaintDurationKey] = currentDuration.ToString();
-                    }
+                    //Add to existing duration
+                    float currentDuration = 0;
+                    float.TryParse(astronautData.keyValuePairs[FaintDurationKey], out currentDuration);
+                    currentDuration += faintDurationSeconds;
+                    astronautData.keyValuePairs[FaintDurationKey] = currentDuration.ToString();
+                }
 
-                    if (!astronautData.keyValuePairs.ContainsKey(FaintMessageKey))
-                    {
-                        astronautData.keyValuePairs.Add(FaintMessageKey, astronautData.name + " " + playerMessage);
-                    }
-                    else
-                    {
-                        //Add to existing message
-                        message = astronautData.name + " " + playerMessage;
-                        if (!astronautData.keyValuePairs[FaintMessageKey].Contains(message))
-                            astronautData.keyValuePairs[FaintMessageKey] += (";" + message);
+                if (!astronautData.keyValuePairs.ContainsKey(FaintMessageKey))
+                {
+                    astronautData.keyValuePairs.Add(FaintMessageKey, astronautData.name + " " + playerMessage);
+                }
+                else
+                {
+                    //Add to existing message
+                    message = astronautData.name + " " + playerMessage;
+                    if (!astronautData.keyValuePairs[FaintMessageKey].Contains(message))
+                        astronautData.keyValuePairs[FaintMessageKey] += (";" + message);
 
-                        //Inform player
-                        string[] messages = astronautData.keyValuePairs[FaintMessageKey].Split(';');
-                        for (int messageIndex = 0; messageIndex < messages.Length; messageIndex++)
-                            ScreenMessages.PostScreenMessage(messages[messageIndex], 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                    }
+                    //Inform player
+                    string[] messages = astronautData.keyValuePairs[FaintMessageKey].Split(';');
+                    for (int messageIndex = 0; messageIndex < messages.Length; messageIndex++)
+                        ScreenMessages.PostScreenMessage(messages[messageIndex], 5.0f, ScreenMessageStyle.UPPER_LEFT);
                 }
             }
         }
