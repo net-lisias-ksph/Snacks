@@ -91,15 +91,21 @@ namespace Snacks
             return info.ToString();
         }
 
-        public override void OnAwake()
+        public override void OnStart(StartState state)
         {
-            base.OnAwake();
+            base.OnStart(state);
+
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
                 return;
 
             //If we don't have any resources then make sure to load the defaults.
             if (this.part.Resources.Count == 0)
                 LoadOptionResources();
+        }
+
+        public override void OnAwake()
+        {
+            base.OnAwake();
         }
 
         public override ConfigNode[] GetOptionNodes(string nodeName = kOptionNode)
@@ -137,7 +143,6 @@ namespace Snacks
 
             //Clear our resources
             this.part.Resources.Clear();
-            MonoUtilities.RefreshContextWindows(this.part);
 
             //Set the option name
             Events["ToggleOption"].guiName = resourceOptions[currentOptionIndex].name;
@@ -150,7 +155,13 @@ namespace Snacks
                 this.part.AddResource(resourceConfigs[index]);
 
             //Dirty the GUI
-            MonoUtilities.RefreshContextWindows(this.part);
+            if (UIPartActionController.Instance != null)
+            {
+                UIPartActionWindow window = UIPartActionController.Instance.GetItem(part);
+                if (window != null)
+                    window.displayDirty = true;
+            }
+            GameEvents.onPartResourceListChange.Fire(this.part);
 
             //Update symmetry parts
             if (updateSymmetryParts && this.part.symmetryCounterparts.Count > 0)

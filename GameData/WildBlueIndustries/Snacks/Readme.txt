@@ -24,6 +24,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.20.3
+- Fix snack tin symmetry issues.
+- Fix NREs when changing resources.
+
 1.20.1
 - Small update to support the new Hydrazine tutorial.
 
