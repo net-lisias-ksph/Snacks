@@ -752,6 +752,11 @@
             Flag to indicate whether or not to check the resource's max amount instead of the curren amount;
             </summary>
         </member>
+        <member name="F:Snacks.CheckResource.checkAsPercentage">
+            <summary>
+            Flag to indicate whether or not to check the resource levels as a percentage.
+            </summary>
+        </member>
         <member name="M:Snacks.CheckResource.#ctor(ConfigNode)">
             <summary>
             Initializes a new instance of the <see cref="T:Snacks.CheckResource"/> class.
@@ -2532,6 +2537,12 @@
             Adds a simulator job to the job list.
             </summary>
             <param name="simSnacks">The simulator to add to the jobs list.</param>
+        </member>
+        <member name="M:Snacks.SnackSimThread.HasJobs">
+            <summary>
+            Determines whether or not the simulator thread has jobs.
+            </summary>
+            <returns>true if the simulator has job, false if not.</returns>
         </member>
         <member name="M:Snacks.SnackSimThread.ClearJobs">
             <summary>

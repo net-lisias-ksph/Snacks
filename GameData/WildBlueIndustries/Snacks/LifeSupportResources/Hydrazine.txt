@@ -8,7 +8,7 @@ SNACKS_RESOURCE_INTRO:NEEDS[SnacksStress]
 RESOURCE_DEFINITION:NEEDS[SnacksStress]
 {
 	name = HydrazineVodka
-	displayName = HydrazineVodka
+	displayName = "Hydrazine"
 	density = 0.001
 	unitCost = .5
 	flowMode = ALL_VESSEL
@@ -75,7 +75,7 @@ SNACKS_RESOURCE_PROCESSOR:NEEDS[SnacksStress]
 	{
 		resourceName = HydrazineVodka
 		amount = 1.0
-		showInSnapshot = true
+		showInSnapshot = false
 		failureResultAppliesOutcomes = false
 	}
 }

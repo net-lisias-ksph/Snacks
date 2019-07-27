@@ -106,6 +106,8 @@ namespace Snacks
             else
             {
                 string timeString = SnacksScenario.FormatTime(estimatedTimeRemaining);
+                if (amount < 0.0001)
+                    timeString = "0 Seconds";
                 status.AppendLine(colorTag + "Duration: " + timeString + endTag);
             }
 

@@ -118,7 +118,9 @@ namespace Snacks
             AstronautData astronautData;
 
             //Get vessel crew
-            if (vessel.loaded)
+            if (result.afftectedAstronauts != null && result.afftectedAstronauts.Count > 0)
+                astronauts = result.afftectedAstronauts.ToArray();
+            else if (vessel.loaded)
                 astronauts = vessel.GetVesselCrew().ToArray();
             else
                 astronauts = vessel.protoVessel.GetVesselCrew().ToArray();

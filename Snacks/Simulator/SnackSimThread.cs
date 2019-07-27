@@ -93,6 +93,19 @@ namespace Snacks
         }
 
         /// <summary>
+        /// Determines whether or not the simulator thread has jobs.
+        /// </summary>
+        /// <returns>true if the simulator has job, false if not.</returns>
+        public bool HasJobs()
+        {
+            bool hasJobs = false;
+            mutex.WaitOne();
+            hasJobs = jobList.Count > 0;
+            mutex.ReleaseMutex();
+            return hasJobs;
+        }
+
+        /// <summary>
         /// Clears all pending and running jobs.
         /// </summary>
         public void ClearJobs()

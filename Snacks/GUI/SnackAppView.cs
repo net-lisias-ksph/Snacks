@@ -65,6 +65,11 @@ namespace Snacks
 
             if (newValue)
             {
+                partCount = 0;
+                crewCapacity = 0;
+                previousCrewCount = 0;
+                currentCrewCount = -1;
+
                 if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedScene == GameScenes.SPACECENTER)
                 {
                     SnacksScenario.Instance.UpdateSnapshots();
@@ -73,6 +78,10 @@ namespace Snacks
                 else if (HighLogic.LoadedSceneIsEditor)
                 {
                     snackshots = new List<Snackshot>();
+
+                    GameEvents.onEditorPartEvent.Add(onEditorPartEvent);
+                    GameEvents.onPartResourceListChange.Add(onPartResourceListChange);
+                    GameEvents.onEditorShipModified.Add(onEditorShipModified);
 
                     snackThread = new SnackSimThread(new Mutex(), new List<SimSnacks>());
                     snackThread.OnSimulationComplete = OnSimulationComplete;
@@ -98,12 +107,33 @@ namespace Snacks
                     if (SnacksScenario.Instance != null && SnacksScenario.Instance.threadPool != null)
                         SnacksScenario.Instance.threadPool.StopAllJobs();
                 }
+                else if (HighLogic.LoadedSceneIsEditor)
+                {
+                    GameEvents.onEditorPartEvent.Remove(onEditorPartEvent);
+                    GameEvents.onPartResourceListChange.Remove(onPartResourceListChange);
+                    GameEvents.onEditorShipModified.Remove(onEditorShipModified);
+                }
             }
         }
 
         private void onSnackTime()
         {
             SnacksScenario.Instance.UpdateSnapshots();
+        }
+
+        private void onEditorPartEvent(ConstructionEventType eventType, Part part)
+        {
+            partCount = 0;
+        }
+
+        private void onPartResourceListChange(Part part)
+        {
+            partCount = 0;
+        }
+
+        private void onEditorShipModified(ShipConstruct ship)
+        {
+            partCount = 0;
         }
 
         protected override void DrawWindowContents(int windowId)

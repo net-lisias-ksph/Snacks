@@ -71,6 +71,7 @@ namespace Snacks
         private const float kCriticalSuccess = 95f;
         private const float kCriticalFailure = 33f;
         private const float kDefaultHoursPerCycle = 1.0f;
+        private const double kHighTimewarpDelta = 2.0;
 
         //Summary messages for lastAttempt
         protected string attemptCriticalFail = "Critical Failure";
@@ -617,10 +618,14 @@ namespace Snacks
             {
                 ResourceRatio ratio;
                 int count = inputList.Count;
+                double adjustedDeltaTime = deltatime;
 
                 for (int index = 0; index < count; index++)
                 {
-                    ratio = new ResourceRatio(inputList[index].ResourceName, inputList[index].Ratio * inputEfficiency * deltatime, inputList[index].DumpExcess);
+                    adjustedDeltaTime = deltatime;
+                    if (deltatime >= kHighTimewarpDelta && inputList[index].ResourceName == "ElectricCharge")
+                        adjustedDeltaTime = kHighTimewarpDelta;
+                    ratio = new ResourceRatio(inputList[index].ResourceName, inputList[index].Ratio * inputEfficiency * adjustedDeltaTime, inputList[index].DumpExcess);
                     ratio.FlowMode = inputList[index].FlowMode;
                     recipe.Inputs.Add(ratio);
                 }
@@ -777,8 +782,6 @@ namespace Snacks
                     if (amountObtained >= maxAmount)
                     {
                         status = resourceDef.displayName + " is full";
-//                        if ((resourceRatio.DumpExcess == false || AutoShutdown))
-//                            StopResourceConverter();
                     }
                 }
 

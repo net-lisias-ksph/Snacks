@@ -65,6 +65,11 @@ namespace Snacks
         /// </summary>
         public bool checkMaxAmount;
 
+        /// <summary>
+        /// Flag to indicate whether or not to check the resource levels as a percentage.
+        /// </summary>
+        public bool checkAsPercentage;
+
         protected bool isRosterResource;
         #endregion
 
@@ -108,11 +113,13 @@ namespace Snacks
 
             double amount = 0;
             double maxAmount = 0;
+            double percentage = 0;
             //Get vessel resource
             if (!isRosterResource)
             {
                 List<ProtoPartResourceSnapshot> protoPartResources = new List<ProtoPartResourceSnapshot>();
                 ProcessedResource.GetResourceTotals(vessel, resourceName, out amount, out maxAmount, protoPartResources);
+                percentage = amount / maxAmount;
             }
 
             //Get roster resource
@@ -127,11 +134,14 @@ namespace Snacks
                 SnacksRosterResource rosterResource = astronautData.rosterResources[resourceName];
                 amount = rosterResource.amount;
                 maxAmount = rosterResource.maxAmount;
+                percentage = amount / maxAmount;
             }
 
             //Now perform the check
             if (checkMaxAmount)
                 amount = maxAmount;
+            else if (checkAsPercentage)
+                amount = percentage;
             switch (checkType)
             {
                 case CheckValueConditionals.checkEquals:
@@ -163,6 +173,7 @@ namespace Snacks
             //Get roster resource
             double amount = 0;
             double maxAmount = 0;
+            double percentage = 0;
             if (isRosterResource)
             {
                 AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
@@ -174,6 +185,7 @@ namespace Snacks
                 SnacksRosterResource rosterResource = astronautData.rosterResources[resourceName];
                 amount = rosterResource.amount;
                 maxAmount = rosterResource.maxAmount;
+                percentage = amount / maxAmount;
             }
 
             //Try to get vessel resource
@@ -184,11 +196,14 @@ namespace Snacks
 
                 List<ProtoPartResourceSnapshot> protoPartResources = new List<ProtoPartResourceSnapshot>();
                 ProcessedResource.GetResourceTotals(astronaut.KerbalRef.InVessel, resourceName, out amount, out maxAmount, protoPartResources);
+                percentage = amount / maxAmount;
             }
 
             //Now perform the check
             if (checkMaxAmount)
                 amount = maxAmount;
+            else if (checkAsPercentage)
+                amount = percentage;
             switch (checkType)
             {
                 case CheckValueConditionals.checkEquals:

@@ -83,6 +83,8 @@ namespace Snacks
     {
         public static string NodeName = "SnacksBackgroundConverter";
         public static string skipReources = ";";
+        private const double kHighTimewarpDelta = 3600.0;
+
 
         #region Properties
         public string converterID;
@@ -463,6 +465,10 @@ namespace Snacks
             if (isContainerFull)
                 return;
 
+            //Get cheat states
+            bool infinitePropellantsEnabled = CheatOptions.InfinitePropellant;
+            bool infiniteElectricity = CheatOptions.InfiniteElectricity;
+
             //Check to make sure we have enough resources
             ResourceRatio resourceRatio;
             double amount = 0;
@@ -470,7 +476,16 @@ namespace Snacks
             for (int index = 0; index < count; index++)
             {
                 resourceRatio = inputList[index];
-                demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
+                //Skip resource if the appropriate cheat is on
+                if ((resourceRatio.ResourceName == "ElectricCharge" && infiniteElectricity) || (infinitePropellantsEnabled))
+                    continue;
+
+                //Give players a break on E.C. for high timewarp
+                if (elapsedTime >= kHighTimewarpDelta)
+                    demand = resourceRatio.Ratio * inputEfficiency * kHighTimewarpDelta;
+                else
+                    demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
+
                 amount = getAmount(resourceRatio.ResourceName, resourceRatio.FlowMode);
                 if (amount < demand)
                 {
@@ -487,6 +502,16 @@ namespace Snacks
             for (int index = 0; index < count; index++)
             {
                 resourceRatio = inputList[index];
+                //Skip resource if the appropriate cheat is on
+                if ((resourceRatio.ResourceName == "ElectricCharge" && infiniteElectricity) || (infinitePropellantsEnabled))
+                    continue;
+
+                //Give players a break on E.C. for high timewarp
+                if (elapsedTime >= kHighTimewarpDelta)
+                    demand = resourceRatio.Ratio * inputEfficiency * kHighTimewarpDelta;
+                else
+                    demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
+
                 demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
                 requestAmount(resourceRatio.ResourceName, demand, resourceRatio.FlowMode);
             }
@@ -503,6 +528,9 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     rosterRatio = rosterInputList[index];
+                    //Skip resource if the appropriate cheat is on
+                    if ((rosterRatio.ResourceName == "ElectricCharge" && infiniteElectricity) || (infinitePropellantsEnabled))
+                        continue;
                     for (int astronautIndex = 0; astronautIndex < astronauts.Length; astronautIndex++)
                     {
                         //Get astronaut data
