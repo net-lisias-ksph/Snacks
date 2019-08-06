@@ -116,6 +116,12 @@ namespace Snacks
 
         #region Converter Fields
         /// <summary>
+        /// This field describes how much ElectricCharge is consumed per second. A negative number indicates consumption.
+        /// </summary>
+        [KSPField]
+        public double ecPerSec = 0;
+
+        /// <summary>
         /// This is a threshold value to ensure that the converter will shut off if the vessel's
         /// ElectricCharge falls below the specified percentage. It is ignored if the converter doesn't
         /// use ElectricCharge.
@@ -623,8 +629,12 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     adjustedDeltaTime = deltatime;
-                    if (deltatime >= kHighTimewarpDelta && inputList[index].ResourceName == "ElectricCharge")
-                        adjustedDeltaTime = kHighTimewarpDelta;
+                    if (inputList[index].ResourceName == "ElectricCharge")
+                    {
+                        ecPerSec = -inputList[index].Ratio;
+                        if (deltatime >= kHighTimewarpDelta)
+                            adjustedDeltaTime = kHighTimewarpDelta;
+                    }
                     ratio = new ResourceRatio(inputList[index].ResourceName, inputList[index].Ratio * inputEfficiency * adjustedDeltaTime, inputList[index].DumpExcess);
                     ratio.FlowMode = inputList[index].FlowMode;
                     recipe.Inputs.Add(ratio);

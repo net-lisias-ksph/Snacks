@@ -115,7 +115,11 @@ namespace Snacks
                     for (int rosterIndex = 0; rosterIndex < keys.Length; rosterIndex++)
                     {
                         if (astronautData.rosterResources[keys[rosterIndex]].showInSnapshot)
-                            status.AppendLine(astronautData.rosterResources[keys[rosterIndex]].GetStatusDisplay());
+                        {
+                            conditionSummary = astronautData.rosterResources[keys[rosterIndex]].GetStatusDisplay();
+                            if (!string.IsNullOrEmpty(conditionSummary))
+                                status.AppendLine();
+                        }
                     }
                 }
             }

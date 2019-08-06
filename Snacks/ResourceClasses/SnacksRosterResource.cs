@@ -253,6 +253,9 @@ namespace Snacks
             if (!astronautData.rosterResources.ContainsKey(resourceName))
             {
                 resource = new SnacksRosterResource();
+                resource.displayName = displayName;
+                resource.resourceName = resourceName;
+                resource.showInSnapshot = showInSnapshot;
                 resource.amount = amount;
                 resource.maxAmount = maxAmount;
 
@@ -285,6 +288,9 @@ namespace Snacks
             StringBuilder status = new StringBuilder();
             double percent = amount / maxAmount;
             string statusDisplay = statusFormat;
+
+            if (percent < 0.0001)
+                return string.Empty;
 
             status.Append("<color=white> - ");
             status.Append(displayName != string.Empty ? displayName : resourceName);

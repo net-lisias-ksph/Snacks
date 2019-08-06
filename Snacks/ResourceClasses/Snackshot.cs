@@ -64,6 +64,11 @@ namespace Snacks
         /// </summary>
         public double estimatedTimeRemaining;
 
+        /// <summary>
+        /// Flag to indicate whether or not the simulator was interrupted.
+        /// </summary>
+        public bool simulatorInterrupted = false;
+
         public virtual string GetStatusDisplay()
         {
             StringBuilder status = new StringBuilder();
@@ -95,7 +100,11 @@ namespace Snacks
             status.AppendLine(endTag);
 
             //Duration
-            if (estimatedTimeRemaining < 0)
+            if (simulatorInterrupted)
+            {
+                status.AppendLine("<color=white>Duration: Unavailable</color>");
+            }
+            else if (estimatedTimeRemaining < 0)
             {
                 status.AppendLine("<color=white>Duration: Indefinite</color>");
             }

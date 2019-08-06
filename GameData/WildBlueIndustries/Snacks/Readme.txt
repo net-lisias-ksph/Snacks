@@ -24,6 +24,12 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.22
+- Added support for Dynamic Batteries.
+- Added ability to interrupt the resource consumption simulator. NOTE: duration estimates will be unavailable.
+- Fix Inability to view vessels not on or around the current world.
+- Fix Missing roster resource names when added to the kerbal.
+
 1.21
 - CheckResources can now check resource percent levels.
 - Fix Simulator window not running simulations after closing and reopening the window in the same scene.

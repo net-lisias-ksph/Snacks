@@ -2210,6 +2210,11 @@
             Name of the effect to play while the converter is running.
             </summary>
         </member>
+        <member name="F:Snacks.SnacksConverter.ecPerSec">
+            <summary>
+            This field describes how much ElectricCharge is consumed per second. A negative number indicates consumption.
+            </summary>
+        </member>
         <member name="F:Snacks.SnacksConverter.minimumVesselPercentEC">
             <summary>
             This is a threshold value to ensure that the converter will shut off if the vessel's
@@ -2515,6 +2520,11 @@
         <member name="F:Snacks.Snackshot.estimatedTimeRemaining">
             <summary>
             Estimated time remaining in seconds.
+            </summary>
+        </member>
+        <member name="F:Snacks.Snackshot.simulatorInterrupted">
+            <summary>
+            Flag to indicate whether or not the simulator was interrupted.
             </summary>
         </member>
         <member name="T:Snacks.SnackSimThread">

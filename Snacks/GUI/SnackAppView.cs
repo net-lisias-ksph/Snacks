@@ -69,6 +69,7 @@ namespace Snacks
                 crewCapacity = 0;
                 previousCrewCount = 0;
                 currentCrewCount = -1;
+                selectedBody = -1;
 
                 if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedScene == GameScenes.SPACECENTER)
                 {
@@ -396,7 +397,8 @@ namespace Snacks
 
             GUILayout.BeginVertical();
             scrollPosButtons = GUILayout.BeginScrollView(scrollPosButtons, flightWindowLeftPaneOptions);
-            selectedBody = FlightGlobals.currentMainBody.flightGlobalsIndex;
+            if (selectedBody == -1)
+                selectedBody = FlightGlobals.currentMainBody.flightGlobalsIndex;
             if (SnacksScenario.Instance.bodyVesselCountMap.Keys.Count > 0)
             {
                 int bodyCount = bodies.Count;
@@ -504,6 +506,25 @@ namespace Snacks
             GUILayout.EndVertical();
 
             GUILayout.EndHorizontal();
+            if (GUILayout.Button("Stop simulators (Estimates will be unavailable)"))
+            {
+                SnacksScenario.Instance.threadPool.StopAllJobs();
+                for (int index = 0; index < keys.Count; index++)
+                {
+                    vesselSnackshot = snapshotMap[keys[index]];
+                    snackShotCount = vesselSnackshot.snackshots.Count;
+                    for (int snackShotIndex = 0; snackShotIndex < snackShotCount; snackShotIndex++)
+                    {
+                        snackshot = vesselSnackshot.snackshots[snackShotIndex];
+                        if (snackshot.isSimulatorRunning)
+                        {
+                            snackshot.estimatedTimeRemaining = 0;
+                            snackshot.isSimulatorRunning = false;
+                            snackshot.simulatorInterrupted = true;
+                        }
+                    }
+                }
+            }
         }
     }
 }
