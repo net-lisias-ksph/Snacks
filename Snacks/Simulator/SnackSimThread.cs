@@ -130,7 +130,6 @@ namespace Snacks
                     mutex.ReleaseMutex();
                     return;
                 }
-                return;
 
                 //Grab a simulator if one is available.
                 if (jobList.Count > 0)

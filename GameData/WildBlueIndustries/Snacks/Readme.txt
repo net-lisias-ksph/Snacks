@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.22.1
+- Removed test code from the simulator.
+
 1.22
 - Added support for Dynamic Batteries.
 - Added ability to interrupt the resource consumption simulator. NOTE: duration estimates will be unavailable.
