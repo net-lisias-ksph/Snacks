@@ -637,6 +637,8 @@ namespace Snacks
                     }
                     ratio = new ResourceRatio(inputList[index].ResourceName, inputList[index].Ratio * inputEfficiency * adjustedDeltaTime, inputList[index].DumpExcess);
                     ratio.FlowMode = inputList[index].FlowMode;
+                    if (ratio.FlowMode == ResourceFlowMode.NULL)
+                        ratio.FlowMode = ResourceFlowMode.STAGE_PRIORITY_FLOW;
                     recipe.Inputs.Add(ratio);
                 }
 
@@ -645,6 +647,8 @@ namespace Snacks
                 {
                     ratio = new ResourceRatio(outputList[index].ResourceName, outputList[index].Ratio * outputEfficiency * deltatime, outputList[index].DumpExcess);
                     ratio.FlowMode = outputList[index].FlowMode;
+                    if (ratio.FlowMode == ResourceFlowMode.NULL)
+                        ratio.FlowMode = ResourceFlowMode.STAGE_PRIORITY_FLOW;
                     recipe.Outputs.Add(ratio);
                 }
 

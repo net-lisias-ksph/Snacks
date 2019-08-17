@@ -410,7 +410,7 @@ SNACKS_EVENT
 		{
 			ResourceName = ElectricCharge
 			Ratio = 0.4
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		//Works like an INPUT_RESOURCE except:
@@ -454,7 +454,7 @@ SNACKS_EVENT
 		{
 			ResourceName = ElectricCharge
 			Ratio = 0.2
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		//Works like an INPUT_RESOURCE except:
@@ -498,7 +498,7 @@ SNACKS_EVENT
 		{
 			ResourceName = ElectricCharge
 			Ratio = 1.6
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		//Works like an INPUT_RESOURCE except:
@@ -542,7 +542,7 @@ SNACKS_EVENT
 		{
 			ResourceName = ElectricCharge
 			Ratio = 0.05
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		//Works like an INPUT_RESOURCE except:

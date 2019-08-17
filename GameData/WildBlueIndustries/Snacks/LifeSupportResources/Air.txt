@@ -219,6 +219,7 @@ SNACKS_RESOURCE_PROCESSOR
 		{
 			ResourceName = ElectricCharge
 			Ratio = 3
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		OUTPUT_RESOURCE
@@ -249,13 +250,14 @@ SNACKS_RESOURCE_PROCESSOR
 		{
 			ResourceName = Oxidizer
 			Ratio = 0.01
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
   		}
 
 		INPUT_RESOURCE
 		{
 			ResourceName = ElectricCharge
 			Ratio = 3
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		OUTPUT_RESOURCE
@@ -291,7 +293,7 @@ SNACKS_RESOURCE_PROCESSOR
 		{
 			ResourceName = ElectricCharge
 			Ratio = 0.4
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		OUTPUT_RESOURCE
@@ -334,7 +336,7 @@ SNACKS_RESOURCE_PROCESSOR
 		{
 			ResourceName = ElectricCharge
 			Ratio = 0.2
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		OUTPUT_RESOURCE
@@ -342,7 +344,8 @@ SNACKS_RESOURCE_PROCESSOR
 			ResourceName = FreshAir
 			Ratio = 0.000148
 			FlowMode = ALL_VESSEL
-		}	}
+		}	
+}
 
 	RESOURCE
 	{
@@ -375,7 +378,7 @@ SNACKS_RESOURCE_PROCESSOR
 		{
 			ResourceName = ElectricCharge
 			Ratio = 1.6
-			FlowMode = ALL_VESSEL
+			FlowMode = STAGE_PRIORITY_FLOW
 		}
 
 		OUTPUT_RESOURCE

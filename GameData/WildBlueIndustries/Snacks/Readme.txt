@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.22.2
+- Fixed flow mode issues for ElectricCharge consumption.
+
 1.22.1
 - Removed test code from the simulator.
 
