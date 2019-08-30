@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.23.0
+- You can now disable Snacks/Soil resource processing if desired. Just rename Snacks.cfg to Snacks.txt in the LifeSupportResources folder.
+
 1.22.2
 - Fixed flow mode issues for ElectricCharge consumption.
 
