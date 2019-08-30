@@ -72,9 +72,6 @@ namespace Snacks
         [GameParameters.CustomParameterUI("Data lost", toolTip = "What percentage of lab data is lost", autoPersistance = true, gameMode = GameParameters.GameMode.CAREER | GameParameters.GameMode.SCIENCE)]
         public RepLoss dataLostWhenHungry = RepLoss.Low;
 
-//        [GameParameters.CustomParameterUI("Hungry kerbals can't fly straight.", toolTip = "When kerbals go hungry, ships partialy lose control", autoPersistance = true)]
-        public bool partialControlWhenHungry = true;
-
         [GameParameters.CustomParameterUI("Hungry kerbals can faint.", toolTip = "When kerbals go hungry, they might pass out and can't be controlled.", autoPersistance = true)]
         public bool faintWhenHungry = true;
 
@@ -370,15 +367,6 @@ namespace Snacks
             }
         }
 
-        public static bool PartialControlWhenHungry
-        {
-            get
-            {
-                SnackPenalties penalties = HighLogic.CurrentGame.Parameters.CustomParams<SnackPenalties>();
-                return penalties.partialControlWhenHungry;
-            }
-        }
-
         public static bool RecyclersEnabled
         {
             get
@@ -530,12 +518,29 @@ namespace Snacks
 
         public override bool Enabled(System.Reflection.MemberInfo member, GameParameters parameters)
         {
-            if (member.Name == "recyclerEfficiency" && enableRecyclers)
-                return true;
-            else if (member.Name == "recyclerEfficiency")
-                return false;
+            ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes(BaseResourceProcessor.ProcessorNode);
+            ConfigNode node;
+            bool snacksEnabled = false;
 
-            return base.Enabled(member, parameters);
+            for (int index = 0; index < nodes.Length; index++)
+            {
+                node = nodes[index];
+                if (!node.HasValue("name"))
+                    continue;
+                if (node.GetValue("name") == SnacksResourceProcessor.SnacksProcessorName)
+                {
+                    snacksEnabled = true;
+                    if (member.Name == "recyclerEfficiency" && enableRecyclers)
+                        return true;
+                    else if (member.Name == "recyclerEfficiency")
+                        return false;
+                }
+            }
+
+            if (!snacksEnabled)
+                return false;
+            else
+                return base.Enabled(member, parameters);
         }
 
         #endregion

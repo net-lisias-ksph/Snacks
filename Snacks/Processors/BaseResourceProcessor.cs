@@ -322,11 +322,6 @@ namespace Snacks
             ConfigNode[] nodes = GameDatabase.Instance.GetConfigNodes(ProcessorNode);
             ConfigNode node;
 
-            //Add the snacks processor
-            SnacksResourceProcessor snacksProcessor = new SnacksResourceProcessor();
-            snacksProcessor.Initialize();
-            resourceProcessors.Add(snacksProcessor);
-
             //Add the Stress processor if Stress is defined
             if (SnacksScenario.Instance.rosterResources.ContainsKey(StressProcessor.StressResourceName))
             {
@@ -339,9 +334,21 @@ namespace Snacks
             for (int index = 0; index < nodes.Length; index++)
             {
                 node = nodes[index];
-                resourceProcessor = new BaseResourceProcessor(node);
-                resourceProcessor.Initialize();
-                resourceProcessors.Add(resourceProcessor);
+                if (!node.HasValue("name"))
+                    continue;
+                if (node.GetValue("name") == SnacksResourceProcessor.SnacksProcessorName)
+                {
+                    //Add the snacks processor
+                    SnacksResourceProcessor snacksProcessor = new SnacksResourceProcessor();
+                    snacksProcessor.Initialize();
+                    resourceProcessors.Add(snacksProcessor);
+                }
+                else
+                {
+                    resourceProcessor = new BaseResourceProcessor(node);
+                    resourceProcessor.Initialize();
+                    resourceProcessors.Add(resourceProcessor);
+                }
             }
 
             //Return all the processors

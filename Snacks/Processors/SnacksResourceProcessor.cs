@@ -36,10 +36,12 @@ namespace Snacks
     /// </summary>
     public class SnacksResourceProcessor: BaseResourceProcessor
     {
+        public const string SnacksProcessorName = "Snacks!";
+
         #region Constructors
         public SnacksResourceProcessor()
         {
-            name = "Snacks!";
+            name = SnacksProcessorName;
 
             //Get input list
             inputList = new List<ProcessedResource>();

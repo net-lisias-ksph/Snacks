@@ -71,6 +71,7 @@ namespace Snacks
         {
             base.OnStart(state);
             GameEvents.OnGameSettingsApplied.Add(updateSettings);
+            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
 
             ResourceRatio ratio;
             for (int index = 0; index < outputList.Count; index++)
@@ -91,6 +92,11 @@ namespace Snacks
                 {
                     sourceInputRatio = ratio.Ratio;
                     break;
+                }
+                else if (!definitions.Contains(ratio.ResourceName))
+                {
+                    DisableModule();
+                    return;
                 }
             }
 
@@ -145,6 +151,8 @@ namespace Snacks
                 infoBuilder.AppendLine("<color=#7FFF00><b>Inputs</b></color>");
                 for (int index = 0; index < resourceCount; index++)
                 {
+                    if (!definitions.Contains(inputList[index].ResourceName))
+                        continue;
                     resourceName = definitions[inputList[index].ResourceName].displayName;
                     infoBuilder.AppendLine(" -" + resourceName);
                 }
@@ -156,6 +164,8 @@ namespace Snacks
                 infoBuilder.AppendLine("<color=#7FFF00><b>Outputs</b></color>");
                 for (int index = 0; index < resourceCount; index++)
                 {
+                    if (!definitions.Contains(outputList[index].ResourceName))
+                        continue;
                     resourceName = definitions[outputList[index].ResourceName].displayName;
                     infoBuilder.AppendLine(" -" + resourceName);
                 }
