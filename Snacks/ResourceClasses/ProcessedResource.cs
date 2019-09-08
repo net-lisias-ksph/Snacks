@@ -585,9 +585,10 @@ namespace Snacks
                     for (int resourceIndex = 0; resourceIndex < protoResources.Length; resourceIndex++)
                     {
                         resource = protoResources[resourceIndex];
-                        if (resource.resourceName == resourceName && resource.flowState)
+                        if (resource.resourceName == resourceName)
                         {
-                            amount += resource.amount;
+                            if (resource.flowState)
+                                amount += resource.amount;
                             maxAmount += resource.maxAmount;
                             resourceList.Add(resource);
                         }

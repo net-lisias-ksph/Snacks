@@ -24,6 +24,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.23.1
+- Fixed issue with kerbals not suffering any penalties when a ship processed in the background has locked snack tins.
+- Experienced kerbals can now process inputs and outputs without affecting ElectricCharge consumption.
+
 1.23.0
 - You can now disable Snacks/Soil resource processing if desired. Just rename Snacks.cfg to Snacks.txt in the LifeSupportResources folder.
 

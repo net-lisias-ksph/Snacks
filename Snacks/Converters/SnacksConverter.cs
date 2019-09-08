@@ -634,8 +634,12 @@ namespace Snacks
                         ecPerSec = -inputList[index].Ratio;
                         if (deltatime >= kHighTimewarpDelta)
                             adjustedDeltaTime = kHighTimewarpDelta;
+                        ratio = new ResourceRatio(inputList[index].ResourceName, inputList[index].Ratio * adjustedDeltaTime, inputList[index].DumpExcess);
                     }
-                    ratio = new ResourceRatio(inputList[index].ResourceName, inputList[index].Ratio * inputEfficiency * adjustedDeltaTime, inputList[index].DumpExcess);
+                    else
+                    {
+                        ratio = new ResourceRatio(inputList[index].ResourceName, inputList[index].Ratio * inputEfficiency * adjustedDeltaTime, inputList[index].DumpExcess);
+                    }
                     ratio.FlowMode = inputList[index].FlowMode;
                     if (ratio.FlowMode == ResourceFlowMode.NULL)
                         ratio.FlowMode = ResourceFlowMode.STAGE_PRIORITY_FLOW;
