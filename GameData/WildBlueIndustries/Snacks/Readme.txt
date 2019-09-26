@@ -24,6 +24,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.23.2
+- Reduced timewarp ElectricCharge cap to 3x.
+- New game settings: you can turn on/off ElectricCharge consumption for Snacks converters during background processing. Default is ON.
+ 
 1.23.1
 - Fixed issue with kerbals not suffering any penalties when a ship processed in the background has locked snack tins.
 - Experienced kerbals can now process inputs and outputs without affecting ElectricCharge consumption.

@@ -71,7 +71,7 @@ namespace Snacks
         private const float kCriticalSuccess = 95f;
         private const float kCriticalFailure = 33f;
         private const float kDefaultHoursPerCycle = 1.0f;
-        private const double kHighTimewarpDelta = 2.0;
+        private const double kHighTimewarpDelta = 0.2;
 
         //Summary messages for lastAttempt
         protected string attemptCriticalFail = "Critical Failure";

@@ -83,7 +83,7 @@ namespace Snacks
     {
         public static string NodeName = "SnacksBackgroundConverter";
         public static string skipReources = ";";
-        private const double kHighTimewarpDelta = 3600.0;
+        private const double kHighTimewarpDelta = 360.0;
 
 
         #region Properties
@@ -467,7 +467,7 @@ namespace Snacks
 
             //Get cheat states
             bool infinitePropellantsEnabled = CheatOptions.InfinitePropellant;
-            bool infiniteElectricity = CheatOptions.InfiniteElectricity;
+            bool infiniteElectricity = CheatOptions.InfiniteElectricity || !SnacksProperties.ConsumeECInBackground;
 
             //Check to make sure we have enough resources
             ResourceRatio resourceRatio;
