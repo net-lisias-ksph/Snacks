@@ -481,7 +481,7 @@ namespace Snacks
                     continue;
 
                 //Give players a break on E.C. for high timewarp
-                if (elapsedTime >= kHighTimewarpDelta)
+                if (elapsedTime >= kHighTimewarpDelta && resourceRatio.ResourceName == "ElectricCharge")
                     demand = resourceRatio.Ratio * inputEfficiency * kHighTimewarpDelta;
                 else
                     demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
@@ -507,7 +507,7 @@ namespace Snacks
                     continue;
 
                 //Give players a break on E.C. for high timewarp
-                if (elapsedTime >= kHighTimewarpDelta)
+                if (elapsedTime >= kHighTimewarpDelta && resourceRatio.ResourceName == "ElectricCharge")
                     demand = resourceRatio.Ratio * inputEfficiency * kHighTimewarpDelta;
                 else
                     demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;

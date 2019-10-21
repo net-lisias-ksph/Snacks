@@ -197,6 +197,9 @@ namespace Snacks
         [GameParameters.CustomParameterUI("Consume E.C. in background", toolTip = "Toggles ElectricCharge consumption during background processing on/off.", autoPersistance = true)]
         public bool backroundECUsage = true;
 
+        [GameParameters.CustomParameterUI("Run simulator estimates", toolTip = "Toggles simulator calculations on/off.", autoPersistance = true)]
+        public bool enableSimulator = true;
+
         [GameParameters.CustomParameterUI("Enable Debug Log", toolTip = "Logs stuff to help diagnose issues.", autoPersistance = true)]
         public bool enableDebugLog = true;
 
@@ -208,6 +211,15 @@ namespace Snacks
             {
                 SnacksProperties snacksProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
                 return snacksProperties.enableDebugLog;
+            }
+        }
+
+        public static bool EnableSimulator
+        {
+            get
+            {
+                SnacksProperties snacksProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snacksProperties.enableSimulator;
             }
         }
 

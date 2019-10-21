@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.24.0
+- Updated for KSP 1.8
+
 1.23.2
 - Reduced timewarp ElectricCharge cap to 3x.
 - New game settings: you can turn on/off ElectricCharge consumption for Snacks converters during background processing. Default is ON.
