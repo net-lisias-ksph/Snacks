@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.24.3
+- Compatibility update
+
 1.24.1
 - Updated for KSP 1.8
 

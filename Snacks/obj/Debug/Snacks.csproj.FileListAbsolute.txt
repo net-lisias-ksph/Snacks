@@ -32,7 +32,6 @@ C:/Projects/KSP/Snacks/Snacks/obj/Debug/Snacks.pdb
 /Users/michael/Projects/Snacks/Snacks/obj/Debug/Snacks.csproj.CoreCompileInputs.cache
 /Users/michael/Projects/Snacks/Snacks/obj/Debug/SnacksUtils.dll
 /Users/michael/Projects/Snacks/Snacks/obj/Debug/SnacksUtils.pdb
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CoreCompileInputs.cache
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\MarkdownSeparator.exe
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\xmldoc2md.xsl
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\RunMDSeparator.bat
@@ -46,7 +45,6 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\Assembly-CSharp.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\KSPAssets.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.AnimationModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.CoreModule.dll
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.ImageConversionModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.IMGUIModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.InputLegacyModule.dll
@@ -74,6 +72,9 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\TDx.TDxInput.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.Physics2DModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.UnityWebRequestAssetBundleModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.SharedInternalsModule.dll
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.JSONSerializeModule.dll
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.dll
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.XRModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.AccessibilityModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.AIModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.AndroidJNIModule.dll
@@ -81,7 +82,6 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.ClusterIn
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.DirectorModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.DSPGraphModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.GridModule.dll
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.JSONSerializeModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.LocalizationModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.SpriteMaskModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.SpriteShapeModule.dll
@@ -99,12 +99,12 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.GameCente
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.InputModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.TextCoreModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.UNETModule.dll
-C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.XRModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.ARModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.ClusterRendererModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.CrashReportingModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.PerformanceReportingModule.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\KSPAssets.XmlSerializers.dll
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CoreCompileInputs.cache
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CopyComplete
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.pdb
