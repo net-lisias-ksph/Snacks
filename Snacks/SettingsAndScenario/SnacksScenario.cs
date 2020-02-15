@@ -30,6 +30,7 @@ using System.Text;
 using System.IO;
 using UnityEngine;
 using KSP.IO;
+using KSP.UI.Screens;
 
 namespace Snacks
 {
@@ -889,6 +890,7 @@ namespace Snacks
             GameEvents.onVesselGoOffRails.Add(onVesselGoOffRails);
             GameEvents.onKerbalLevelUp.Add(onKerbalLevelUp);
             GameEvents.onVesselSituationChange.Add(onVesselSituationChange);
+            GameEvents.onEditorLoad.Add(onEditorLoad);
 
             //Create skill loss conditions list
             lossOfSkillConditions = new List<string>();
@@ -982,6 +984,7 @@ namespace Snacks
             GameEvents.onVesselGoOffRails.Remove(onVesselGoOffRails);
             GameEvents.onKerbalLevelUp.Remove(onKerbalLevelUp);
             GameEvents.onVesselSituationChange.Remove(onVesselSituationChange);
+            GameEvents.onEditorLoad.Remove(onEditorLoad);
         }
 
         public override void OnLoad(ConfigNode node)
@@ -1348,6 +1351,21 @@ namespace Snacks
                             rosterResources[keys[resourceIndex]].addResourceIfNeeded(astronauts[astronautIndex]);
                     }
                 }
+            }
+        }
+
+        private void onEditorLoad(ShipConstruct ship, CraftBrowserDialog.LoadType loadType)
+        {
+            Part part;
+            int count = 0;
+            string[] keys = rosterResources.Keys.ToArray();
+            for (int index = 0; index < ship.parts.Count; index++)
+            {
+                part = ship.parts[index];
+
+                count = snacksPartResources.Count;
+                for (int resourceIndex = 0; resourceIndex < count; resourceIndex++)
+                    snacksPartResources[resourceIndex].addResourcesIfNeeded(part);
             }
         }
 
