@@ -90,8 +90,8 @@ namespace Snacks
         #region Constants
         public const string SNACKS_EVENT = "SNACKS_EVENT";
         public const string SnacksEventName = "name";
-        public const string SnacksEventCategory = "category";
-        public const string SnacksEventAffectedKerbals = "affectedKerbals";
+        public const string SnacksEventCategory = "eventCategory";
+        public const string SnacksEventAffectedKerbals = "kerbalsAffected";
         public const string SnacksEventPlayerMessage = "playerMessage";
         public const string SnacksEventSecondsBetweenChecks = "secondsBetweenChecks";
         public const string SnacksEventDaysBetweenChecks = "daysBetweenChecks";
@@ -500,14 +500,16 @@ namespace Snacks
 
             //Make sure all preconditions are valid before applying outcomes.
             if (PreconditionsValid(randomAssignedCandidates[randomIndex], randomAssignedVessels[randomIndex]))
+            {
                 ApplyOutcomes(randomAssignedCandidates[randomIndex], randomAssignedVessels[randomIndex]);
 
-            //Finally, show player message
-            if (!string.IsNullOrEmpty(playerMessage))
-            {
-                string message = playerMessage;
-                message = message.Replace("<<KerbalName>>", randomAssignedCandidates[randomIndex].name);
-                ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                //Finally, show player message
+                if (!string.IsNullOrEmpty(playerMessage))
+                {
+                    string message = playerMessage;
+                    message = message.Replace("<<KerbalName>>", randomAssignedCandidates[randomIndex].name);
+                    ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                }
             }
         }
 
@@ -530,14 +532,16 @@ namespace Snacks
 
             //Make sure all preconditions are valid before applying outcomes.
             if (PreconditionsValid(roster[randomIndex]))
+            {
                 ApplyOutcomes(roster[randomIndex]);
 
-            //Finally, show player message
-            if (!string.IsNullOrEmpty(playerMessage))
-            {
-                string message = playerMessage;
-                message = message.Replace("<<KerbalName>>", roster[randomIndex].name);
-                ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                //Finally, show player message
+                if (!string.IsNullOrEmpty(playerMessage))
+                {
+                    string message = playerMessage;
+                    message = message.Replace("<<KerbalName>>", roster[randomIndex].name);
+                    ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                }
             }
         }
 
@@ -580,14 +584,16 @@ namespace Snacks
                 int randomIndex = UnityEngine.Random.Range(0, astronauts.Length - 1);
 
                 if (PreconditionsValid(crewList[randomIndex], vessel))
+                {
                     ApplyOutcomes(crewList[randomIndex], vessel);
 
-                //Finally, show player message
-                if (!string.IsNullOrEmpty(playerMessage))
-                {
-                    string message = playerMessage;
-                    message = message.Replace("<<KerbalName>>", crewList[randomIndex].name);
-                    ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                    //Finally, show player message
+                    if (!string.IsNullOrEmpty(playerMessage))
+                    {
+                        string message = playerMessage;
+                        message = message.Replace("<<KerbalName>>", crewList[randomIndex].name);
+                        ScreenMessages.PostScreenMessage(message, 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                    }
                 }
             }
         }

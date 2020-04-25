@@ -71,8 +71,8 @@ SKILL_LOSS_CONDITION
 SNACKS_EVENT
 {
 	name = microgravityStress
-	category = categoryPostProcessCycle
-	affectedKerbals = affectsAllAssigned
+	eventCategory = categoryPostProcessCycle
+	kerbalsAffected = affectsAllAssigned
 	daysBetweenChecks = 1
 
 	PRECONDITION
@@ -118,8 +118,8 @@ SNACKS_EVENT
 SNACKS_EVENT
 {
 	name = lonelinessStress
-	category = categoryPostProcessCycle
-	affectedKerbals = affectsAllAssigned
+	eventCategory = categoryPostProcessCycle
+	kerbalsAffected = affectsAllAssigned
 	daysBetweenChecks = 1
 
 	PRECONDITION
@@ -140,8 +140,8 @@ SNACKS_EVENT
 SNACKS_EVENT
 {
 	name = disconnectedStress
-	category = categoryPostProcessCycle
-	affectedKerbals = affectsAllAssigned
+	eventCategory = categoryPostProcessCycle
+	kerbalsAffected = affectsAllAssigned
 	daysBetweenChecks = 1
 
 	PRECONDITION
@@ -317,8 +317,8 @@ SNACKS_EVENT
 SNACKS_EVENT
 {
 	name = kscRecovery
-	category = categoryPostProcessCycle
-	affectedKerbals = affectsAllAvailable
+	eventCategory = categoryPostProcessCycle
+	kerbalsAffected = affectsAllAvailable
 	daysBetweenChecks = 1
 
 	OUTCOME

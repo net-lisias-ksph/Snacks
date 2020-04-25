@@ -86,6 +86,9 @@ namespace Snacks
                 {
                     return false;
                 }
+
+                if (vessel.protoVessel.situation == Vessel.Situations.ORBITING || vessel.protoVessel.situation == Vessel.Situations.SUB_ORBITAL || vessel.situation == Vessel.Situations.ESCAPING)
+                    staticPressure = 0;
             }
 
             if (mustExist)

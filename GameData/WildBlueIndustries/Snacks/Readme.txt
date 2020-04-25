@@ -24,6 +24,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.24.5
+- Bug fixes
+
 1.24.4
 - Snacks (and other life support resources) will now be added to vessels that are loaded into the VAB/SPH.
 
