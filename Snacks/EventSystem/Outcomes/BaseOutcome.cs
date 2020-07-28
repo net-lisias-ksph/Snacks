@@ -175,11 +175,12 @@ namespace Snacks
         /// Removes the outcome from the vessel's crew.
         /// </summary>
         /// <param name="vessel">The Vessel to process.</param>
-        public virtual void RemoveOutcome(Vessel vessel)
+        /// <param name="informPlayer">A Bool indicating whether or not to inform the player.</param>
+        public virtual void RemoveOutcome(Vessel vessel, bool informPlayer = true)
         {
             int count = childOutcomes.Count;
             for (int index = 0; index < count; index++)
-                childOutcomes[index].RemoveOutcome(vessel);
+                childOutcomes[index].RemoveOutcome(vessel, informPlayer);
         }
         #endregion
     }

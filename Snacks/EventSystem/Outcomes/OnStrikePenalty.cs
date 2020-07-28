@@ -124,7 +124,7 @@ namespace Snacks
             base.ApplyOutcome(vessel, result);
         }
 
-        public override void RemoveOutcome(Vessel vessel)
+        public override void RemoveOutcome(Vessel vessel, bool informPlayer)
         {
             ProtoCrewMember[] astronauts = null;
             AstronautData astronautData = null;
@@ -148,7 +148,7 @@ namespace Snacks
             }
 
             //Call base class
-            base.RemoveOutcome(vessel);
+            base.RemoveOutcome(vessel, informPlayer);
         }
 
         public override bool IsEnabled()

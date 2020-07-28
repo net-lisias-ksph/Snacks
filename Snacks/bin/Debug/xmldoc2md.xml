@@ -956,6 +956,12 @@
             </summary>
             <param name="vessel">The vessel that was loaded.</param>
         </member>
+        <member name="M:Snacks.BaseResourceProcessor.onVesselDockUndock(Vessel)">
+            <summary>
+            Handles vessel dock/undock event.
+            </summary>
+            <param name="vessel">The vessel that was loaded.</param>
+        </member>
         <member name="M:Snacks.BaseResourceProcessor.onVesselRecovered(ProtoVessel)">
             <summary>
             Handles the vessel recovery event
@@ -2105,6 +2111,11 @@
             The output efficiency.
             </summary>
         </member>
+        <member name="F:Snacks.SnacksBackgroundConverter.playerEmailed">
+            <summary>
+            Flag to indicate that the player has been emailed. Used so we don't spam the player's inbox.
+            </summary>
+        </member>
         <member name="M:Snacks.SnacksBackgroundConverter.GetBackgroundConverters">
             <summary>
             Parses a vessel to find active converters to run in the background.
@@ -2874,11 +2885,12 @@
             <param name="vessel">The Vessel being processed.</param>
             <param name="result">The Result of the processing attempt.</param>
         </member>
-        <member name="M:Snacks.BaseOutcome.RemoveOutcome(Vessel)">
+        <member name="M:Snacks.BaseOutcome.RemoveOutcome(Vessel,System.Boolean)">
             <summary>
             Removes the outcome from the vessel's crew.
             </summary>
             <param name="vessel">The Vessel to process.</param>
+            <param name="informPlayer">A Bool indicating whether or not to inform the player.</param>
         </member>
     </members>
 </doc>

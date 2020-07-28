@@ -277,6 +277,15 @@ namespace Snacks
         }
 
         /// <summary>
+        /// Handles vessel dock/undock event.
+        /// </summary>
+        /// <param name="vessel">The vessel that was loaded.</param>
+        public virtual void onVesselDockUndock(Vessel vessel)
+        {
+
+        }
+
+        /// <summary>
         /// Handles the vessel recovery event
         /// </summary>
         /// <param name="protoVessel">The ProtoVessel being recovered</param>
@@ -689,11 +698,11 @@ namespace Snacks
             }
         }
 
-        protected virtual void removeFailureOutcomes(Vessel vessel)
+        protected virtual void removeFailureOutcomes(Vessel vessel, bool informPlayer = true)
         {
             int count = outcomes.Count;
             for (int index = 0; index < count; index++)
-                outcomes[index].RemoveOutcome(vessel);
+                outcomes[index].RemoveOutcome(vessel, informPlayer);
         }
         #endregion
     }

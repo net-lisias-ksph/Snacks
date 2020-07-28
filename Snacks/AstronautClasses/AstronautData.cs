@@ -292,6 +292,8 @@ namespace Snacks
 
             else if (!conditionSummary.Contains(disqualifier))
                 disqualifiedPreconditions += ", " + disqualifier;
+
+            SnacksScenario.Instance.SetAstronautData(this);
         }
 
         /// <summary>
@@ -308,6 +310,8 @@ namespace Snacks
                 disqualifiedPreconditions = disqualifiedPreconditions.Replace(", " + disqualifier, "");
                 disqualifiedPreconditions = disqualifiedPreconditions.Replace(disqualifier + ", ", "");
             }
+
+            SnacksScenario.Instance.SetAstronautData(this);
         }
 
         /// <summary>
@@ -322,6 +326,8 @@ namespace Snacks
 
             else if (!conditionSummary.Contains(condition))
                 conditionSummary += ", " + condition;
+
+            SnacksScenario.Instance.SetAstronautData(this);
         }
 
         /// <summary>
@@ -340,6 +346,7 @@ namespace Snacks
                 conditionSummary = conditionSummary.Replace(", " + condition, "");
                 conditionSummary = conditionSummary.Replace(condition + ", ", "");
             }
+            SnacksScenario.Instance.SetAstronautData(this);
         }
         #endregion
     }

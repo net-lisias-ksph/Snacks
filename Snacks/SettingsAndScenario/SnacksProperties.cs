@@ -200,10 +200,22 @@ namespace Snacks
         [GameParameters.CustomParameterUI("Run simulator estimates", toolTip = "Toggles simulator calculations on/off.", autoPersistance = true)]
         public bool enableSimulator = true;
 
+        [GameParameters.CustomParameterUI("Email background converter results.", toolTip = "Enable this to know when converters run out of resources or room.", autoPersistance = true)]
+        public bool emailConverterResults = true;
+
         [GameParameters.CustomParameterUI("Enable Debug Log", toolTip = "Logs stuff to help diagnose issues.", autoPersistance = true)]
         public bool enableDebugLog = true;
 
         #region Properties
+
+        public static bool EmailConverterResults
+        {
+            get
+            {
+                SnacksProperties snacksProperties = HighLogic.CurrentGame.Parameters.CustomParams<SnacksProperties>();
+                return snacksProperties.emailConverterResults;
+            }
+        }
 
         public static bool DebugLoggingEnabled
         {

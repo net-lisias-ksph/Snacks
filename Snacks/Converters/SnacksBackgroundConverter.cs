@@ -133,6 +133,11 @@ namespace Snacks
         /// </summary>
         public double outputEfficiency = 1.0f;
 
+        /// <summary>
+        /// Flag to indicate that the player has been emailed. Used so we don't spam the player's inbox.
+        /// </summary>
+        public bool playerEmailed = false;
+
         bool UseSpecialistBonus = false;
         float SpecialistBonusBase = 0.05f;
         float SpecialistEfficiencyFactor = 0.1f;
@@ -334,8 +339,11 @@ namespace Snacks
             {
                 this.moduleSnapshot = protoModule;
                 this.protoPart = protoPart;
+                this.ConverterName = node.GetValue("ConverterName");
 
                 bool.TryParse(protoModule.moduleValues.GetValue("IsActivated"), out IsActivated);
+                if (node.HasValue("playerEmailed"))
+                    bool.TryParse(moduleSnapshot.moduleValues.GetValue("playerEmailed"), out playerEmailed);
 
                 //Get input resources
                 if (node.HasNode("INPUT_RESOURCE"))
@@ -477,15 +485,10 @@ namespace Snacks
             {
                 resourceRatio = inputList[index];
                 //Skip resource if the appropriate cheat is on
-                if ((resourceRatio.ResourceName == "ElectricCharge" && infiniteElectricity) || (infinitePropellantsEnabled))
+                if ((resourceRatio.ResourceName == "ElectricCharge") || (infinitePropellantsEnabled))
                     continue;
 
-                //Give players a break on E.C. for high timewarp
-                if (elapsedTime >= kHighTimewarpDelta && resourceRatio.ResourceName == "ElectricCharge")
-                    demand = resourceRatio.Ratio * inputEfficiency * kHighTimewarpDelta;
-                else
                     demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
-
                 amount = getAmount(resourceRatio.ResourceName, resourceRatio.FlowMode);
                 if (amount < demand)
                 {
@@ -503,15 +506,10 @@ namespace Snacks
             {
                 resourceRatio = inputList[index];
                 //Skip resource if the appropriate cheat is on
-                if ((resourceRatio.ResourceName == "ElectricCharge" && infiniteElectricity) || (infinitePropellantsEnabled))
+                if ((resourceRatio.ResourceName == "ElectricCharge") || (infinitePropellantsEnabled))
                     continue;
 
-                //Give players a break on E.C. for high timewarp
-                if (elapsedTime >= kHighTimewarpDelta && resourceRatio.ResourceName == "ElectricCharge")
-                    demand = resourceRatio.Ratio * inputEfficiency * kHighTimewarpDelta;
-                else
-                    demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
-
+                //Request resource
                 demand = resourceRatio.Ratio * inputEfficiency * elapsedTime;
                 requestAmount(resourceRatio.ResourceName, demand, resourceRatio.FlowMode);
             }
@@ -546,6 +544,10 @@ namespace Snacks
                         if (rosterResource.amount <= 0)
                             rosterResource.amount = 0;
                         astronautData.rosterResources[rosterRatio.ResourceName] = rosterResource;
+                        SnacksScenario.Instance.SetAstronautData(astronautData);
+
+                        if (SnacksProperties.DebugLoggingEnabled)
+                            Debug.Log("[" + ConverterName + "] - " + astronautData.name + ": " + rosterResource.GetStatusDisplay());
 
                         //Fire event
                         SnacksScenario.onRosterResourceUpdated.Fire(vessel.vesselRef, rosterResource, astronautData, astronauts[astronautIndex]);
@@ -915,6 +917,17 @@ namespace Snacks
             PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
             string titleMessage;
 
+            //Spam check
+            if (playerEmailed || !SnacksProperties.EmailConverterResults)
+            {
+                return;
+            }
+            else
+            {
+                playerEmailed = true;
+                moduleSnapshot.moduleValues.SetValue("playerEmailed", playerEmailed);
+            }
+
             //From
             resultsMessage.AppendLine("From: " + protoPart.pVesselRef.vesselName);
 
@@ -922,14 +935,14 @@ namespace Snacks
             {
                 case SnacksBackroundEmailTypes.missingResources:
                     resourceDef = definitions[resourceName];
-                    titleMessage = "needs more resources";
+                    titleMessage = " needs more resources";
                     resultsMessage.AppendLine("Subject: Missing Resources");
                     resultsMessage.AppendLine("There is no more " + resourceDef.displayName + " available to continue production. Operations cannot continue with the " + ConverterName + " until more resource becomes available.");
                     break;
 
                 case SnacksBackroundEmailTypes.missingRequiredResource:
                     resourceDef = definitions[resourceName];
-                    titleMessage = "needs a resource";
+                    titleMessage = " needs a resource";
                     resultsMessage.AppendLine("Subject: Missing Required Resource");
                     resultsMessage.AppendLine(ConverterName + " needs " + resourceDef.displayName + " in order to function. Operations halted until the resource becomes available.");
                     break;
@@ -942,7 +955,7 @@ namespace Snacks
                     break;
 
                 case SnacksBackroundEmailTypes.yieldCriticalFail:
-                    titleMessage = "has suffered a critical failure in one of its converters";
+                    titleMessage = " has suffered a critical failure in one of its converters";
                     resultsMessage.AppendLine("A " + ConverterName + " has failed! The production yield has been lost. It must be repaired and/or restarted before it can begin production again.");
                     break;
 
@@ -1030,6 +1043,10 @@ namespace Snacks
                 double currentDemand = demand;
                 for (int index = 0; index < count; index++)
                 {
+                    //Skip locked resources
+                    if (!resourceShapshots[index].flowState)
+                        continue;
+
                     if (resourceShapshots[index].amount > currentDemand)
                     {
                         resourceShapshots[index].amount -= currentDemand;
@@ -1049,6 +1066,10 @@ namespace Snacks
                 count = protoPart.resources.Count;
                 for (int index = 0; index < count; index++)
                 {
+                    //Skip locked resources
+                    if (!protoPart.resources[index].flowState)
+                        continue;
+
                     if (protoPart.resources[index].resourceName == resourceName)
                     {
                         supply = protoPart.resources[index].amount;
@@ -1083,7 +1104,8 @@ namespace Snacks
                 count = resourceShapshots.Count;
                 for (int index = 0; index < count; index++)
                 {
-                    amount += resourceShapshots[index].amount;
+                    if (resourceShapshots[index].flowState)
+                        amount += resourceShapshots[index].amount;
                 }
             }
             else //Check the part
@@ -1091,7 +1113,7 @@ namespace Snacks
                 count = protoPart.resources.Count;
                 for (int index = 0; index < count; index++)
                 {
-                    if (protoPart.resources[index].resourceName == resourceName)
+                    if (protoPart.resources[index].resourceName == resourceName && protoPart.resources[index].flowState)
                         return protoPart.resources[index].amount;
                 }
             }

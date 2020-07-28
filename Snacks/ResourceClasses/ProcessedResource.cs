@@ -316,6 +316,8 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     resource = resourceList[index];
+                    if (!resource.flowState)
+                        continue;
 
                     if (amountSupplied >= supply)
                     {
@@ -358,6 +360,8 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     resource = resourceList[index];
+                    if (!resource.flowState)
+                        continue;
 
                     if (resource.amount >= demandRemaining)
                     {
@@ -403,6 +407,9 @@ namespace Snacks
                     for (int resourceIndex = 0; resourceIndex < protoResources.Length; resourceIndex++)
                     {
                         resource = protoResources[resourceIndex];
+                        if (!resource.flowState)
+                            continue;
+
                         if (resource.resourceName == resourceName && resource.flowState)
                         {
                             amount += resource.amount;
@@ -498,6 +505,8 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     resource = resourceList[index];
+                    if (!resource.flowState)
+                        continue;
 
                     if (amountSupplied >= supply)
                     {
@@ -540,6 +549,8 @@ namespace Snacks
                 for (int index = 0; index < count; index++)
                 {
                     resource = resourceList[index];
+                    if (!resource.flowState)
+                        continue;
 
                     if (resource.amount >= demandRemaining)
                     {
@@ -585,6 +596,9 @@ namespace Snacks
                     for (int resourceIndex = 0; resourceIndex < protoResources.Length; resourceIndex++)
                     {
                         resource = protoResources[resourceIndex];
+                        if (!resource.flowState)
+                            continue;
+
                         if (resource.resourceName == resourceName)
                         {
                             if (resource.flowState)

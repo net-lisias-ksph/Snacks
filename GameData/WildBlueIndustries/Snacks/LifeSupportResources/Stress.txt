@@ -159,6 +159,47 @@ SNACKS_EVENT
 	}
 }
 
+//Stress eating!
+SNACKS_EVENT:NEEDS[SnacksStress]
+{
+	eventCategory = categoryPostProcessCycle
+	kerbalsAffected = affectsAllAssigned
+
+	PRECONDITION
+	{
+		name = CheckCondition
+		conditionSummary = Stressed Out
+	}
+
+	PRECONDITION
+	{
+		name = CheckRandomChance
+		dieRollMin = 1
+		dieRollMax = 100
+		targetNumber = 95
+	}
+
+	OUTCOME
+	{
+		name = ConsumeResource
+		resourceName = Snacks
+		randomMin = 0.1
+		randomMax = 0.5
+		showInSnapshot = false
+		failureResultAppliesOutcomes = true
+	}
+
+	OUTCOME
+	{
+		name = ConsumeResource
+		resourceName = Stress
+		randomMin = 0.1
+		randomMax = 0.5
+		showInSnapshot = false
+		failureResultAppliesOutcomes = false
+	}
+}
+
 //Kerbals can catch a cold!
 SNACKS_ROSTER_RESOURCE
 {

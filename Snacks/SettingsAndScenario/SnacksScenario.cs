@@ -868,6 +868,8 @@ namespace Snacks
             GameEvents.onCrewBoardVessel.Add(onCrewBoardVessel);
             GameEvents.OnGameSettingsApplied.Add(onGameSettingsApplied);
             GameEvents.onVesselWasModified.Add(onVesselWasModified);
+            GameEvents.onDockingComplete.Add(onDockingComplete);
+            GameEvents.onVesselsUndocking.Add(onVesselsUndocking);
             GameEvents.onVesselWillDestroy.Add(onVesselWillDestroy);
             GameEvents.OnVesselRecoveryRequested.Add(onVesselRecoveryRequested);
             GameEvents.OnVesselRollout.Add(onVesselRollout);
@@ -962,6 +964,8 @@ namespace Snacks
             GameEvents.onCrewBoardVessel.Remove(onCrewBoardVessel);
             GameEvents.OnGameSettingsApplied.Remove(onGameSettingsApplied);
             GameEvents.onVesselWasModified.Remove(onVesselWasModified);
+            GameEvents.onDockingComplete.Add(onDockingComplete);
+            GameEvents.onVesselsUndocking.Add(onVesselsUndocking);
             GameEvents.onVesselWillDestroy.Remove(onVesselWillDestroy);
             GameEvents.OnVesselRecoveryRequested.Remove(onVesselRecoveryRequested);
             GameEvents.OnVesselRollout.Remove(onVesselRollout);
@@ -1386,6 +1390,28 @@ namespace Snacks
         private void onVesselWasModified(Vessel vessel)
         {
             onVesselLoaded(vessel);
+        }
+
+        private void onDockingComplete(GameEvents.FromToAction<Part, Part> action)
+        {
+            //Inform resource processors
+            Vessel vessel = action.from.vessel;
+            int count = resourceProcessors.Count;
+            for (int index = 0; index < count; index++)
+            {
+                resourceProcessors[index].onVesselDockUndock(vessel);
+            }
+        }
+
+        private void onVesselsUndocking(Vessel oldVessel, Vessel newVessel)
+        {
+            //Inform resource processors
+            int count = resourceProcessors.Count;
+            for (int index = 0; index < count; index++)
+            {
+                resourceProcessors[index].onVesselDockUndock(oldVessel);
+                resourceProcessors[index].onVesselDockUndock(newVessel);
+            }
         }
 
         private void onGameSettingsApplied()

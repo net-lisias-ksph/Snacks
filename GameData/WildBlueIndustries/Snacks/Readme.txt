@@ -24,6 +24,20 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.25.0
+- Fix background converters not respecting locked resources for unloaded vessels.
+- Fix resource processors not respecting locked resources for unloaded vessels.
+- Fix condition summary not showing Stressed Out condition.
+- Fix Stress not recalculated when a vessel docks or undocks.
+- Fix SOCS Cannister explosion check not being checked.
+- Fix SOCS Cannister automatically shuts down when it runs out of SOCS Fuel.
+- Fix SOCS Cannister user messages are more appropriate now.
+- If kerbals get Stressed Out they might start stress eating. If you run out of Snacks they'll get even more Stressed Out.
+- Kerbals wait to get Stressed Out before they start consuming "Hydrazine."
+- You can now disable email notifications of converters running out of resources or storage space via the Snacks Settings menu.
+- Background processors no longer consume ElectricCharge for simplicity; it's either that or bog the game down with finding and running power generators.
+- You can now customize the SnacksConverter's criticalSuccessMessage, successMessage, failMessage, and criticalFailMessage displayed during yielded resource checks.
+
 1.24.5
 - Bug fixes
 

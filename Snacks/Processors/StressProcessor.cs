@@ -184,7 +184,6 @@ namespace Snacks
             ProtoCrewMember[] astronauts = null;
             AstronautData astronautData = null;
             SnacksProcessorResult result = new SnacksProcessorResult();
-            bool completedSuccessfully = true;
             float stress = 0;
 
             remainingTime += elapsedTime;
@@ -214,10 +213,7 @@ namespace Snacks
                 //Now increase stress in the vessel's crew.
                 SnacksRosterResource resource;
                 for (int index = 0; index < astronauts.Length; index++)
-                {
-                    //Reset flag
-                    completedSuccessfully = true;
-
+                {                    
                     //Get astronaut data
                     astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
                     if (astronautData == null)
@@ -230,6 +226,7 @@ namespace Snacks
 
                     //Increase stress; stupidity matters
                     stress = (1 - astronauts[index].stupidity);
+                    stress = UnityEngine.Random.Range(stress/2.0f, stress);
 
                     //Is kerbal a badass? Then reduce acquired stress
                     if (astronauts[index].isBadass)
@@ -244,11 +241,13 @@ namespace Snacks
                     resource.amount += stress;
                     astronautData.rosterResources[StressResourceName] = resource;
 
+                    if (SnacksProperties.DebugLoggingEnabled)
+                        Debug.Log("[" + name + "] - " + astronautData.name + ": Stress added: " + stress.ToString() + " Status: "+ resource.GetStatusDisplay());
+
                     //Check for failure conditions
                     if (resource.amount >= resource.maxAmount)
                     {
-                        //Set the flags
-                        completedSuccessfully = false;
+                        //Set the flag
                         result.completedSuccessfully = false;
 
                         //Incease affected kerbal count
@@ -259,13 +258,13 @@ namespace Snacks
                             result.afftectedAstronauts = new List<ProtoCrewMember>();
                         result.afftectedAstronauts.Add(astronauts[index]);
                     }
-
-                    //Process results
-                    if (!completedSuccessfully)
-                        applyFailureOutcomes(vessel, result);
-                    else
-                        removeFailureOutcomes(vessel);
                 }
+
+                //Process results
+                //First clear the failure outcomes, then apply to any who are affected.
+                removeFailureOutcomes(vessel, false);
+                if (!result.completedSuccessfully)
+                    applyFailureOutcomes(vessel, result);
 
                 //Record results
                 productionResults.Add(StressResourceName, result);
@@ -274,13 +273,69 @@ namespace Snacks
 
         public override void onVesselLoaded(Vessel vessel)
         {
+            ProtoCrewMember[] astronauts = null;
+            AstronautData astronautData = null;
+            SnacksProcessorResult result = new SnacksProcessorResult();
+
+            //Get the crew manifest
+            if (vessel.loaded)
+                astronauts = vessel.GetVesselCrew().ToArray();
+            else
+                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+            if (astronauts.Length == 0)
+                return;
+
+            //Update max space
             updateMaxSpace(vessel);
+
+            //Setup result
+            productionResults.Clear();
+            result.crewCount = vessel.GetCrewCount();
+            result.crewCapacity = vessel.GetCrewCapacity();
+            result.resourceName = StressResourceName;
+            result.completedSuccessfully = true;
+
+            SnacksRosterResource resource;
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                //Get astronaut data
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+                if (astronautData == null)
+                    continue;
+                if (!astronautData.rosterResources.ContainsKey(StressResourceName))
+                    continue;
+
+                //Get the Stress roster resource
+                resource = astronautData.rosterResources[StressResourceName];
+
+                //Check for failure conditions
+                if (resource.amount >= resource.maxAmount)
+                {
+                    //Set the flag
+                    result.completedSuccessfully = false;
+
+                    //Incease affected kerbal count
+                    result.affectedKerbalCount += 1;
+
+                    //Add astronaut to the affected list
+                    if (result.afftectedAstronauts == null)
+                        result.afftectedAstronauts = new List<ProtoCrewMember>();
+                    result.afftectedAstronauts.Add(astronauts[index]);
+                }
+            }
+
+            //Process results
+            //First clear the failure outcomes, then apply to any who are affected.
+            removeFailureOutcomes(vessel, false);
+            if (!result.completedSuccessfully)
+                applyFailureOutcomes(vessel, result);
         }
 
         public override void onVesselGoOffRails(Vessel vessel)
         {
             updateMaxSpace(vessel);
         }
+
         #endregion
 
         #region Helpers

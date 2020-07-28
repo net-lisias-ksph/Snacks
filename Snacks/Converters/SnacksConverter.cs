@@ -81,9 +81,13 @@ namespace Snacks
 
         //User messages for last attempt
         public float kMessageDuration = 5.0f;
+        [KSPField]
         public string criticalFailMessage = "Production yield lost!";
+        [KSPField]
         public string criticalSuccessMessage = "Production yield higher than expected.";
+        [KSPField]
         public string failMessage = "Production yield lower than expected.";
+        [KSPField]
         public string successMessage = "Production completed.";
 
         //Roster resources
@@ -868,6 +872,31 @@ namespace Snacks
                 results.Status = status;
                 results.TimeFactor = deltaTime;
                 PostProcess(results, deltaTime);
+
+                //Explosion check. Special case for when we have no yield resources.
+                if (explodeUponCriticalFail && yieldsList.Count == 0)
+                {
+                    elapsedTime = Planetarium.GetUniversalTime() - cycleStartTime;
+                    if (elapsedTime >= secondsPerCycle)
+                    {
+                        float completionRatio = (float)(elapsedTime / secondsPerCycle);
+                        elapsedTime = 0;
+                        cycleStartTime = Planetarium.GetUniversalTime();
+
+                        if (completionRatio > 1.0f && !missingResources)
+                        {
+                            int cyclesSinceLastUpdate = Mathf.RoundToInt(completionRatio);
+                            for (int currentCycle = 0; currentCycle < cyclesSinceLastUpdate; currentCycle++)
+                            {
+                                if (performAnalysisRoll() <= criticalFail)
+                                {
+                                    onCriticalFailure();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             //Cleanup

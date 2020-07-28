@@ -160,7 +160,7 @@ namespace Snacks
             base.ApplyOutcome(vessel, result);
         }
 
-        public override void RemoveOutcome(Vessel vessel)
+        public override void RemoveOutcome(Vessel vessel, bool informPlayer)
         {
             ProtoCrewMember[] astronauts;
 
@@ -173,7 +173,7 @@ namespace Snacks
                 astronauts[index].inactive = false;
 
             //Call base class
-            base.RemoveOutcome(vessel);
+            base.RemoveOutcome(vessel, informPlayer);
         }
         #endregion
 

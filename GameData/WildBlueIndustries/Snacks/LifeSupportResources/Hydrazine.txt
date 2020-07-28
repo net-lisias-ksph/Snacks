@@ -57,10 +57,8 @@ SNACKS_RESOURCE_PROCESSOR:NEEDS[SnacksStress]
 
 	PRECONDITION
 	{
-		name = CheckResource
-		resourceName = Stress
-		checkType = checkGreaterOrEqual
-		valueToCheck = 10
+		name = CheckCondition
+		conditionSummary = Stressed Out
 	}
 
 	PRECONDITION
@@ -124,14 +122,6 @@ SNACKS_EVENT:NEEDS[SnacksStress]
 		dieRollMin = 1
 		dieRollMax = 100
 		targetNumber = 80
-	}
-
-	OUTCOME
-	{
-		name = ConsumeResource
-		resourceName = HydrazineVodka
-		randomMin = 1
-		randomMax = 3
 	}
 
 	OUTCOME
