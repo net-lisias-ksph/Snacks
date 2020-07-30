@@ -335,6 +335,7 @@ namespace Snacks
             Part fromPart = data.from;
             Part toPart = data.to;
 
+            //Kerbal is entering the part
             if (!string.IsNullOrEmpty(conditionSummary) && IsActivated && toPart == this.part)
             {
                 AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
@@ -342,6 +343,16 @@ namespace Snacks
                 //Set condition
                 astronautData.SetCondition(conditionSummary);
                 SnacksScenario.Instance.RemoveSkills(astronaut);
+            }
+
+            //Kerbal is leaving the part
+            else if (!string.IsNullOrEmpty(conditionSummary) && IsActivated && fromPart == this.part)
+            {
+                AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+
+                //Remove condition
+                astronautData.ClearCondition(conditionSummary);
+                SnacksScenario.Instance.RestoreSkillsIfNeeded(astronaut);
             }
         }
 

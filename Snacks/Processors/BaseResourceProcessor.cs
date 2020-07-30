@@ -321,6 +321,18 @@ namespace Snacks
 
         #region API
         /// <summary>
+        /// Retrieves the editor estimates for roster resources, if any.
+        /// </summary>
+        /// <param name="currentCrewCount">An int containing the current crew count.</param>
+        /// <param name="crewCapacity">An int containing the vessel's crew capacity.</param>
+        /// <param name="results">A StringBuilder that will hold the results.</param>
+        /// <param name="ship">A ShipConstruct that is the current ship design in the editor.</param>
+        public virtual void GetRosterResourceEstimatesForEditor(int currentCrewCount, int crewCapacity, StringBuilder results, ShipConstruct ship)
+        {
+
+        }
+
+        /// <summary>
         /// Loads the SNACKS_RESOURCE_PROCESSOR config nodes and returns a list of processors.
         /// </summary>
         /// <returns>A list of resource processors.</returns>

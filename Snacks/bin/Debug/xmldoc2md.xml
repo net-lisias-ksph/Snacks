@@ -979,6 +979,15 @@
             Handles changes to game settings.
             </summary>
         </member>
+        <member name="M:Snacks.BaseResourceProcessor.GetRosterResourceEstimatesForEditor(System.Int32,System.Int32,System.Text.StringBuilder,ShipConstruct)">
+            <summary>
+            Retrieves the editor estimates for roster resources, if any.
+            </summary>
+            <param name="currentCrewCount">An int containing the current crew count.</param>
+            <param name="crewCapacity">An int containing the vessel's crew capacity.</param>
+            <param name="results">A StringBuilder that will hold the results.</param>
+            <param name="ship">A ShipConstruct that is the current ship design in the editor.</param>
+        </member>
         <member name="M:Snacks.BaseResourceProcessor.LoadProcessors">
             <summary>
             Loads the SNACKS_RESOURCE_PROCESSOR config nodes and returns a list of processors.

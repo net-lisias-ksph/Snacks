@@ -15,7 +15,6 @@ You can configure things like snacks consumed per meal, meals per day, enable/di
 LICENSE
 Source code: The MIT License (MIT)
 Snack Tin artwork by SQUAD/Porkjet: CC-BY-NC 3.0
-Greenhouse artwork by ZZZ: public domain license
 Portions of this codebase are CC-BY-NC 3.0 and derived from Taranis Elsu's Window class.
 
 INSTALLATION
@@ -23,6 +22,13 @@ Delete any previous instances in GameData/Snacks
 Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
+
+1.25.1
+- Fix SnacksConverter not restoring skills when the converter is activated and a kerbal transfers to another part.
+- You can now estimate a vessel's max Stress capacity in the VAB/SPH. Requires Stress to be enabled (rename the Stress.txt file in LifeSupportResources folder to Stress.cfg).
+
+New Feature
+- Stresstimator: If you have Stress enabled, then you'll get a new button in the in-flight Snacks window to open the Stresstimator. This window helps you estimate the max Stress that your crew can take based on the crewable parts that you select. Since kerbals can get Stressed Out when moving from vessels with a lot of available crew capacity to vessels without much available crew capacity, the Stresstimator helps you avoid kerbals getting Stressed Out if they have accumulated Stress, you move them to a docked vessel, and then undock the vessel. Given the game design, it's very difficult to do the Stress estimate automagically, so the Stresstimator is better than nothing...
 
 1.25.0
 - Fix background converters not respecting locked resources for unloaded vessels.

@@ -112,6 +112,16 @@ namespace Snacks
             SnacksScenario.onRosterResourceUpdated.Remove(onRosterResourceUpdated);
         }
 
+        public override void GetRosterResourceEstimatesForEditor(int currentCrewCount, int crewCapacity, StringBuilder results, ShipConstruct ship)
+        {
+            //Calculate the space available.
+            float space = CalculateSpace(currentCrewCount, crewCapacity);
+
+            results.AppendLine("Estimated Max Stress: A crew of " + currentCrewCount.ToString() + string.Format(" will be Stressed Out after {0:n2} days.", space));
+            results.AppendLine("This is based on a kerbal with no experience. Experienced kerbals can last longer.");
+            results.AppendLine(" ");
+        }
+
         public override void onKerbalBoardedVessel(ProtoCrewMember astronaut, Part part)
         {
             if (part == null || part.vessel == null)

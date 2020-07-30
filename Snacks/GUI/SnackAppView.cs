@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using KSP.UI;
+using Highlighting;
 
 /**
 The MIT License (MIT)
@@ -51,7 +52,12 @@ namespace Snacks
         private bool convertersAssumedActive = false;
         private bool showCrewView = false;
         private bool showAvailableCrew = false;
-        int crewCapacity = 0;
+        private bool showStresstimator = false;
+        private int crewCapacity = 0;
+        private int activeVesselCrewCount = 0;
+        private List<Part> habitableParts = new List<Part>();
+        private List<Part> selectedParts = new List<Part>();
+        private StressProcessor stressProcessor = null;
 
         public SnackAppView() :
         base("Vessel Status", 500, 500)
@@ -306,6 +312,13 @@ namespace Snacks
                 simResults.AppendLine(snackshot.GetStatusDisplay());
             }
 
+            //Add roster resource estimates such as Stress
+            List<BaseResourceProcessor> processors = SnacksScenario.Instance.resourceProcessors;
+            ShipConstruct ship = EditorLogic.fetch.ship;
+            count = processors.Count;
+            for (int index = 0; index < count; index++)
+                processors[index].GetRosterResourceEstimatesForEditor(currentCrewCount, crewCapacity, simResults, ship);
+
             //Converter assumption
             if (convertersAssumedActive)
                 simResults.AppendLine("<color=orange>Assumes converters are active; be sure to turn them on.</color>");
@@ -359,13 +372,55 @@ namespace Snacks
             VesselSnackshot vesselSnackshot;
             List<Vessel> keys = snapshotMap.Keys.ToList();
             int count = keys.Count;
-            List<CelestialBody> bodies = FlightGlobals.Bodies;
-            Dictionary<string, double> resourceDurations = null;
             int snackShotCount = 0;
             Snackshot snackshot;
-            bool convertersAssumedActive;
 
             //Update resource durations
+            updateResourcesDurations();
+
+            GUILayout.BeginHorizontal();
+
+            //Draw left pane
+            drawFlightLeftPane();
+
+            //Draw right pane
+            drawFlightRightPane();
+
+            GUILayout.EndHorizontal();
+
+            //Draw stop simulators button
+            if (GUILayout.Button("Stop simulators (Estimates will be unavailable)"))
+            {
+                SnacksScenario.Instance.threadPool.StopAllJobs();
+                for (int index = 0; index < keys.Count; index++)
+                {
+                    vesselSnackshot = snapshotMap[keys[index]];
+                    snackShotCount = vesselSnackshot.snackshots.Count;
+                    for (int snackShotIndex = 0; snackShotIndex < snackShotCount; snackShotIndex++)
+                    {
+                        snackshot = vesselSnackshot.snackshots[snackShotIndex];
+                        if (snackshot.isSimulatorRunning)
+                        {
+                            snackshot.estimatedTimeRemaining = 0;
+                            snackshot.isSimulatorRunning = false;
+                            snackshot.simulatorInterrupted = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void updateResourcesDurations()
+        {
+            Dictionary<Vessel, VesselSnackshot> snapshotMap = SnacksScenario.Instance.snapshotMap;
+            VesselSnackshot vesselSnackshot;
+            List<Vessel> keys = snapshotMap.Keys.ToList();
+            int count = keys.Count;
+            int snackShotCount = 0;
+            Snackshot snackshot;
+            Dictionary<string, double> resourceDurations = null;
+            bool convertersAssumedActive;
+
             SnacksScenario.Instance.threadPool.LockResourceDurations();
             for (int index = 0; index < keys.Count; index++)
             {
@@ -391,9 +446,11 @@ namespace Snacks
                 }
             }
             SnacksScenario.Instance.threadPool.UnlockResourceDurations();
+        }
 
-            //Draw left pane
-            GUILayout.BeginHorizontal();
+        private void drawFlightLeftPane()
+        {
+            List<CelestialBody> bodies = FlightGlobals.Bodies;
 
             GUILayout.BeginVertical();
             scrollPosButtons = GUILayout.BeginScrollView(scrollPosButtons, flightWindowLeftPaneOptions);
@@ -422,16 +479,42 @@ namespace Snacks
 
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
+        }
 
-            //Draw right pane
+        private void drawFlightRightPane()
+        {
+            Dictionary<Vessel, VesselSnackshot> snapshotMap = SnacksScenario.Instance.snapshotMap;
+            VesselSnackshot vesselSnackshot;
+            List<Vessel> keys = snapshotMap.Keys.ToList();
+            int count = keys.Count;
+            List<CelestialBody> bodies = FlightGlobals.Bodies;
+
+            //Draw stresstimator?
+            if (showStresstimator)
+            {
+                drawStresstimator();
+                return;
+            }
+
             GUILayout.BeginVertical();
             if (SnacksScenario.Instance.rosterResources.Count > 0)
             {
                 showCrewView = GUILayout.Toggle(showCrewView, "Show Crew View");
                 if (showCrewView)
                     showAvailableCrew = GUILayout.Toggle(showAvailableCrew, "Show Available Crew");
+
+                //Stresstimator button
+                if (SnacksScenario.Instance.rosterResources.ContainsKey(StressProcessor.StressResourceName))
+                {
+                    if (GUILayout.Button("Open Stresstimator"))
+                    {
+                        showStresstimator = true;
+                        return;
+                    }
+                }
             }
 
+            //Show vessel crew status
             if (!showAvailableCrew)
             {
                 scrollPos = GUILayout.BeginScrollView(scrollPos, flightWindowRightPaneOptions);
@@ -504,26 +587,174 @@ namespace Snacks
 
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
+        }
 
-            GUILayout.EndHorizontal();
-            if (GUILayout.Button("Stop simulators (Estimates will be unavailable)"))
+        private void drawStresstimator()
+        {
+            //Find habitable parts
+            findHabitableParts();
+            if (habitableParts.Count == 0)
             {
-                SnacksScenario.Instance.threadPool.StopAllJobs();
-                for (int index = 0; index < keys.Count; index++)
+                showStresstimator = false;
+                return;
+            }
+
+            //Get the Stress processor
+            findStressProcessor();
+            if (stressProcessor == null)
+            {
+                unhighlightHabitableParts();
+                showStresstimator = false;
+                habitableParts.Clear();
+                selectedParts.Clear();
+                return;
+            }
+
+            GUILayout.BeginVertical();
+            scrollPos = GUILayout.BeginScrollView(scrollPos, flightWindowRightPaneOptions);
+
+            GUILayout.Label("<color=white>Your kerbals might get Stressed Out if you transfer them to a docked vessel and then undock. Will that happen? Click on the habitable parts of the docked vessel to find out. Parts highlighted in blue will count towards the estimate.</color>");
+
+            //Highlight all habitable parts
+            highlightHabitableParts();
+
+            //Calculate and show the estimates
+            drawStressEstimates();
+
+            GUILayout.EndScrollView();
+
+            if (GUILayout.Button("Close Stresstimator"))
+            {
+                unhighlightHabitableParts();
+                showStresstimator = false;
+                habitableParts.Clear();
+                selectedParts.Clear();
+            }
+
+            GUILayout.EndVertical();
+        }
+
+        private void drawStressEstimates()
+        {
+            ProtoCrewMember[] astronauts = FlightGlobals.ActiveVessel.GetVesselCrew().ToArray(); ;
+            AstronautData astronautData = null;
+
+            //Show crew capacity
+            GUILayout.Label(string.Format("<color=white>Estimated Crew Capacity: {0:n0}</color>", crewCapacity));
+
+            //Calculate the total space.
+            float space = stressProcessor.CalculateSpace(activeVesselCrewCount, crewCapacity);
+
+            //Get experience bonus
+            double stressExperienceBonus = SnacksScenario.Instance.rosterResources[StressProcessor.StressResourceName].experienceBonusMaxAmount;
+
+            //Show who will get stressed and who won't.
+            SnacksRosterResource resource;
+            double amount, maxAmount, bonusMaxStress = 0;
+            int experienceLevel = 0;
+            for (int index = 0; index < astronauts.Length; index++)
+            {
+                astronautData = SnacksScenario.Instance.GetAstronautData(astronauts[index]);
+                if (astronautData == null)
+                    continue;
+                if (!astronautData.rosterResources.ContainsKey(StressProcessor.StressResourceName))
+                    continue;
+
+                resource = astronautData.rosterResources[StressProcessor.StressResourceName];
+                experienceLevel = astronauts[index].experienceTrait.CrewMemberExperienceLevel();
+                bonusMaxStress = stressExperienceBonus * experienceLevel;
+                maxAmount = space + bonusMaxStress;
+                amount = resource.amount;
+
+                if (amount > maxAmount)
+                    GUILayout.Label("<color=white>" + astronautData.name + string.Format("\n Estimated Stress: {0:n2}/{1:n2}", amount, maxAmount) + "</color>\n<color=orange> Will likely get Stressed Out</color>");
+                else
+                    GUILayout.Label("<color=white>" + astronautData.name + string.Format("\n Estimated Stress: {0:n2}/{1:n2}", amount, maxAmount) + "</color>");
+            }
+        }
+
+        private void findStressProcessor()
+        {
+            if (stressProcessor == null)
+            {
+                int count = SnacksScenario.Instance.resourceProcessors.Count;
+                for (int index = 0; index < count; index++)
                 {
-                    vesselSnackshot = snapshotMap[keys[index]];
-                    snackShotCount = vesselSnackshot.snackshots.Count;
-                    for (int snackShotIndex = 0; snackShotIndex < snackShotCount; snackShotIndex++)
+                    if (SnacksScenario.Instance.resourceProcessors[index] is StressProcessor)
                     {
-                        snackshot = vesselSnackshot.snackshots[snackShotIndex];
-                        if (snackshot.isSimulatorRunning)
-                        {
-                            snackshot.estimatedTimeRemaining = 0;
-                            snackshot.isSimulatorRunning = false;
-                            snackshot.simulatorInterrupted = true;
-                        }
+                        stressProcessor = (StressProcessor)SnacksScenario.Instance.resourceProcessors[index];
+                        break;
                     }
                 }
+            }
+        }
+
+        private void findHabitableParts()
+        {
+            if (habitableParts.Count > 0)
+                return;
+
+            Vessel vessel = FlightGlobals.ActiveVessel;
+            crewCapacity = 0;
+            activeVesselCrewCount = vessel.GetCrewCount();
+
+            int count = vessel.Parts.Count;
+            Part part;
+            for (int index = 0; index < count; index++)
+            {
+                part = vessel.Parts[index];
+
+                if (part.CrewCapacity > 0)
+                {
+                    habitableParts.Add(part);
+                    part.AddOnMouseDown(onPartMouseDown);
+                }
+            }
+        }
+
+        private void highlightHabitableParts()
+        {
+            if (habitableParts.Count == 0)
+                return;
+
+            int count = habitableParts.Count;
+            for (int index = 0; index < count; index++)
+            {
+                if (habitableParts[index].HighlightActive)
+                    continue;
+
+                if (selectedParts.Contains(habitableParts[index]))
+                    habitableParts[index].Highlight(Highlighter.colorPartTransferDestHighlight);
+                else
+                    habitableParts[index].Highlight(Highlighter.colorPartTransferSourceHighlight);
+            }
+        }
+
+        private void unhighlightHabitableParts()
+        {
+            int count = habitableParts.Count;
+
+            for (int index = 0; index < count; index++)
+            {
+                habitableParts[index].Highlight(false);
+                habitableParts[index].SetHighlightDefault();
+                habitableParts[index].RemoveOnMouseDown(onPartMouseDown);
+            }
+        }
+
+        private void onPartMouseDown(Part partClicked)
+        {
+            if (!selectedParts.Contains(partClicked))
+                selectedParts.Add(partClicked);
+
+            else if (selectedParts.Contains(partClicked))
+                selectedParts.Remove(partClicked);
+
+            int count = selectedParts.Count;
+            crewCapacity = 0;
+            for (int index = 0; index < count; index++)
+            {
+                crewCapacity += selectedParts[index].CrewCapacity;
             }
         }
     }
