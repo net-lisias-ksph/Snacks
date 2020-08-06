@@ -490,7 +490,7 @@ namespace Snacks
             List<CelestialBody> bodies = FlightGlobals.Bodies;
 
             //Draw stresstimator?
-            if (showStresstimator)
+            if (showStresstimator && HighLogic.LoadedSceneIsFlight)
             {
                 drawStresstimator();
                 return;
@@ -504,7 +504,7 @@ namespace Snacks
                     showAvailableCrew = GUILayout.Toggle(showAvailableCrew, "Show Available Crew");
 
                 //Stresstimator button
-                if (SnacksScenario.Instance.rosterResources.ContainsKey(StressProcessor.StressResourceName))
+                if (SnacksScenario.Instance.rosterResources.ContainsKey(StressProcessor.StressResourceName) && HighLogic.LoadedSceneIsFlight)
                 {
                     if (GUILayout.Button("Open Stresstimator"))
                     {

@@ -23,6 +23,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.25.2
+- Fix Stresstimator showing up in Space Center window when it shouldn't.
+- Fix corrected density of Hydrazine.
+
 1.25.1
 - Fix SnacksConverter not restoring skills when the converter is activated and a kerbal transfers to another part.
 - You can now estimate a vessel's max Stress capacity in the VAB/SPH. Requires Stress to be enabled (rename the Stress.txt file in LifeSupportResources folder to Stress.cfg).
