@@ -23,7 +23,7 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
-1.3.0
+1.26.0
 
 Changes
 
