@@ -53,10 +53,16 @@ namespace Snacks
         const string ResourceCounterIsSuccess = "isSuccess";
         const string ResourceCounterName = "resourceName";
         const string ResourceCounterValue = "count";
+        const string ResourceNode = "RESOURCE";
+        const string ResourceNodeName = "name";
+        const string ResourceNodeAmount = "amount";
+        const string ResourceNodeMaxAmount = "maxAmount";
 
         const string KeyValueNode = "KEYVALUE";
         const string KeyValuePairKey = "key";
         const string KeyValuePairValue = "value";
+
+        public const string EVAStartTime = "EVAStartTime";
         #endregion
 
         #region Housekeeping
@@ -114,6 +120,11 @@ namespace Snacks
         /// Conditions that will automatically disqualify a precondition check.
         /// </summary>
         public string disqualifiedPreconditions = string.Empty;
+
+        /// <summary>
+        /// List of resources that the kerbal uses.
+        /// </summary>
+        public Dictionary<string, ConfigNode> resources;
         #endregion
 
         #region Constructors
@@ -126,6 +137,7 @@ namespace Snacks
             processedResourceFailures = new Dictionary<string, int>();
             processedResourceSuccesses = new Dictionary<string, int>();
             rosterResources = new Dictionary<string, SnacksRosterResource>();
+            resources = new Dictionary<string, ConfigNode>();
         }
         #endregion
 
@@ -201,6 +213,14 @@ namespace Snacks
                     if (astronautNode.HasNode(SnacksRosterResource.RosterResourceNode))
                         astronautData.rosterResources = SnacksRosterResource.LoadFromAstronautData(astronautNode);
 
+                    //Other resources
+                    if (astronautNode.HasNode(ResourceNodeName))
+                    {
+                        ConfigNode[] resourceNodes = astronautNode.GetNodes(ResourceNodeName);
+                        for (int index = 0; index < resourceNodes.Length; index++)
+                            astronautData.resources.Add(resourceNodes[index].GetValue(ResourceNodeName), resourceNodes[index]);
+                    }
+
                     crewData.Add(astronautData.name, astronautData);
                 }
                 catch (Exception ex)
@@ -275,6 +295,13 @@ namespace Snacks
                 //Save roster resources
                 SnacksRosterResource.SaveToAstronautData(astronautData.rosterResources, astronautNode);
 
+                //Save other resources
+                keys = astronautData.resources.Keys.ToArray();
+                for (int index = 0; index < keys.Length; index++)
+                {
+                    astronautNode.AddNode(astronautData.resources[keys[index]]);
+                }
+
                 node.AddNode(astronautNode);
             }
         }
@@ -347,6 +374,118 @@ namespace Snacks
                 conditionSummary = conditionSummary.Replace(condition + ", ", "");
             }
             SnacksScenario.Instance.SetAstronautData(this);
+        }
+
+        /// <summary>
+        /// Sets the key/value pair.
+        /// </summary>
+        /// <param name="key">The key to use.</param>
+        /// <param name="value">The value of the key.</param>
+        public void SetKeyValue(string key, string value)
+        {
+            if (keyValuePairs.ContainsKey(key))
+                keyValuePairs[key] = value;
+            else
+                keyValuePairs.Add(key, value);
+        }
+
+        /// <summary>
+        /// Returns the value for the desired key.
+        /// </summary>
+        /// <param name="key">A string containing the desired key.</param>
+        /// <returns>A string with the value, or null if it doesn't exist.</returns>
+        public string GetValueForKey(string key)
+        {
+            return keyValuePairs.Contains(key) ? keyValuePairs[key] : null;
+        }
+
+        /// <summary>
+        /// Returns the value for the desired key.
+        /// </summary>
+        /// <param name="key">A string containing the desired key.</param>
+        /// <returns>A double with the value, or NaN if it doesn't exist.</returns>
+        public double GetDoubleValueForKey(string key)
+        {
+            string value = GetValueForKey(key);
+            if (string.IsNullOrEmpty(value))
+                return double.NaN;
+
+            double doubleValue;
+            if (double.TryParse(value, out doubleValue))
+                return doubleValue;
+            else
+                return double.NaN;
+        }
+
+        /// <summary>
+        /// Removes the key/value pair.
+        /// </summary>
+        /// <param name="key">A string containing the key/value key to remove.</param>
+        public void RemoveKeyValue(string key)
+        {
+            if (keyValuePairs.ContainsKey(key))
+                keyValuePairs.Remove(key);
+        }
+
+        /// <summary>
+        /// Sets the resource to the desired amount and max amount.
+        /// </summary>
+        /// <param name="resourceName">A string containing the name of the resource.</param>
+        /// <param name="amount">A double containing the resource amount.</param>
+        /// <param name="maxAmount">A double containing the resource max amount.</param>
+        public void SetResourceAmounts(string resourceName, double amount, double maxAmount)
+        {
+            ConfigNode node = new ConfigNode(ResourceNode);
+            node.SetValue(ResourceNodeName, resourceName, true);
+            node.SetValue(ResourceNodeAmount, amount.ToString(), true);
+            node.SetValue(ResourceNodeMaxAmount, maxAmount.ToString(), true);
+
+            if (resources.ContainsKey(resourceName))
+                resources[resourceName] = node;
+            else
+                resources.Add(resourceName, node);
+        }
+
+        /// <summary>
+        /// Retrieves the resource's amount and max amount if they exist.
+        /// </summary>
+        /// <param name="resourceName">A string containing the name of the resource.</param>
+        /// <param name="amount">A double containing the amount of resource.</param>
+        /// <param name="maxAmount">A double containing the max amount of the resource.</param>
+        /// <returns>true if the resource was successfully retrieved, false if not.</returns>
+        public bool GetResourceAmounts(string resourceName, out double amount, out double maxAmount)
+        {
+            amount = 0;
+            maxAmount = 0;
+
+            if (!resources.ContainsKey(resourceName))
+                return false;
+
+            ConfigNode node = resources[resourceName];
+            double.TryParse(node.GetValue(ResourceNodeAmount), out amount);
+            double.TryParse(node.GetValue(ResourceNodeMaxAmount), out maxAmount);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Removes the desired resource from the map.
+        /// </summary>
+        /// <param name="resourceName">A string containing the name of the resource to remove.</param>
+        public void RemoveResource(string resourceName)
+        {
+            if (resources.ContainsKey(resourceName))
+                resources.Remove(resourceName);
+        }
+
+        /// <summary>
+        /// Determines whether or not the resource exists.
+        /// </summary>
+        /// <param name="resourceName">A string containing the name of the resource.</param>
+        /// <returns>true if the resource exists, false if not.</returns>
+        public bool HasResource(string resourceName)
+        {
+            return resources.ContainsKey(resourceName);
         }
         #endregion
     }

@@ -408,6 +408,14 @@ namespace Snacks
                     }
                 }
             }
+
+            if (SnacksProperties.DebugLoggingEnabled && HighLogic.LoadedSceneIsFlight)
+            {
+                if (GUILayout.Button("Snack Time!"))
+                {
+                    SnacksScenario.Instance.RunSnackCyleImmediately(SnacksScenario.GetSecondsPerDay() / SnacksProperties.MealsPerDay);
+                }
+            }
         }
 
         private void updateResourcesDurations()

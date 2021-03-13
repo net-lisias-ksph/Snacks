@@ -375,6 +375,32 @@ namespace Snacks
             simSnacks.maxSimulatorCycles = SnacksScenario.Instance.maxSimulatorCycles;
             simSnacks.vessel = vessel;
 
+            // If the vessel is actually a kerbal then we only need its resources.
+            if (vessel.isEVA)
+            {
+                ProtoCrewMember astronaut = vessel.GetVesselCrew()[0];
+                AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+
+                string[] resourceNames = astronautData.resources.Keys.ToArray();
+                string resourceName;
+                for (int index = 0; index < resourceNames.Length; index++)
+                {
+                    resourceName = resourceNames[index];
+                    if (!simSnacks.resources.ContainsKey(resourceName))
+                    {
+                        astronautData.GetResourceAmounts(resourceName, out amount, out maxAmount);
+                        simResource = new SimResource();
+                        simResource.resourceName = resourceName;
+                        simResource.amount = amount;
+                        simResource.maxAmount = maxAmount;
+                        simSnacks.resources.Add(simResource.resourceName, simResource);
+
+                    }
+                }
+
+                return simSnacks;
+            }
+
             //Get resources
             for (int partIndex = 0; partIndex < partCount; partIndex++)
             {

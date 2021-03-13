@@ -50,6 +50,16 @@ namespace Snacks
         /// Max amount possible
         /// </summary>
         public double maxAmount;
+
+        /// <summary>
+        /// When the resource amount drops to or below this value, display the warning message.
+        /// </summary>
+        public double warningAmount;
+
+        /// <summary>
+        /// Message to display when the kerbal's resource has dropped to or below the warningAmount.
+        /// </summary>
+        public string warningMessage = string.Empty;
         #endregion
 
         #region Housekeeping
@@ -71,14 +81,6 @@ namespace Snacks
             List<SnacksEVAResource> resourceList = new List<SnacksEVAResource>();
             SnacksEVAResource resource;
 
-            //Add snacks resource. We do this internally because we need to keep track of changing game settings.
-            resource = new SnacksEVAResource();
-            resource.resourceName = SnacksProperties.SnacksResourceName;
-            resource.amount = SnacksProperties.SnacksPerMeal;
-            resource.maxAmount = SnacksProperties.SnacksPerMeal;
-            SnacksEVAResource.snacksEVAResource = resource;
-            resourceList.Add(resource);
-
             for (int index = 0; index < evaResourceNodes.Length; index++)
             {
                 node = evaResourceNodes[index];
@@ -86,14 +88,28 @@ namespace Snacks
                 resource = new SnacksEVAResource();
                 if (node.HasValue("resourceName"))
                     resource.resourceName = node.GetValue("resourceName");
-                //Skip the Snacks resource definition as we build that internally.
-                if (resource.resourceName == SnacksProperties.SnacksResourceName)
-                    continue;
 
-                if (node.HasValue("amount"))
-                    double.TryParse(node.GetValue("amount"), out resource.amount);
-                if (node.HasValue("maxAmount"))
-                    double.TryParse(node.GetValue("maxAmount"), out resource.maxAmount);
+                if (node.HasValue("warningAmount"))
+                    double.TryParse(node.GetValue("warningAmount"), out resource.warningAmount);
+
+                if (node.HasValue("warningMessage"))
+                    resource.warningMessage = node.GetValue("warningMessage");
+
+                //We use the game settings for Snacks.
+                if (resource.resourceName == SnacksProperties.SnacksResourceName)
+                {
+                    resource.amount = SnacksProperties.SnacksPerMeal;
+                    resource.maxAmount = SnacksProperties.SnacksPerMeal;
+                    snacksEVAResource = resource;
+                }
+                else
+                {
+                    if (node.HasValue("amount"))
+                        double.TryParse(node.GetValue("amount"), out resource.amount);
+
+                    if (node.HasValue("maxAmount"))
+                        double.TryParse(node.GetValue("maxAmount"), out resource.maxAmount);
+                }
 
                 resourceList.Add(resource);
             }
@@ -108,22 +124,6 @@ namespace Snacks
         /// <param name="boardedPart">The part that the kerbal boarded</param>
         public void onCrewBoardedVessel(Part evaKerbal, Part boardedPart)
         {
-            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
-            PartResourceDefinition def;
-            double partCurrentAmount = 0;
-            double partMaxAmount = 0;
-
-            if (string.IsNullOrEmpty(resourceName))
-                return;
-            if (!definitions.Contains(resourceName))
-                return;
-
-            //Get the resource amounts
-            def = definitions[resourceName];
-            evaKerbal.vessel.rootPart.GetConnectedResourceTotals(def.id, out partCurrentAmount, out partMaxAmount, true);
-
-            //Add resource to the vessel
-            boardedPart.vessel.rootPart.RequestResource(def.id, -partCurrentAmount);
         }
 
         /// <summary>
@@ -133,6 +133,11 @@ namespace Snacks
         /// <param name="partExited">The part that the kerbal exited</param>
         public void onCrewEVA(Part evaKerbal, Part partExited)
         {
+            // Get the astronaut's roster
+            ProtoCrewMember astronaut = evaKerbal.vessel.GetVesselCrew()[0];
+            AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+
+            // Get the resource definition
             PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
             PartResourceDefinition def;
             double partCurrentAmount = 0;
@@ -147,41 +152,31 @@ namespace Snacks
             def = definitions[resourceName];
             partExited.vessel.rootPart.GetConnectedResourceTotals(def.id, out partCurrentAmount, out partMaxAmount, true);
             if (partCurrentAmount <= amount)
+            {
                 return;
+            }
 
-            //Add the resource
-            evaKerbal.Resources.Add(def.name, amount, maxAmount, true, true, false, true, PartResource.FlowMode.Both);
+            // Add resource to astronaut if we don't have it already.
+            if (!astronautData.HasResource(resourceName))
+            {
+                //Remove resource from the vessel
+                partExited.vessel.rootPart.RequestResource(def.id, amount);
 
-            //Remove resource from the vessel
-            partExited.vessel.rootPart.RequestResource(def.id, amount);
-        }
-
-        /// <summary>
-        /// If the loaded vessel's parts with crew capacity don't have the resource
-        /// </summary>
-        /// <param name="vessel"></param>
-        public void addResourcesIfNeeded(Vessel vessel)
-        {
-            if (!vessel.isEVA)
-                return;
-            PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
-            PartResourceDefinition def;
-            double partCurrentAmount = 0;
-            double partMaxAmount = 0;
-
-            if (string.IsNullOrEmpty(resourceName))
-                return;
-            if (!definitions.Contains(resourceName))
-                return;
-
-            //Check the vessel to see if it has the resources already.
-            def = definitions[resourceName];
-            vessel.rootPart.GetConnectedResourceTotals(def.id, out partCurrentAmount, out partMaxAmount, true);
-            if (partMaxAmount > 0)
-                return;
-
-            //Add the resource
-            vessel.rootPart.Resources.Add(def.name, amount, maxAmount, true, true, false, true, PartResource.FlowMode.Both);
+                astronautData.SetResourceAmounts(resourceName, amount, amount);
+            }
+            else
+            {
+                // Refill the astronaut resource
+                double astronautAmount = 0;
+                double astronautMaxAmount = 0;
+                astronautData.GetResourceAmounts(resourceName, out astronautAmount, out astronautMaxAmount);
+                if (astronautAmount < amount)
+                {
+                    //Remove resource from the vessel
+                    partExited.vessel.rootPart.RequestResource(def.id, amount - astronautAmount);
+                    astronautData.SetResourceAmounts(resourceName, amount, amount);
+                }
+            }
         }
         #endregion
     }

@@ -405,6 +405,8 @@ namespace Snacks
             {
                 snackCycleStarted = false;
                 StartCoroutine(processEvents(postProcessEvents));
+                //Fire snack time event
+                onSnackTime.Fire();
             }
 
             //To avoid hammering the game with updates, we only run background converters, processors, and events once per game hour.
@@ -454,9 +456,6 @@ namespace Snacks
                 vesselsBeingProcessed += 1;
                 StartCoroutine(runSnackCycle(vessel, secondsElapsed));
             }
-
-            //Fire snack time event
-            onSnackTime.Fire();
         }
         #endregion
 
@@ -888,6 +887,7 @@ namespace Snacks
             GameEvents.onEditorPartPlaced.Add(onEditorPartPlaced);
             GameEvents.onEditorPartPicked.Add(onEditorPartPicked);
             GameEvents.onEditorPodPicked.Add(onEditorPartPicked);
+            GameEvents.onEditorShipModified.Add(onEditorShipModified);
             GameEvents.onProtoCrewMemberLoad.Add(onProtoCrewMemberLoad);
             GameEvents.onVesselGoOffRails.Add(onVesselGoOffRails);
             GameEvents.onKerbalLevelUp.Add(onKerbalLevelUp);
@@ -984,6 +984,7 @@ namespace Snacks
             GameEvents.onEditorPartPlaced.Remove(onEditorPartPlaced);
             GameEvents.onEditorPartPicked.Remove(onEditorPartPicked);
             GameEvents.onEditorPodPicked.Remove(onEditorPartPicked);
+            GameEvents.onEditorShipModified.Remove(onEditorShipModified);
             GameEvents.onProtoCrewMemberLoad.Remove(onProtoCrewMemberLoad);
             GameEvents.onVesselGoOffRails.Remove(onVesselGoOffRails);
             GameEvents.onKerbalLevelUp.Remove(onKerbalLevelUp);
@@ -1263,20 +1264,34 @@ namespace Snacks
             }
         }
 
+        private void onEditorShipModified(ShipConstruct ship)
+        {
+            Part part;
+            Part[] parts = ship.parts.ToArray();
+            int count = snacksPartResources.Count;
+            
+            for (int index = 0; index < parts.Length; index++)
+            {
+                part = parts[index];
+                if (part.CrewCapacity == 0)
+                    continue;
+
+                for (int resourceIndex = 0; resourceIndex < count; resourceIndex++)
+                {
+                    snacksPartResources[resourceIndex].addResourcesIfNeeded(part);
+                }
+
+                MonoUtilities.RefreshContextWindows(part);
+                GameEvents.onPartResourceListChange.Fire(part);
+            }
+        }
+
         private void onEditorPartPicked(Part part)
         {
-            //Inform all part resources
-            int count = snacksPartResources.Count;
-            for (int index = 0; index < count; index++)
-                snacksPartResources[index].addResourcesIfNeeded(part);
         }
 
         private void onEditorPartPlaced(Part part)
         {
-            //Inform all part resources
-            int count = snacksPartResources.Count;
-            for (int index = 0; index < count; index++)
-                snacksPartResources[index].addResourcesIfNeeded(part);
         }
 
         private void onVesselTerminated(ProtoVessel protoVessel)
@@ -1925,19 +1940,26 @@ namespace Snacks
 
                 astronauts = protoVessel.GetVesselCrew().ToArray();
 
-                count = protoVessel.protoPartSnapshots.Count;
-                for (int index = 0; index < count; index++)
+                if (!vessel.isEVA)
                 {
-                    protoPart = protoVessel.protoPartSnapshots[index];
-                    node = protoPart.partInfo.partConfig;
-                    if (!node.HasValue("CrewCapacity"))
-                        continue;
-                    partCapacity = 0;
-                    int.TryParse(node.GetValue("CrewCapacity"), out partCapacity);
-                    crewCapacity += partCapacity;
-                }
+                    count = protoVessel.protoPartSnapshots.Count;
+                    for (int index = 0; index < count; index++)
+                    {
+                        protoPart = protoVessel.protoPartSnapshots[index];
+                        node = protoPart.partInfo.partConfig;
+                        if (!node.HasValue("CrewCapacity"))
+                            continue;
+                        partCapacity = 0;
+                        int.TryParse(node.GetValue("CrewCapacity"), out partCapacity);
+                        crewCapacity += partCapacity;
+                    }
 
-                yield return new WaitForFixedUpdate();
+                    yield return new WaitForFixedUpdate();
+                }
+                else
+                {
+                    crewCapacity = 1;
+                }
             }
 
             //Count up the crew, but skip any that are unowned.

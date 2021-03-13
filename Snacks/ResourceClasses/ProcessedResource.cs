@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Unity;
 
 namespace Snacks
 {
@@ -171,6 +172,12 @@ namespace Snacks
                 double vesselCurrentAmount = 0;
                 double vesselMaxAmount = 0;
                 double requestAmount = amount;
+
+                // If the vessel is a kerbal on EVA, then consume the snack pack resources.
+                if (vessel.isEVA)
+                {
+                    return ConsumeEVAResource(vessel, result);
+                }
 
                 //Get current totals
                 getResourceTotals(vessel, out vesselCurrentAmount, out vesselMaxAmount, protoPartResources);
@@ -609,6 +616,69 @@ namespace Snacks
                     }
                 }
             }
+        }
+
+        protected virtual SnacksProcessorResult ConsumeEVAResource(Vessel vessel, SnacksProcessorResult result)
+        {
+            ProtoCrewMember astronaut = vessel.loaded ? vessel.GetVesselCrew()[0] : vessel.protoVessel.GetVesselCrew()[0];
+            AstronautData astronautData = SnacksScenario.Instance.GetAstronautData(astronaut);
+            double astronautAmount = 0;
+            double astronautMaxAmount = 0;
+
+            // Get the current and max amounts.
+            if (!astronautData.HasResource(resourceName))
+            {
+                result.resultType = SnacksResultType.notApplicable;
+                return result;
+            }
+            astronautData.GetResourceAmounts(resourceName, out astronautAmount, out astronautMaxAmount);
+            if (astronautAmount == double.NaN)
+            {
+                result.resultType = SnacksResultType.notApplicable;
+                return result;
+            }
+
+            // Consume the resource and note the result.
+            if (astronautAmount >= amount)
+            {
+                astronautAmount -= amount;
+                result.completedSuccessfully = true;
+            }
+            else
+            {
+                result.completedSuccessfully = false;
+            }
+
+            // Finish up the results
+            result.currentAmount = astronautAmount;
+            result.maxAmount = astronautMaxAmount;
+            result.affectedKerbalCount = 1;
+
+            // Update the astronaut's resource amounts.
+            astronautData.SetResourceAmounts(resourceName, astronautAmount, astronautMaxAmount);
+            SnacksScenario.Instance.SetAstronautData(astronautData);
+
+            // Get the EVA resource (if any)
+            SnacksEVAResource[] evaResources = SnacksScenario.Instance.snacksEVAResources.ToArray();
+            SnacksEVAResource evaResource = null;
+            for (int index = 0; index < evaResources.Length; index++)
+            {
+                if (evaResources[index].resourceName == resourceName)
+                {
+                    evaResource = evaResources[index];
+                    break;
+                }
+            }
+
+            // Display warning message if there is one and we've crossed the threshold.
+            if (evaResource != null && !string.IsNullOrEmpty(evaResource.warningMessage) && astronautAmount <= evaResource.warningAmount)
+            {
+                ScreenMessages.PostScreenMessage(astronaut.name + " (On EVA )- " + evaResource.warningMessage, 5.0f, ScreenMessageStyle.UPPER_CENTER);
+            }
+            
+
+            // Retur the result
+            return result;
         }
         #endregion
     }

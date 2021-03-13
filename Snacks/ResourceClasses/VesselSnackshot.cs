@@ -79,7 +79,8 @@ namespace Snacks
             status.AppendLine("<color=white><b>" + vesselName + "</b></color>");
 
             //Crew capacity
-            status.AppendLine("<color=white>Crew: " + crewCount + "/" + maxCrewCount + "</color>");
+            if (!vessel.isEVA)
+                status.AppendLine("<color=white>Crew: " + crewCount + "/" + maxCrewCount + "</color>");
 
             //Resource snapshots
             if (!showCrewView)

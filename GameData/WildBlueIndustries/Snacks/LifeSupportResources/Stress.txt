@@ -463,7 +463,7 @@ SNACKS_EVENT
 
 			//AmountPerDay will be translated into: AmountPerDay / seconds per homeworld day
 			//This will override AmountPerSecond if it is defined in the node.
-			AmountPerDay = 2
+			AmountPerDay = 2.5
 		}
 	}
 }
@@ -507,7 +507,7 @@ SNACKS_EVENT
 
 			//AmountPerDay will be translated into: AmountPerDay / seconds per homeworld day
 			//This will override AmountPerSecond if it is defined in the node.
-			AmountPerDay = 2
+			AmountPerDay = 2.5
 		}
 	}
 }
@@ -551,7 +551,7 @@ SNACKS_EVENT
 
 			//AmountPerDay will be translated into: AmountPerDay / seconds per homeworld day
 			//This will override AmountPerSecond if it is defined in the node.
-			AmountPerDay = 2
+			AmountPerDay = 2.5
 		}
 	}
 }
@@ -595,7 +595,7 @@ SNACKS_EVENT
 
 			//AmountPerDay will be translated into: AmountPerDay / seconds per homeworld day
 			//This will override AmountPerSecond if it is defined in the node.
-			AmountPerDay = 1.5
+			AmountPerDay = 2
 		}
 	}
 }

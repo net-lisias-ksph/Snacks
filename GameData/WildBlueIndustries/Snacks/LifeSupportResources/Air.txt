@@ -91,24 +91,15 @@ STORAGE_TEMPLATE
 //When a part with crew capacity is loaded in the editor and it lacks this resource, 
 //or when a vessel is loaded into the scene and its parts with crew capacity lack this resource, 
 //add it to the part. Doesn’t apply to kerbals going on EVA. Use SNACKS_EVA_RESOURCE for that.
-SNACKS_PART_RESOURCE
-{
-	resourceName = FreshAir
-	amount = 16
-	maxAmount = 16
-
-	//If true (which is the default), then amount and maxAmount added are multiplied by the part's crew capacity.
-	isPerKerbal = true
-}
-
-//When a kerbal goes on EVA, take this resource along and remove a corresponding amount from the vessel.
-//NOTE: Snacks is a special case since we have game settings that affect snacks per meal and meals per day.
-//So for these values, the SNACKS_EVA_RESOURCE config will reflect the game settings. This config node is provided as an example.
 SNACKS_EVA_RESOURCE
 {
 	resourceName = FreshAir
-	amount = 1.0
-	maxAmount = 1.0
+	amount = 1.42
+	maxAmount = 1.42
+	// When the resource amount drops to or below this value, display the warning message.
+	warningAmount = 0.44
+	// Message to display when the kerbal's resource has dropped to or below the warningAmount.
+	warningMessage = Warning: The supply of Fresh Air has dropped below minimum safetly levels.
 }
 
 //This is how you define a resource processor that can consume inputs and produce outputs. The inputs and outputs are applied per kerbal.
