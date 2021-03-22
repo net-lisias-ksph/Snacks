@@ -23,6 +23,11 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.26.1
+
+- Fixed issue where the PAW would flicker whenever adjusting settings on another part.
+- Fixed issue where players could not copy parts with Snacks resources in them.
+
 1.26.0
 
 Changes

@@ -893,6 +893,7 @@ namespace Snacks
             GameEvents.onKerbalLevelUp.Add(onKerbalLevelUp);
             GameEvents.onVesselSituationChange.Add(onVesselSituationChange);
             GameEvents.onEditorLoad.Add(onEditorLoad);
+            GameEvents.onEditorStarted.Add(onEditorStarted);
 
             //Create skill loss conditions list
             lossOfSkillConditions = new List<string>();
@@ -990,6 +991,7 @@ namespace Snacks
             GameEvents.onKerbalLevelUp.Remove(onKerbalLevelUp);
             GameEvents.onVesselSituationChange.Remove(onVesselSituationChange);
             GameEvents.onEditorLoad.Remove(onEditorLoad);
+            GameEvents.onEditorStarted.Remove(onEditorStarted);
         }
 
         public override void OnLoad(ConfigNode node)
@@ -1266,24 +1268,6 @@ namespace Snacks
 
         private void onEditorShipModified(ShipConstruct ship)
         {
-            Part part;
-            Part[] parts = ship.parts.ToArray();
-            int count = snacksPartResources.Count;
-            
-            for (int index = 0; index < parts.Length; index++)
-            {
-                part = parts[index];
-                if (part.CrewCapacity == 0)
-                    continue;
-
-                for (int resourceIndex = 0; resourceIndex < count; resourceIndex++)
-                {
-                    snacksPartResources[resourceIndex].addResourcesIfNeeded(part);
-                }
-
-                MonoUtilities.RefreshContextWindows(part);
-                GameEvents.onPartResourceListChange.Fire(part);
-            }
         }
 
         private void onEditorPartPicked(Part part)
@@ -1369,6 +1353,24 @@ namespace Snacks
                         for (int resourceIndex = 0; resourceIndex < keys.Length; resourceIndex++)
                             rosterResources[keys[resourceIndex]].addResourceIfNeeded(astronauts[astronautIndex]);
                     }
+                }
+            }
+        }
+
+        private void onEditorStarted()
+        {
+            int count = PartLoader.LoadedPartsList.Count;
+            Part partPrefab;
+            for (int index = 0; index < count; index++)
+            {
+                int resourceCount = snacksPartResources.Count;
+
+                for (int resourceIndex = 0; resourceIndex < resourceCount; resourceIndex++)
+                {
+                    partPrefab = PartLoader.LoadedPartsList[index].partPrefab;
+                    if (partPrefab.isKerbalEVA() || partPrefab.isVesselEVA || partPrefab.CrewCapacity == 0 || PartLoader.LoadedPartsList[index].TechHidden)
+                        continue;
+                    snacksPartResources[resourceIndex].addResourcesIfNeeded(partPrefab);
                 }
             }
         }

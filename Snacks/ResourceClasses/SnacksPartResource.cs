@@ -124,12 +124,14 @@ namespace Snacks
         /// If the part with crew capacity doesn't have the resource, then add it.
         /// </summary>
         /// <param name="part"></param>
-        public void addResourcesIfNeeded(Part part)
+        public bool addResourcesIfNeeded(Part part)
         {
             if (part == null)
-                return;
+                return false;
             if (part.CrewCapacity <= 0)
-                return;
+                return false;
+            if (part.isKerbalEVA() || part.isVesselEVA)
+                return false;
             PartResourceDefinitionList definitions = PartResourceLibrary.Instance.resourceDefinitions;
             PartResourceDefinition def;
             double partCurrentAmount = 0;
@@ -139,15 +141,23 @@ namespace Snacks
             int moduleCount;
 
             if (string.IsNullOrEmpty(resourceName))
-                return;
+                return false;
             if (!definitions.Contains(resourceName))
-                return;
+                return false;
 
             //Check the part to see if it has the resources already.
             def = definitions[resourceName];
-            part.GetConnectedResourceTotals(def.id, out partCurrentAmount, out partMaxAmount, true);
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                part.GetConnectedResourceTotals(def.id, out partCurrentAmount, out partMaxAmount, true);
+            }
+            else if (HighLogic.LoadedSceneIsEditor)
+            {
+                if (part.Resources.Contains(resourceName))
+                    partMaxAmount = part.Resources[resourceName].amount;
+            }
             if (partMaxAmount > 0)
-                return;
+                return false;
 
             //Now add the resource.
             //Determine how many units to add. If the part has any module on the capacity list, then we use the capacity modifier.
@@ -173,6 +183,7 @@ namespace Snacks
 
             //Add the resource.
             part.Resources.Add(def.name, unitsToAdd, maxUnitsToAdd, true, true, false, true, PartResource.FlowMode.Both);
+            return true;
         }
 
         /// <summary>
