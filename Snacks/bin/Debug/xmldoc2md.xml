@@ -2485,6 +2485,17 @@
             Max amount possible
             </summary>
         </member>
+        <member name="F:Snacks.SnacksPartResource.unitsPerDay">
+            <summary>
+            How many units per day that will be consumed. Overrides amount and maxAmount.
+            For Snacks, this is dynamically calculated based on game settings for Snacks per meal and meals per day.
+            </summary>
+        </member>
+        <member name="F:Snacks.SnacksPartResource.daysLifeSupport">
+            <summary>
+            Specifies how many days of life support to provide.
+            </summary>
+        </member>
         <member name="F:Snacks.SnacksPartResource.capacityAffectingModules">
             <summary>
             Parts with at least one of the modules on this list affect the part's capacity to store the resource (their equipment takes up additional space, for instance).
@@ -2506,7 +2517,7 @@
             </summary>
             <returns>A list of SnacksPartResource objects.</returns>
         </member>
-        <member name="M:Snacks.SnacksPartResource.addResourcesIfNeeded(Part)">
+        <member name="M:Snacks.SnacksPartResource.addResourcesIfNeeded(Part,AvailablePart)">
             <summary>
             If the part with crew capacity doesn't have the resource, then add it.
             </summary>

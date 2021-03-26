@@ -53,6 +53,17 @@ namespace Snacks
         public double maxAmount;
 
         /// <summary>
+        /// How many units per day that will be consumed. Overrides amount and maxAmount.
+        /// For Snacks, this is dynamically calculated based on game settings for Snacks per meal and meals per day.
+        /// </summary>
+        public double unitsPerDay;
+
+        /// <summary>
+        /// Specifies how many days of life support to provide.
+        /// </summary>
+        public double daysLifeSupport;
+
+        /// <summary>
         /// Parts with at least one of the modules on this list affect the part's capacity to store the resource (their equipment takes up additional space, for instance).
         /// </summary>
         public string capacityAffectingModules = string.Empty;
@@ -100,6 +111,10 @@ namespace Snacks
                     float.TryParse(node.GetValue("capacityMultiplier"), out partResource.capacityMultiplier);
                 if (node.HasValue("isPerKerbal"))
                     bool.TryParse(node.GetValue("isPerKerbal"), out partResource.isPerKerbal);
+                if (node.HasValue("unitsPerDay"))
+                    double.TryParse(node.GetValue("unitsPerDay"), out partResource.unitsPerDay);
+                if (node.HasValue("daysLifeSupport"))
+                    double.TryParse(node.GetValue("daysLifeSupport"), out partResource.daysLifeSupport);
 
                 partResourceList.Add(partResource);
             }
@@ -109,8 +124,8 @@ namespace Snacks
             {
                 partResource = new SnacksPartResource();
                 partResource.resourceName = SnacksProperties.SnacksResourceName;
-                partResource.amount = 200;
-                partResource.maxAmount = 200;
+                partResource.unitsPerDay = SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay;
+                partResource.daysLifeSupport = 2;
                 partResource.capacityAffectingModules = "ModuleCommand";
                 partResource.capacityMultiplier = 0.25f;
                 partResourceList.Add(partResource);
@@ -124,7 +139,7 @@ namespace Snacks
         /// If the part with crew capacity doesn't have the resource, then add it.
         /// </summary>
         /// <param name="part"></param>
-        public bool addResourcesIfNeeded(Part part)
+        public bool addResourcesIfNeeded(Part part, AvailablePart availablePart = null)
         {
             if (part == null)
                 return false;
@@ -154,15 +169,15 @@ namespace Snacks
             else if (HighLogic.LoadedSceneIsEditor)
             {
                 if (part.Resources.Contains(resourceName))
-                    partMaxAmount = part.Resources[resourceName].amount;
+                    return false;
             }
             if (partMaxAmount > 0)
                 return false;
 
             //Now add the resource.
             //Determine how many units to add. If the part has any module on the capacity list, then we use the capacity modifier.
-            unitsToAdd = amount;
-            maxUnitsToAdd = maxAmount;
+            unitsToAdd = unitsPerDay > 0 ? unitsPerDay * daysLifeSupport : amount;
+            maxUnitsToAdd = unitsPerDay > 0 ? unitsToAdd : maxAmount;
             if (isPerKerbal)
             {
                 unitsToAdd *= part.CrewCapacity;
@@ -183,6 +198,17 @@ namespace Snacks
 
             //Add the resource.
             part.Resources.Add(def.name, unitsToAdd, maxUnitsToAdd, true, true, false, true, PartResource.FlowMode.Both);
+            Debug.Log(string.Format("[SnacksPartResource] - Added Amt: {0:n2} Max: {1:n2} of {2:s} to {3:s}", unitsToAdd, maxUnitsToAdd, resourceName, part.partInfo.title));
+
+            if (availablePart != null)
+            {
+                AvailablePart.ResourceInfo resourceInfo = new AvailablePart.ResourceInfo();
+                resourceInfo.resourceName = resourceName;
+                resourceInfo.displayName = def.displayName;
+                resourceInfo.info = string.Format("Amount: {0:n1}\nMass: {1:n3}\nCost: {2:n1}", unitsToAdd, def.density * unitsToAdd, def.unitCost * unitsToAdd);
+                availablePart.resourceInfos.Add(resourceInfo);
+            }
+
             return true;
         }
 
@@ -224,8 +250,8 @@ namespace Snacks
                     continue;
 
                 //Determine how many units to add. If the part has any module on the capacity list, then we use the capacity modifier.
-                unitsToAdd = amount;
-                maxUnitsToAdd = maxAmount;
+                unitsToAdd = unitsPerDay > 0 ? unitsPerDay * daysLifeSupport : amount;
+                maxUnitsToAdd = unitsPerDay > 0 ? unitsToAdd : maxAmount;
                 if (!isPerKerbal)
                 {
                     unitsToAdd *= part.CrewCapacity;

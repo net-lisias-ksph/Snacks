@@ -913,6 +913,7 @@ namespace Snacks
             snapshotMap = new Dictionary<Vessel, VesselSnackshot>();
             bodyVesselCountMap = new Dictionary<int, int>();
             initializeEventLists();
+            onGameSettingsApplied();
         }
 
         public void Start()
@@ -1370,7 +1371,7 @@ namespace Snacks
                     partPrefab = PartLoader.LoadedPartsList[index].partPrefab;
                     if (partPrefab.isKerbalEVA() || partPrefab.isVesselEVA || partPrefab.CrewCapacity == 0 || PartLoader.LoadedPartsList[index].TechHidden)
                         continue;
-                    snacksPartResources[resourceIndex].addResourcesIfNeeded(partPrefab);
+                    snacksPartResources[resourceIndex].addResourcesIfNeeded(partPrefab, PartLoader.LoadedPartsList[index]);
                 }
             }
         }
@@ -1437,6 +1438,19 @@ namespace Snacks
             for (int index = 0; index < count; index++)
             {
                 resourceProcessors[index].OnGameSettingsApplied();
+            }
+
+            count = snacksPartResources.Count;
+            SnacksPartResource resource = null;
+            for (int index = 0; index < count; index++)
+            {
+                resource = snacksPartResources[index];
+                if (resource.resourceName == SnacksProperties.SnacksResourceName)
+                    break;
+            }
+            if (resource != null)
+            {
+                resource.unitsPerDay = SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay;
             }
         }
 

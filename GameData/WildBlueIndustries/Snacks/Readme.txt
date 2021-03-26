@@ -23,6 +23,12 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.27
+
+- Added the ability to store the SOCS Oxium Candle as a cargo part.
+- SNACKS_PART_RESOURCE now supports unitsPerDay and daysLifeSupport. They specify the number of units per day that is consumed (per kerbal), and the number of days of life support to add to the part, respectively. If they're specified, then amount and maxAmount are ignored.
+- Fixed missing resource infos in the editor's part display window.
+
 1.26.1
 
 - Fixed issue where the PAW would flicker whenever adjusting settings on another part.

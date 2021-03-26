@@ -44,6 +44,8 @@ RESOURCE_DEFINITION:NEEDS[SnacksStress]
 
 SNACKS_PART_RESOURCE:NEEDS[SnacksStress]
 {
+	name = HydrazineVodka
+
 	resourceName = HydrazineVodka
 	amount = 17
 	maxAmount = 17

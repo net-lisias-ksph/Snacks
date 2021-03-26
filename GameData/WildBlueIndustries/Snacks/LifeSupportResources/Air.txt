@@ -91,6 +91,29 @@ STORAGE_TEMPLATE
 //When a part with crew capacity is loaded in the editor and it lacks this resource, 
 //or when a vessel is loaded into the scene and its parts with crew capacity lack this resource, 
 //add it to the part. Doesn’t apply to kerbals going on EVA. Use SNACKS_EVA_RESOURCE for that.
+SNACKS_PART_RESOURCE
+{
+	name = FreshAir
+
+	resourceName = FreshAir
+
+	// How many units per day that will be consumed. Overrides amount and maxAmount.
+//	unitsPerDay = 1
+
+	// Specifies how many days of life support to provide.
+//	daysLifeSupport = 2
+
+	// Overriden by unitsPerDay and daysLifeSupport if they're > 0
+	amount = 16
+	maxAmount = 16
+
+	//If true (which is the default), then unitsPerDay and daysLifeSupport added are multiplied by the part's crew capacity.
+	isPerKerbal = true
+}
+
+//When a kerbal goes on EVA, take this resource along and remove a corresponding amount from the vessel.
+//NOTE: Snacks is a special case since we have game settings that affect snacks per meal and meals per day.
+//So for these values, the SNACKS_EVA_RESOURCE config will reflect the game settings. This config node is provided as an example.
 SNACKS_EVA_RESOURCE
 {
 	resourceName = FreshAir
