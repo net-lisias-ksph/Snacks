@@ -535,12 +535,6 @@ namespace Snacks
             return info.ToString();
         }
 
-        public override void OnLoad(ConfigNode node)
-        {
-            base.OnLoad(node);
-            setupRosterResources();
-        }
-
         private void OnDestroy()
         {
             if (!string.IsNullOrEmpty(conditionSummary))
@@ -588,6 +582,9 @@ namespace Snacks
                 GameEvents.onCrewTransferred.Add(onCrewTransferred);
                 GameEvents.OnVesselRecoveryRequested.Add(OnVesselRecoveryRequested);
             }
+
+            // Setup any roster resources
+            setupRosterResources();
 
             //Do a quick preprocessing to update our input/output effincies
             secondsPerCycle = hoursPerCycle * 3600;
@@ -846,6 +843,7 @@ namespace Snacks
                             if (rosterResource.amount <= 0)
                                 rosterResource.amount = 0;
                             astronautData.rosterResources[rosterRatio.ResourceName] = rosterResource;
+                            SnacksScenario.Instance.SetAstronautData(astronautData);
 
                             //Fire event
                             SnacksScenario.onRosterResourceUpdated.Fire(this.part.vessel, rosterResource, astronautData, astronauts[astronautIndex]);
@@ -872,6 +870,7 @@ namespace Snacks
                             if (rosterResource.amount >= rosterResource.maxAmount)
                                 rosterResource.amount = rosterResource.maxAmount;
                             astronautData.rosterResources[rosterRatio.ResourceName] = rosterResource;
+                            SnacksScenario.Instance.SetAstronautData(astronautData);
 
                             //Fire event
                             SnacksScenario.onRosterResourceUpdated.Fire(this.part.vessel, rosterResource, astronautData, astronauts[astronautIndex]);

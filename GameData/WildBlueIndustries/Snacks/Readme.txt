@@ -23,6 +23,9 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.27.1
+- Fixed issue where Snacks weren't being added to crewed parts.
+
 1.27
 
 - Added the ability to store the SOCS Oxium Candle as a cargo part.

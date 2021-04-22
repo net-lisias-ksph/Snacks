@@ -208,6 +208,7 @@ namespace Snacks
                 resourceInfo.info = string.Format("Amount: {0:n1}\nMass: {1:n3}\nCost: {2:n1}", unitsToAdd, def.density * unitsToAdd, def.unitCost * unitsToAdd);
                 availablePart.resourceInfos.Add(resourceInfo);
             }
+            MonoUtilities.RefreshContextWindows(part);
 
             return true;
         }

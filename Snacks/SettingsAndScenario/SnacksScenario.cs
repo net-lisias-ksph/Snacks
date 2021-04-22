@@ -1448,7 +1448,7 @@ namespace Snacks
                 if (resource.resourceName == SnacksProperties.SnacksResourceName)
                     break;
             }
-            if (resource != null)
+            if (resource != null && resource.unitsPerDay != 0 && resource.daysLifeSupport != 0)
             {
                 resource.unitsPerDay = SnacksProperties.SnacksPerMeal * SnacksProperties.MealsPerDay;
             }

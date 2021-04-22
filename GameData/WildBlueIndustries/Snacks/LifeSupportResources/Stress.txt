@@ -56,6 +56,11 @@ SKILL_LOSS_CONDITION
 	name = Stargazing
 }
 
+SKILL_LOSS_CONDITION
+{
+	name = Gardening
+}
+
 //A lack of air will definitely cause stress...
 @SNACKS_RESOURCE_PROCESSOR[Air]:FOR[SnacksFreshAir]
 {
