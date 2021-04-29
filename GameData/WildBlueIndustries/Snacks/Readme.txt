@@ -23,6 +23,14 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.27.2
+- Added new SKILL_LOSS_CONDITION named Gardening to the list of conditions that will cause skill loss when a part with an active SnacksConverter is running, it lists Gardening as one of its skill loss conditions, and a kerbal resides inside the part. For example, a kerbal can be working in a greenhouse.
+Hint: The greenhouse could also reduce a kerbal's Stress while it is running.
+- Fixed issue where too many Snacks were being added to kerbals sitting in external command seats.
+- Fixed issue where kerbals sitting in external command seats upon vessel launch weren't receiving EVA resources like FreshAir.
+- Fixed NRE generated while opening the Snacks window when a vessel has kerbals in external command seats.
+- Fixed issue where crew capacity was incorrectly calculated when kerbals sat in external command seats. Yay for circumventing a KSP bug!
+
 1.27.1
 - Fixed issue where Snacks weren't being added to crewed parts.
 

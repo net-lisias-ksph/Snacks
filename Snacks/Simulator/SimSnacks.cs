@@ -734,7 +734,7 @@ namespace Snacks
         {
             SimConverter simConverter;
 
-            if (node.HasNode("MODULE"))
+            if (node != null && node.HasNode("MODULE"))
             {
                 ConfigNode[] moduleNodes = node.GetNodes("MODULE");
                 ConfigNode moduleNode;

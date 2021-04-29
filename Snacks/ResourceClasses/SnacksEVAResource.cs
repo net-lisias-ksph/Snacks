@@ -147,17 +147,26 @@ namespace Snacks
                 return;
             if (!definitions.Contains(resourceName))
                 return;
-
-            //Make sure that we have enough resources.
             def = definitions[resourceName];
-            partExited.vessel.rootPart.GetConnectedResourceTotals(def.id, out partCurrentAmount, out partMaxAmount, true);
-            if (partCurrentAmount <= amount)
+
+            // See if we have the resource
+            bool hasResource = astronautData.HasResource(resourceName);
+
+            // Edge case: boardedPart is null, which indicates that the kerbal is already outside.
+            // If we don't have the resource then we need to add it; kerbal gets a freebie here...
+            if (!hasResource && partExited == null)
             {
+                astronautData.SetResourceAmounts(resourceName, amount, amount);
                 return;
             }
 
+            //Make sure that we have enough resources.
+            partExited.vessel.rootPart.GetConnectedResourceTotals(def.id, out partCurrentAmount, out partMaxAmount, true);
+            if (partCurrentAmount <= amount)
+                return;
+
             // Add resource to astronaut if we don't have it already.
-            if (!astronautData.HasResource(resourceName))
+            if (!hasResource)
             {
                 //Remove resource from the vessel
                 partExited.vessel.rootPart.RequestResource(def.id, amount);

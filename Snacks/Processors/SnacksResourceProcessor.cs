@@ -92,6 +92,11 @@ namespace Snacks
         #endregion
 
         #region Overrides
+        public override void ProcessResources(Vessel vessel, double elapsedTime, int crewCount, int crewCapacity)
+        {
+            base.ProcessResources(vessel, elapsedTime, crewCount, crewCapacity);
+        }
+
         public override void AddConsumedAndProducedResources(Vessel vessel, double secondsPerCycle, List<ResourceRatio> consumedResources, List<ResourceRatio> producedResources)
         {
             //Make sure we have crew

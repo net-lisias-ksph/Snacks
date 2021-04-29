@@ -247,7 +247,7 @@ namespace Snacks
             for (int index = 0; index < partCount; index++)
             {
                 part = vessel.parts[index];
-                if (part.CrewCapacity <= 0)
+                if (part.CrewCapacity <= 0 || part.HasModuleImplementing<KerbalSeat>() || part.HasModuleImplementing<KerbalEVA>())
                     continue;
 
                 //Determine how many units to add. If the part has any module on the capacity list, then we use the capacity modifier.

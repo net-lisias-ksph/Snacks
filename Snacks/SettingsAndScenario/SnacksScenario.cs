@@ -373,12 +373,28 @@ namespace Snacks
         /// <param name="vessel">The Vessel to query.</param>
         public int GetCrewCapacity(Vessel vessel)
         {
+            if (vessel.isEVA)
+                return 1;
+
+            // vessel.GetCrewCapacity() incorrectly reports the crew capacity when kerbals are seated in command seats.
+            int crewCapacity = 0;
             if (vessel.loaded)
-                return vessel.GetCrewCapacity();
+            {
+                int count = vessel.Parts.Count;
+                Part part;
+                for (int index = 0; index < count; index++)
+                {
+                    part = vessel.Parts[index];
+                    if (part.HasModuleImplementing<KerbalEVA>() || part.CrewCapacity <= 0)
+                        continue;
+
+                    crewCapacity += part.CrewCapacity;
+                }
+
+                return crewCapacity;
+            }
 
             ProtoPartSnapshot[] protoParts = vessel.protoVessel.protoPartSnapshots.ToArray();
-            int crewCapacity = 0;
-
             for (int index = 0; index < protoParts.Length; index++)
                 crewCapacity += protoParts[index].partInfo.partPrefab.CrewCapacity;
 
@@ -894,6 +910,7 @@ namespace Snacks
             GameEvents.onVesselSituationChange.Add(onVesselSituationChange);
             GameEvents.onEditorLoad.Add(onEditorLoad);
             GameEvents.onEditorStarted.Add(onEditorStarted);
+            GameEvents.onCommandSeatInteractionEnter.Add(onCommandSeatInteractionEnter);
 
             //Create skill loss conditions list
             lossOfSkillConditions = new List<string>();
@@ -993,6 +1010,7 @@ namespace Snacks
             GameEvents.onVesselSituationChange.Remove(onVesselSituationChange);
             GameEvents.onEditorLoad.Remove(onEditorLoad);
             GameEvents.onEditorStarted.Remove(onEditorStarted);
+            GameEvents.onCommandSeatInteractionEnter.Remove(onCommandSeatInteractionEnter);
         }
 
         public override void OnLoad(ConfigNode node)
@@ -1454,6 +1472,11 @@ namespace Snacks
             }
         }
 
+        private void onCommandSeatInteractionEnter(KerbalEVA kerbalEVA, bool boardedSeat)
+        {
+            // Unfortunately we don't know what seat or what vessel we have boarded or left.
+        }
+
         private void onVesselLoaded(Vessel vessel)
         {
             int count = 0;
@@ -1461,7 +1484,16 @@ namespace Snacks
             string objectName = vessel.name;
 
             if (vessel.isEVA || objectName.Contains("EVA"))
+            {
+                // A kerbal that just left a command seat or a kerbal that's already on EVA when the vessel is loaded will have a crew count.
+                if (HighLogic.LoadedSceneIsFlight && vessel.GetVesselCrew().Count > 0)
+                {
+                    GameEvents.FromToAction<Part, Part> evaData = new GameEvents.FromToAction<Part, Part>();
+                    evaData.to = vessel.rootPart;
+                    onCrewOnEva(evaData);
+                }
                 return;
+            }
 
             //Inform all part resources
             count = snacksPartResources.Count;
