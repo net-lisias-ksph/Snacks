@@ -23,6 +23,10 @@ Copy the files in the zip folder over to GameData/Snacks
 
 REVISION HISTORY
 
+1.27.3
+- Recompiled for KSP 1.12.2.
+- Fixed issue where Snacks events weren't being processed correctly.
+
 1.27.2
 - Added new SKILL_LOSS_CONDITION named Gardening to the list of conditions that will cause skill loss when a part with an active SnacksConverter is running, it lists Gardening as one of its skill loss conditions, and a kerbal resides inside the part. For example, a kerbal can be working in a greenhouse.
 Hint: The greenhouse could also reduce a kerbal's Stress while it is running.

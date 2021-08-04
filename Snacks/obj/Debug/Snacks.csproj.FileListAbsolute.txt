@@ -109,3 +109,4 @@ C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csproj.CopyCom
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.dll
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\SnacksUtils.pdb
 C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\obj\Debug\Snacks.csprojAssemblyReference.cache
+C:\Projects\KSP\WildBlueIndustries\Snacks\Snacks\bin\Debug\UnityEngine.SubsystemsModule.dll

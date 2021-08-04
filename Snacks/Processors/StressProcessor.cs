@@ -133,12 +133,9 @@ namespace Snacks
             SnacksRosterResource resource;
             bool completedSuccessfully = true;
 
-            //Get the crew manifest
-            if (vessel.loaded)
-                astronauts = vessel.GetVesselCrew().ToArray();
-            else
-                astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
-            if (astronauts.Length == 0)
+            //Get vessel crew
+            astronauts = SnacksScenario.Instance.GetNonExemptCrew(vessel);
+            if (astronauts == null)
                 return;
 
             //Update max space
@@ -203,10 +200,9 @@ namespace Snacks
                 remainingTime -= secondsPerCycle;
 
                 //Get the crew manifest
-                if (vessel.loaded)
-                    astronauts = vessel.GetVesselCrew().ToArray();
-                else
-                    astronauts = vessel.protoVessel.GetVesselCrew().ToArray();
+                astronauts = SnacksScenario.Instance.GetNonExemptCrew(vessel);
+                if (astronauts == null)
+                    return;
                 if (astronauts.Length == 0)
                     return;
 

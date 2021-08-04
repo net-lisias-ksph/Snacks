@@ -2060,7 +2060,7 @@ namespace Snacks
             for (int index = 0; index < keys.Length; index++)
             {
                 snacksEvent = eventList[keys[index]];
-                snacksEvent.ProcessEvent(elapsedTime);
+                snacksEvent.ProcessEvent(secondsPerCycle);
                 yield return new WaitForFixedUpdate();
             }
             yield return new WaitForFixedUpdate();
