@@ -1,5 +1,15 @@
 # Snacks Continued :: Change Log
 
+* 2019-0330: 1.11.5 (Angel-125) for KSP 1.6.1
+	+ Fixed empty mass for the radial snack tin to be in line with similar parts.
+	+ Fixed snack resources being locked by default when Snacks are added to in-flight vessels.
+	+ Fixed efficiency processing; processors and recyclers output efficiency should now be 10% to 100% efficient based on their efficiency setting.
+	+ Fixed issue where converters and processors wouldn't run in the background without at least one Kerbal aboard.
+	+ Fixed issue where the Snacks Processor and Soil Recycler wouldn't produce the proper amount of resources while the vessel is in physics range.
+	+ Reduced the amount of Snacks per day produced by the stock Mobile Processing Lab. It was a bit OP...
+	+ Snack tins now tell you what their resource options are in the part info view.
+	+ Added new SnacksConverter part module. It serves as the basis for the existing Snacks Processor and Soil Recycler. It can also produce "YIELD_RESOURCE" units over time just like the greenhouse from Wild Blue Tools. You can even assign effects to the converter!
+	+ NOTE: Snacks won't be getting a greenhouse of its own; it's intended to be a lightweight life support system, but I recognize that some players want more sophisticated capabilities. So the tools are there for others to expand upon...
 * 2018-1227: 1.11.2 (Angel-125) for KSP 1.6.1
 	+ Recompiled for KSP 1.6
 * 2018-1103: 1.11.1 (Angel-125) for KSP 1.5.1
