@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2020-0425: 1.24.5 (Angel-125) for KSP 1.9.1
+	+ Bug fixes
 * 2020-0215: 1.24.4 (Angel-125) for KSP 1.9.0
 	+ Snacks (and other life support resources) will now be added to vessels that are loaded into the VAB/SPH.
 * 2020-0211: 1.24.2 (Angel-125) for KSP 1.9.0
