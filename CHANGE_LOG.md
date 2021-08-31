@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2019-0830: 1.23.0 (Angel-125) for KSP 1.7.3
+	+ You can now disable Snacks/Soil resource processing if desired. Just rename Snacks.cfg to Snacks.txt in the LifeSupportResources folder.
 * 2019-0817: 1.22.2 (Angel-125) for KSP 1.7.3
 	+ Fixed flow mode issues for ElectricCharge consumption.
 * 2019-0807: 1.22.1 (Angel-125) for KSP 1.7.3
