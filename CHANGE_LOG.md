@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2018-0320: 1.9.0 (Angel-125) for KSP 1.4.1
+	+ Recompiled for KSP 1.4.1
 * 2018-0221: 1.8.7 (Angel-125) for KSP 1.3.1
 	+ Fixed NRE and production issues with the SnackProcessor.
 * 2018-0205: 1.8.6 (Angel-125) for KSP 1.3.1
