@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2021-0322: 1.26.1 (Angel-125) for KSP 1.11.2
+	+ Fixed issue where the PAW would flicker whenever adjusting settings on another part.
+	+ Fixed issue where players could not copy parts with Snacks resources in them.
 * 2021-0313: 1.26.0 (Angel-125) for KSP 1.11.1
 	+ Changes
 			- If a kerbal on EVA consumes a resource and it dips below minimum safe levels, then the player will receive a warning message.
