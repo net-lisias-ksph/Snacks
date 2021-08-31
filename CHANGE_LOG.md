@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2019-1022: 1.24.1 (Angel-125) for KSP 1.8.0
+	+ Bug fixes
 * 2019-1021: 1.24.0 (Angel-125) for KSP 1.8.0
 	+ Updated for KSP 1.8
 * 2019-0926: 1.23.2 (Angel-125) for KSP 1.7.3
