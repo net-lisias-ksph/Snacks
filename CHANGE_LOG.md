@@ -1,5 +1,10 @@
 # Snacks Continued :: Change Log
 
+* 2016-1109: 1.5.6 (Angel-125) for KSP 1.2.1
+	+ Fixed NRE's that happen in the editor (VAB/SPH)
+	+ Snacking frequency is correctly calculated now.
+	+ Updated to KSP 1.2.1
+	+ Added recyclers to the Mk3 shuttle cockpit and the Mk2 crew cabin.
 * 2016-1102: 1.5.5 (Angel-125) for KSP 1.2
 	+ Fixed some NREs.
 	+ Fixed a situation where the ModuleManager patch wasn't adding snacks to crewed parts; Snacks can now dynamically add them when adding parts to vessels in the VAB/SPH.
