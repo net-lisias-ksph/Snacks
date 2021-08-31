@@ -1,5 +1,15 @@
 # Snacks Continued :: Change Log
 
+* 2019-0605: 1.16.1 (Angel-125) for KSP 1.7.1
+	+ Updated Snacks Trip Planner in the Docs folder - new Timewarp Calcs tab.
+	+ SnacksConverter now has new options:
+	+ requiresHomeConnection - Requires connection to homeworld to operate.
+	+ minimumCrew - Minimum number of crew that must be in the host part in order to run the converter.
+	+ NOTE: Snacks Processor and Soil Recycler don't use these.
+		- Fixed NREs generated when converters are added in the editor.
+		- Fixed issue where Snacks wasn't being added to parts in the editor.
+		- Fixed debug info in SnacksProcessor.
+		- Fixed issue where Snack supply window wasn't being updated when the window is opened and snack time happens.
 * 2019-0602: 1.16 (Angel-125) for KSP 1.7.1
 	+ Added new celestial bodies filter to the snacks supply window.
 		- Snacks will now run simulations on a vessel's supplies and converters to estimate how long the vessel's snacks will last.
