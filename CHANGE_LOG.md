@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2016-1102: 1.5.5 (Angel-125) for KSP 1.2
+	+ Fixed some NREs.
+	+ Fixed a situation where the ModuleManager patch wasn't adding snacks to crewed parts; Snacks can now dynamically add them when adding parts to vessels in the VAB/SPH.
 * 2016-1023: 1.5.3 (Angel-125) for KSP 1.2
 	+ When kerbals go EVA, they take one day's worth of snacks with them.
 	+ More code cleanup.
