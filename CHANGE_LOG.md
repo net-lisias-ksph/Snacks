@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2017-0528: 1.8.0 (Angel-125) for KSP 1.3.0
+	+ Time estimates are now measured in years and days; months, though accurate, was getting too confusing.
+	+ Snack processors and soil recyclers now run in the background when vessels aren't loaded.
 * 2017-0227: 1.7.0 (Angel-125) for KSP 1.2.2
 	+ You can now exempt certain kerbals from consuming Snacks and suffering the effects of a lack of Snacks. This is particularly helpful for holograms...
 * 2017-0106: 1.6.5 (Angel-125) for KSP 1.2.2
