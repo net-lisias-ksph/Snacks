@@ -1,5 +1,13 @@
 # Snacks Continued :: Change Log
 
+* 2019-0602: 1.16 (Angel-125) for KSP 1.7.1
+	+ Added new celestial bodies filter to the snacks supply window.
+		- Snacks will now run simulations on a vessel's supplies and converters to estimate how long the vessel's snacks will last.
+	+ NOTE: For the simulator to work properly, be sure to visit all your in-flight vessels that have crews aboard after installing this update.
+	+ NOTE: The simulator cannot simulate drill operations.
+			- Made some improvements to background converter processing. As a bonus, power production & consumption are also run in the background- with Kopernicus support for solar arrays.
+			- SnacksConverter now lists the yield resources in the part info window, and shows yield production time remaining in the PAW.
+			- Snacks and other resources consumed per day are now calculated based on the solar day length of the homeworld instead of set to the stock 6hrs/24hrs. I'm looking at you, JNSQ...
 * 2019-0518: 1.15 (Angel-125) for KSP 1.7.0
 	+ Fixed issue where vessels spawned in game for rescue contracts lacked Snacks.
 	+ Fixed integration issue with WalkAbout.
