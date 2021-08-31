@@ -1,5 +1,9 @@
 # Snacks Continued :: Change Log
 
+* 2016-1202: 1.6.0 (Angel-125) for KSP 1.2.1
+	+ Plugin renamed to SnacksUtils to alleviate issues with ModuleManager.
+	+ When kerbals faint due to lack of snacks, you now choose from 1 minute, 5 minutes, 10 minutes, 30 minutes, an hour, 2 hours, or a day.
+	+ Snacks now supports 24-hour days in addition to 6-hour days. Snack frequency is calculated accordingly.
 * 2016-1118: 1.5.7 (Angel-125) for KSP 1.2.1
 	+ Fixed snacks calculations and minor GUI update. Thanks for the patch, bounty123! :)
 * 2016-1109: 1.5.6 (Angel-125) for KSP 1.2.1
