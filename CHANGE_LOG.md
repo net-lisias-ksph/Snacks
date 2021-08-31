@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2019-0416: 1.12 (Angel-125) for KSP 1.7.0
+	+ Updated for KSP 1.7
+	+ Bug fixes
 * 2019-0330: 1.11.5 (Angel-125) for KSP 1.6.1
 	+ Fixed empty mass for the radial snack tin to be in line with similar parts.
 	+ Fixed snack resources being locked by default when Snacks are added to in-flight vessels.
