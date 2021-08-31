@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2019-0817: 1.22.2 (Angel-125) for KSP 1.7.3
+	+ Fixed flow mode issues for ElectricCharge consumption.
 * 2019-0807: 1.22.1 (Angel-125) for KSP 1.7.3
 	+ Removed test code from the simulator.
 * 2019-0806: 1.22 (Angel-125) for KSP 1.7.3
