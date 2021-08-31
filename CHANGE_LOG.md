@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2016-1118: 1.5.7 (Angel-125) for KSP 1.2.1
+	+ Fixed snacks calculations and minor GUI update. Thanks for the patch, bounty123! :)
 * 2016-1109: 1.5.6 (Angel-125) for KSP 1.2.1
 	+ Fixed NRE's that happen in the editor (VAB/SPH)
 	+ Snacking frequency is correctly calculated now.
