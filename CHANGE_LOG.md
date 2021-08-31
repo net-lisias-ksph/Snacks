@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2019-0616: 1.16.3 (Angel-125) for KSP 1.7.2
+	+ Fixed issue where Snacks was being consumed by occupants of vessel that's part of a rescue contract. NOTE: Once the craft is loaded into the scene, they will be tracked by Snacks.
 * 2019-0609: 1.16.2 (Angel-125) for KSP 1.7.1
 	+ Fixed issue where parts weren't receiving their correct allotment of Snacks for parts where the crew capacity is greater than one kerbal.
 * 2019-0605: 1.16.1 (Angel-125) for KSP 1.7.1
