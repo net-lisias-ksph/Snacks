@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2019-0422: 1.13 (Angel-125) for KSP 1.7.0
+	+ Fixed recycler and processor efficiency calculations.
+	+ Other bug fixes.
 * 2019-0416: 1.12 (Angel-125) for KSP 1.7.0
 	+ Updated for KSP 1.7
 	+ Bug fixes
