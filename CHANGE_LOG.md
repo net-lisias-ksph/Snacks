@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2016-1018: 1.5.2 (Angel-125) for KSP 1.2
+	+ Temporarily disable the partial vessel control penalty.
+	+ Added additional checks for vessels created through rescue contracts; any crew listed as "Unowned" will be ignore.
 * 2016-1017: 1.5.0 (Angel-125) for KSP 1.2
 	+ ISnacksPenalty now has a RemovePenalty method. Snacks will call this each time kerbals don't miss any meals.
 	+ ISnacksPenalty now has a GameSettingsApplied method. This is called at startup and when the player changes game settings.
