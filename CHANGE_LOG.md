@@ -1,5 +1,14 @@
 # Snacks Continued :: Change Log
 
+* 2021-0313: 1.26.0 (Angel-125) for KSP 1.11.1
+	+ Changes
+			- If a kerbal on EVA consumes a resource and it dips below minimum safe levels, then the player will receive a warning message.
+			- In Debug mode, the Snack Time button will become available in the Snacks flight app window.
+			- Fixed Snacks App Window not updating resource values properly after snack time.
+			- Fixed NRE generated when opening the Snacks window and there is a kerbal on EVA.
+			- Fixed issue where EVA resources were consumed when the jetpack is used. NOTE: Use the in-flight Snacks window to see the EVA kerbal's resources, they're no longer
+			- Fixed crash issue that occurs when placing parts with crew capacity in symmetry.
+			- Fixed issue in Snacks App Window where kerbals on EVA would display their crew count.
 * 2020-0806: 1.25.2 (Angel-125) for KSP 1.10.1
 	+ Fix Stresstimator showing up in Space Center window when it shouldn't.
 	+ Fix corrected density of Hydrazine.
