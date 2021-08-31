@@ -21,13 +21,13 @@
 	+ Fixed issue where players could not copy parts with Snacks resources in them.
 * 2021-0313: 1.26.0 (Angel-125) for KSP 1.11.1
 	+ Changes
-			- If a kerbal on EVA consumes a resource and it dips below minimum safe levels, then the player will receive a warning message.
-			- In Debug mode, the Snack Time button will become available in the Snacks flight app window.
-			- Fixed Snacks App Window not updating resource values properly after snack time.
-			- Fixed NRE generated when opening the Snacks window and there is a kerbal on EVA.
-			- Fixed issue where EVA resources were consumed when the jetpack is used. NOTE: Use the in-flight Snacks window to see the EVA kerbal's resources, they're no longer
-			- Fixed crash issue that occurs when placing parts with crew capacity in symmetry.
-			- Fixed issue in Snacks App Window where kerbals on EVA would display their crew count.
+		- If a kerbal on EVA consumes a resource and it dips below minimum safe levels, then the player will receive a warning message.
+		- In Debug mode, the Snack Time button will become available in the Snacks flight app window.
+		- Fixed Snacks App Window not updating resource values properly after snack time.
+		- Fixed NRE generated when opening the Snacks window and there is a kerbal on EVA.
+		- Fixed issue where EVA resources were consumed when the jetpack is used. NOTE: Use the in-flight Snacks window to see the EVA kerbal's resources, they're no longer
+		- Fixed crash issue that occurs when placing parts with crew capacity in symmetry.
+		- Fixed issue in Snacks App Window where kerbals on EVA would display their crew count.
 * 2020-0806: 1.25.2 (Angel-125) for KSP 1.10.1
 	+ Fix Stresstimator showing up in Space Center window when it shouldn't.
 	+ Fix corrected density of Hydrazine.
@@ -35,7 +35,7 @@
 	+ Fix SnacksConverter not restoring skills when the converter is activated and a kerbal transfers to another part.
 	+ You can now estimate a vessel's max Stress capacity in the VAB/SPH. Requires Stress to be enabled (rename the Stress.txt file in LifeSupportResources folder to Stress.cfg).
 	+ New Feature
-			- Stresstimator: If you have Stress enabled, then you'll get a new button in the in-flight Snacks window to open the Stresstimator. This window helps you estimate the max Stress that your crew can take based on the crewable parts that you select. Since kerbals can get Stressed Out when moving from vessels with a lot of available crew capacity to vessels without much available crew capacity, the Stresstimator helps you avoid kerbals getting Stressed Out if they have accumulated Stress, you move them to a docked vessel, and then undock the vessel. Given the game design, it's very difficult to do the Stress estimate automagically, so the Stresstimator is better than nothing...
+		- Stresstimator: If you have Stress enabled, then you'll get a new button in the in-flight Snacks window to open the Stresstimator. This window helps you estimate the max Stress that your crew can take based on the crewable parts that you select. Since kerbals can get Stressed Out when moving from vessels with a lot of available crew capacity to vessels without much available crew capacity, the Stresstimator helps you avoid kerbals getting Stressed Out if they have accumulated Stress, you move them to a docked vessel, and then undock the vessel. Given the game design, it's very difficult to do the Stress estimate automagically, so the Stresstimator is better than nothing...
 * 2020-0728: 1.25.0 (Angel-125) for KSP 1.10.1
 	+ Fix background converters not respecting locked resources for unloaded vessels.
 	+ Fix resource processors not respecting locked resources for unloaded vessels.
@@ -91,9 +91,9 @@
 	+ When I started reworking Snacks to add in the penalty system, I tried to follow the same design philosophies that Squad did when making KerbNet: make it a challenge but don't brick your game or save. I've kept that philosophy and stuck to the original concept as a lightweight life support system as I've made improvements over the years. This update is the collmination of weeks of work that keeps the simplistic life support out of the box but opens the doors to so much more. All it needs is a bit of legwork on your part, but there are plenty of examples.
 	+ I'm happy to say that Snacks is feature complete!
 	+ Custom Life Support Resources: Snacks now has the ability to define custom life support resources besides just Snacks! All it takes is a config file. With this feature you can:
-			- Define your own life support resource to consume and/or produce.
-			- Optionally track its status in the vessel snapshot window- with support in the multithreaded simulator!
-			- Optionally apply one or more outcomes (like penalties) if the consumed resource runs out, or if space for the produced resource is full.
+		- Define your own life support resource to consume and/or produce.
+		- Optionally track its status in the vessel snapshot window- with support in the multithreaded simulator!
+		- Optionally apply one or more outcomes (like penalties) if the consumed resource runs out, or if space for the produced resource is full.
 	+ As an example of a tracked resource, check out the LifeSupportResources folder for the FreshAir.txt file. Rename it with the .cfg extension to enable it.
 	+ NOTE: You can make FreshAir using the stock ISRU and mini ISRU, and all the stock crew cabins have Air Scrubber converters to turn StaleAir into FreshAir.
 	+ New Part: SOCS! Similar to the real-world Solid Fuel Oxygen Generator, the Solid Oxium Candle System burns a solid fuel to produce Fresh Air. Once started it can't be stopped and it might explode... It's available at the Survivability tech tree node, and only available if you enable Air.
@@ -109,9 +109,9 @@
 	+ When I started reworking Snacks to add in the penalty system, I tried to follow the same design philosophies that Squad did when making KerbNet: make it a challenge but don't brick your game or save. I've kept that philosophy and stuck to the original concept as a lightweight life support system as I've made improvements over the years. This update is the collmination of weeks of work that keeps the simplistic life support out of the box but opens the doors to so much more. All it needs is a bit of legwork on your part, but there are plenty of examples.
 	+ I'm happy to say that Snacks is feature complete!
 	+ Custom Life Support Resources: Snacks now has the ability to define custom life support resources besides just Snacks! All it takes is a config file. With this feature you can:
-			- Define your own life support resource to consume and/or produce.
-			- Optionally track its status in the vessel snapshot window- with support in the multithreaded simulator!
-			- Optionally apply one or more outcomes (like penalties) if the consumed resource runs out, or if space for the produced resource is full.
+		- Define your own life support resource to consume and/or produce.
+		- Optionally track its status in the vessel snapshot window- with support in the multithreaded simulator!
+		- Optionally apply one or more outcomes (like penalties) if the consumed resource runs out, or if space for the produced resource is full.
 	+ As an example of a tracked resource, check out the LifeSupportResources folder for the FreshAir.txt file. Rename it with the .cfg extension to enable it.
 	+ NOTE: You can make FreshAir using the stock ISRU and mini ISRU, and all the stock crew cabins have Air Scrubber converters to turn StaleAir into FreshAir.
 	+ New Part: SOCS! Similar to the real-world Solid Fuel Oxygen Generator, the Solid Oxium Candle System burns a solid fuel to produce Fresh Air. Once started it can't be stopped and it might explode... It's available at the Survivability tech tree node, and only available if you enable Air.
@@ -142,9 +142,9 @@
 		- Snacks will now run simulations on a vessel's supplies and converters to estimate how long the vessel's snacks will last.
 	+ NOTE: For the simulator to work properly, be sure to visit all your in-flight vessels that have crews aboard after installing this update.
 	+ NOTE: The simulator cannot simulate drill operations.
-			- Made some improvements to background converter processing. As a bonus, power production & consumption are also run in the background- with Kopernicus support for solar arrays.
-			- SnacksConverter now lists the yield resources in the part info window, and shows yield production time remaining in the PAW.
-			- Snacks and other resources consumed per day are now calculated based on the solar day length of the homeworld instead of set to the stock 6hrs/24hrs. I'm looking at you, JNSQ...
+		- Made some improvements to background converter processing. As a bonus, power production & consumption are also run in the background- with Kopernicus support for solar arrays.
+		- SnacksConverter now lists the yield resources in the part info window, and shows yield production time remaining in the PAW.
+		- Snacks and other resources consumed per day are now calculated based on the solar day length of the homeworld instead of set to the stock 6hrs/24hrs. I'm looking at you, JNSQ...
 * 2019-0518: 1.15 (Angel-125) for KSP 1.7.0
 	+ Fixed issue where vessels spawned in game for rescue contracts lacked Snacks.
 	+ Fixed integration issue with WalkAbout.
