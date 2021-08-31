@@ -1,5 +1,9 @@
 # Snacks Continued :: Change Log
 
+* 2021-0326: 1.27.0 (Angel-125) for KSP 1.11.2
+	+ Added the ability to store the SOCS Oxium Candle as a cargo part.
+	+ SNACKS_PART_RESOURCE now supports unitsPerDay and daysLifeSupport. They specify the number of units per day that is consumed (per kerbal), and the number of days of life support to add to the part, respectively. If they're specified, then amount and maxAmount are ignored.
+	+ Fixed missing resource infos in the editor's
 * 2021-0322: 1.26.1 (Angel-125) for KSP 1.11.2
 	+ Fixed issue where the PAW would flicker whenever adjusting settings on another part.
 	+ Fixed issue where players could not copy parts with Snacks resources in them.
