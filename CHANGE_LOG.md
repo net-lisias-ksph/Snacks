@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2020-0806: 1.25.2 (Angel-125) for KSP 1.10.1
+	+ Fix Stresstimator showing up in Space Center window when it shouldn't.
+	+ Fix corrected density of Hydrazine.
 * 2020-0730: 1.25.1 (Angel-125) for KSP 1.10.1
 	+ Fix SnacksConverter not restoring skills when the converter is activated and a kerbal transfers to another part.
 	+ You can now estimate a vessel's max Stress capacity in the VAB/SPH. Requires Stress to be enabled (rename the Stress.txt file in LifeSupportResources folder to Stress.cfg).
