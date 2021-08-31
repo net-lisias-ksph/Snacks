@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2018-0221: 1.8.7 (Angel-125) for KSP 1.3.1
+	+ Fixed NRE and production issues with the SnackProcessor.
 * 2018-0205: 1.8.6 (Angel-125) for KSP 1.3.1
 	+ Snack consumption now honors resource locks.
 	+ Retextured radial snack tin - Thanks JadeOfMaar! :)
