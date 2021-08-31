@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2017-0106: 1.6.5 (Angel-125) for KSP 1.2.2
+	+ Added a radial snack tin. It holds 150 snacks, 150 Soil, or 75 Snacks and 75 Soil.
 * 2016-1211: 1.6.2 (Angel-125) for KSP 1.2.2
 	+ KSP 1.2.2 Update
 * 2016-1202: 1.6.0 (Angel-125) for KSP 1.2.1
