@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2019-0807: 1.22.1 (Angel-125) for KSP 1.7.3
+	+ Removed test code from the simulator.
 * 2019-0806: 1.22 (Angel-125) for KSP 1.7.3
 	+ Added support for Dynamic Batteries.
 	+ Added ability to interrupt the resource consumption simulator. NOTE: duration estimates will be unavailable.
