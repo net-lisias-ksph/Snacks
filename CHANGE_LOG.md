@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2019-0511: 1.14 (Angel-125) for KSP 1.7.0
+	+ Fixed Restock whitelist
 * 2019-0422: 1.13 (Angel-125) for KSP 1.7.0
 	+ Fixed recycler and processor efficiency calculations.
 	+ Other bug fixes.
