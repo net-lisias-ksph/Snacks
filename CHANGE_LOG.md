@@ -1,5 +1,11 @@
 # Snacks Continued :: Change Log
 
+* 2018-0205: 1.8.6 (Angel-125) for KSP 1.3.1
+	+ Snack consumption now honors resource locks.
+	+ Retextured radial snack tin - Thanks JadeOfMaar! :)
+	+ Removed unneeded catch-all - Thanks JadeOfMaar! :)
+	+ Fixed bulkhead profiles and tags on inline snack tins - Thanks JadeOfMaar! :)
+	+ Add parts to CCK LS category - Thanks JadeOfMaar! :)
 * 2017-1007: 1.8.5 (Angel-125) for KSP 1.3.1
 	+ Fixed background processing of snacks and soil issues with WBI mods (Pathfinder, Buffalo, etc.).
 	+ NOTE: Be sure to visit your spacecraft at least once to ensure that the changes take effect.
