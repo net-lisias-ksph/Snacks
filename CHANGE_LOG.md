@@ -1,5 +1,9 @@
 # Snacks Continued :: Change Log
 
+* 2016-1023: 1.5.3 (Angel-125) for KSP 1.2
+	+ When kerbals go EVA, they take one day's worth of snacks with them.
+	+ More code cleanup.
+	+ Bug Fixes
 * 2016-1018: 1.5.2 (Angel-125) for KSP 1.2
 	+ Temporarily disable the partial vessel control penalty.
 	+ Added additional checks for vessels created through rescue contracts; any crew listed as "Unowned" will be ignore.
