@@ -1,5 +1,10 @@
 # Snacks Continued :: Change Log
 
+* 2019-0806: 1.22 (Angel-125) for KSP 1.7.3
+	+ Added support for Dynamic Batteries.
+	+ Added ability to interrupt the resource consumption simulator. NOTE: duration estimates will be unavailable.
+	+ Fix Inability to view vessels not on or around the current world.
+	+ Fix Missing roster resource names when added to the kerbal.
 * 2019-0727: 1.21 (Angel-125) for KSP 1.7.3
 	+ CheckResources can now check resource percent levels.
 	+ Fix Simulator window not running simulations after closing and reopening the window in the same scene.
