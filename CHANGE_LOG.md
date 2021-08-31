@@ -1,5 +1,18 @@
 # Snacks Continued :: Change Log
 
+* 2020-0728: 1.25.0 (Angel-125) for KSP 1.10.1
+	+ Fix background converters not respecting locked resources for unloaded vessels.
+	+ Fix resource processors not respecting locked resources for unloaded vessels.
+	+ Fix condition summary not showing Stressed Out condition.
+	+ Fix Stress not recalculated when a vessel docks or undocks.
+	+ Fix SOCS Cannister explosion check not being checked.
+	+ Fix SOCS Cannister automatically shuts down when it runs out of SOCS Fuel.
+	+ Fix SOCS Cannister user messages are more appropriate now.
+	+ If kerbals get Stressed Out they might start stress eating. If you run out of Snacks they'll get even more Stressed Out.
+	+ Kerbals wait to get Stressed Out before they start consuming "Hydrazine."
+	+ You can now disable email notifications of converters running out of resources or storage space via the Snacks Settings menu.
+	+ Background processors no longer consume ElectricCharge for simplicity; it's either that or bog the game down with finding and running power generators.
+	+ You can now customize the SnacksConverter's criticalSuccessMessage, successMessage, failMessage, and criticalFailMessage displayed during yielded resource checks.
 * 2020-0425: 1.24.5 (Angel-125) for KSP 1.9.1
 	+ Bug fixes
 * 2020-0215: 1.24.4 (Angel-125) for KSP 1.9.0
