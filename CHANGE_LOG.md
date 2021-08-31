@@ -1,5 +1,7 @@
 # Snacks Continued :: Change Log
 
+* 2017-0227: 1.7.0 (Angel-125) for KSP 1.2.2
+	+ You can now exempt certain kerbals from consuming Snacks and suffering the effects of a lack of Snacks. This is particularly helpful for holograms...
 * 2017-0106: 1.6.5 (Angel-125) for KSP 1.2.2
 	+ Added a radial snack tin. It holds 150 snacks, 150 Soil, or 75 Snacks and 75 Soil.
 * 2016-1211: 1.6.2 (Angel-125) for KSP 1.2.2
