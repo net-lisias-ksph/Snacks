@@ -1,5 +1,8 @@
 # Snacks Continued :: Change Log
 
+* 2019-0716: 1.20.3 (Angel-125) for KSP 1.7.3
+	+ Fix snack tin symmetry issues.
+	+ Fix NREs when changing resources.
 * 2019-0630: 1.20.2 (Angel-125) for KSP 1.7.3
 	+ When I started reworking Snacks to add in the penalty system, I tried to follow the same design philosophies that Squad did when making KerbNet: make it a challenge but don't brick your game or save. I've kept that philosophy and stuck to the original concept as a lightweight life support system as I've made improvements over the years. This update is the collmination of weeks of work that keeps the simplistic life support out of the box but opens the doors to so much more. All it needs is a bit of legwork on your part, but there are plenty of examples.
 	+ I'm happy to say that Snacks is feature complete!
